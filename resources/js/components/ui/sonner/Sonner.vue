@@ -42,3 +42,24 @@ const props = defineProps<ToasterProps>()
     </template>
   </Sonner>
 </template>
+
+
+<style>
+/* Boardgame Vote: contraste de notificaciones */
+
+[data-sonner-toaster] [data-sonner-toast] {
+    background: #111114 !important;
+    color: #fafafa !important;
+    border: 1px solid #3f3f46 !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-title] {
+    color: #fafafa !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-description] {
+    color: #e4e4e7 !important;
+    opacity: 1 !important;
+    line-height: 1.5;
+}
+</style>
