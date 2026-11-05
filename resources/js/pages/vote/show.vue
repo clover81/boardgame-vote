@@ -156,6 +156,13 @@ const selectedParticipant =
 
 const voteSaved = ref(false);
 
+const brokenCoverIds = ref<number[]>([]);
+const markCoverAsBroken = (candidateId: number) => {
+    if (!brokenCoverIds.value.includes(candidateId)) {
+        brokenCoverIds.value.push(candidateId);
+    }
+};
+
 const singleCandidate = computed(
     () =>
         props.poll.candidates.length === 1
@@ -429,10 +436,10 @@ const formatDate = (
         <!-- ===================================================== -->
 
         <header
-            class="bg-[#5200FF] px-5 py-8 text-white"
+            class="bg-[#5200FF] px-4 py-6 text-white sm:px-5 sm:py-8"
         >
             <div
-                class="mx-auto max-w-3xl"
+                class="mx-auto max-w-5xl"
             >
                 <p
                     class="text-sm font-bold uppercase tracking-wider text-[#CCFF00]"
@@ -441,7 +448,7 @@ const formatDate = (
                 </p>
 
                 <h1
-                    class="mt-2 text-3xl font-black"
+                    class="mt-2 break-words text-2xl font-black sm:text-3xl"
                 >
                     {{ poll.name }}
                 </h1>
@@ -465,7 +472,7 @@ const formatDate = (
         </header>
 
         <div
-            class="mx-auto max-w-3xl px-4 py-8"
+            class="mx-auto max-w-5xl px-4 py-6 sm:py-8"
         >
             <AlertError
                 v-if="Object.keys(form.errors).length"
@@ -479,10 +486,8 @@ const formatDate = (
             <!-- ================================================= -->
 
             <section
-                v-if="
-                    poll.status ===
-                    'closed'
-                "
+                v-if="poll.status === 'closed'"
+                class="mx-auto max-w-3xl"
             >
                 <p
                     class="font-bold uppercase tracking-wide text-[#5200FF]"
@@ -551,12 +556,12 @@ const formatDate = (
                         :key="
                             result.candidate_id
                         "
-                        class="flex items-center gap-4 rounded-2xl border bg-white p-5 shadow-sm"
+                        class="flex min-w-0 items-center gap-3 rounded-2xl border bg-white p-3 shadow-sm sm:gap-4 sm:p-5"
                     >
                         <!-- POSICIÓN -->
 
                         <div
-                            class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl font-black"
+                            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg font-black sm:h-14 sm:w-14 sm:text-xl"
                             :class="{
                                 'bg-[#CCFF00] text-black':
                                     result.is_winner,
@@ -594,7 +599,7 @@ const formatDate = (
                             :alt="
                                 result.game.name
                             "
-                            class="h-20 w-16 rounded-lg object-cover"
+                            class="h-16 w-12 shrink-0 rounded-lg bg-zinc-100 object-contain sm:h-20 sm:w-16"
                         />
 
                         <!-- INFO -->
@@ -647,7 +652,7 @@ const formatDate = (
                             class="text-right"
                         >
                             <p
-                                class="text-3xl font-black text-[#5200FF]"
+                                class="text-2xl font-black text-[#5200FF] sm:text-3xl"
                             >
                                 {{
                                     result.points
@@ -673,7 +678,7 @@ const formatDate = (
 
             <section
                 v-if="poll.status === 'open' && voteSaved && selectedParticipant"
-                class="rounded-3xl border border-green-200 bg-white p-6 text-center shadow-sm"
+                class="rounded-3xl border border-green-200 bg-white p-5 text-center shadow-sm sm:p-6"
             >
                 <div
                     class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#CCFF00] text-3xl"
@@ -756,7 +761,7 @@ const formatDate = (
                 <!-- PARTICIPANTE -->
 
                 <div
-                    class="mb-6 flex items-center justify-between"
+                    class="mb-4 flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm"
                 >
                     <div>
                         <p
@@ -784,555 +789,226 @@ const formatDate = (
 
                 <!-- JUEGOS -->
 
-                <div class="space-y-6">
+                <div class="grid items-start gap-4 lg:grid-cols-2">
                     <article
                         v-for="candidate in poll.candidates"
                         :key="candidate.id"
-                        class="overflow-hidden rounded-3xl border bg-white shadow-sm"
+                        class="min-w-0 overflow-hidden rounded-2xl border-2 bg-white shadow-sm transition-colors"
                         :class="{
-                            'border-[#CCFF00] ring-4 ring-[#CCFF00]':
-                                form.first_candidate_id ===
-                                candidate.id,
-
-                            'border-[#FF6B00] ring-4 ring-[#FF6B00]':
-                                form.second_candidate_id ===
-                                candidate.id,
+                            'border-[#7aa600] ring-2 ring-[#CCFF00]/70':
+                                form.first_candidate_id === candidate.id,
+                            'border-[#FF6B00] ring-2 ring-[#FF6B00]/30':
+                                form.second_candidate_id === candidate.id,
+                            'border-zinc-200':
+                                form.first_candidate_id !== candidate.id &&
+                                form.second_candidate_id !== candidate.id,
                         }"
                     >
-                        <!-- PORTADA -->
-
-                        <img
-                            v-if="
-                                candidate.game
-                                    .image_url
-                            "
-                            :src="
-                                candidate.game
-                                    .image_url
-                            "
-                            :alt="
-                                candidate.game
-                                    .name
-                            "
-                            class="aspect-[16/10] w-full object-cover sm:aspect-[16/9]"
-                        />
-
-                        <div class="p-5">
-                            <div
-                                v-if="
-                                    form.first_candidate_id === candidate.id ||
-                                    form.second_candidate_id === candidate.id
-                                "
-                                class="mb-3"
-                            >
-                                <span
-                                    v-if="form.first_candidate_id === candidate.id"
-                                    class="rounded-full bg-[#CCFF00] px-3 py-1 text-xs font-black text-black"
-                                >
-                                    🥇 TU PRIMERA OPCIÓN
-                                </span>
-
-                                <span
-                                    v-if="form.second_candidate_id === candidate.id"
-                                    class="rounded-full bg-[#FF6B00] px-3 py-1 text-xs font-black text-black"
-                                >
-                                    🥈 TU SEGUNDA OPCIÓN
-                                </span>
+                        <!-- Una portada pequeña y completa, también en móvil. -->
+                        <div class="flex min-w-0 gap-3 p-3 sm:gap-4 sm:p-4">
+                            <div class="flex h-32 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 p-2 sm:h-40 sm:w-28">
+                                <img
+                                    v-if="candidate.game.image_url && !brokenCoverIds.includes(candidate.id)"
+                                    :src="candidate.game.image_url"
+                                    :alt="`Portada de ${candidate.game.name}`"
+                                    loading="lazy"
+                                    class="h-full w-full object-contain"
+                                    @error="markCoverAsBroken(candidate.id)"
+                                />
+                                <span v-else class="text-center text-xs text-zinc-500">🎲 Sin portada</span>
                             </div>
 
-                            <!-- NOMBRE -->
-
-                            <h2
-                                class="text-2xl font-black"
-                            >
-                                {{
-                                    candidate.game
-                                        .name
-                                }}
-                            </h2>
-
-                            <!-- IDEALES -->
-
-                            <div
-                                class="mt-3 flex flex-wrap gap-2"
-                            >
-                                <span
-                                    v-for="number in candidate.game.ideal_player_counts"
-                                    :key="number"
-                                    class="rounded-full bg-[#CCFF00] px-3 py-1 text-sm font-bold text-black"
-                                >
-                                    Ideal a
-                                    {{ number }}
-                                </span>
-                            </div>
-
-                            <!-- DATOS -->
-
-                            <div
-                                class="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-zinc-600"
-                            >
-                                <span>
-                                    👥
-                                    {{
-                                        candidate
-                                            .game
-                                            .min_players
-                                    }}–{{
-                                        candidate
-                                            .game
-                                            .max_players
-                                    }}
-                                </span>
-
-                                <span
-                                    v-if="
-                                        candidate
-                                            .game
-                                            .min_playtime
-                                    "
-                                >
-                                    ⏱
-                                    {{
-                                        candidate
-                                            .game
-                                            .min_playtime
-                                    }}
-
-                                    <template
-                                        v-if="
-                                            candidate
-                                                .game
-                                                .max_playtime &&
-                                            candidate
-                                                .game
-                                                .max_playtime !==
-                                                candidate
-                                                    .game
-                                                    .min_playtime
-                                        "
-                                    >
-                                        –{{
-                                            candidate
-                                                .game
-                                                .max_playtime
-                                        }}
-                                    </template>
-
-                                    min
-                                </span>
-
-                                <span
-                                    v-if="
-                                        candidate
-                                            .game
-                                            .complexity !==
-                                        null
-                                    "
-                                >
-                                    🧠
-                                    {{
-                                        candidate
-                                            .game
-                                            .complexity
-                                    }}/5
-                                </span>
-
-                                <span>
-                                    🎲
-                                    {{
-                                        modeLabel(
-                                            candidate
-                                                .game
-                                                .game_mode
-                                        )
-                                    }}
-                                </span>
-                            </div>
-
-                            <!-- DESCRIPCIÓN -->
-
-                            <p
-                                v-if="
-                                    candidate.game
-                                        .short_description
-                                "
-                                class="mt-5 leading-7 text-zinc-600"
-                            >
-                                {{
-                                    candidate.game
-                                        .short_description
-                                }}
-                            </p>
-
-                            <!-- ============================== -->
-                            <!-- EXPANSIÓN PREVISTA             -->
-                            <!-- ============================== -->
-
-                            <div
-                                v-if="
-                                    candidate.expansion
-                                "
-                                class="mt-5 rounded-2xl border border-violet-200 bg-violet-50 p-4"
-                            >
-                                <p
-                                    class="font-bold text-[#5200FF]"
-                                >
-                                    🧩 Para esta partida
-                                </p>
-
-                                <p
-                                    class="mt-1 font-semibold"
-                                >
-                                    Se propone jugar con
-                                    {{
-                                        candidate
-                                            .expansion
-                                            .name
-                                    }}
-                                </p>
-
-                                <p
-                                    class="mt-1 text-xs text-zinc-500"
-                                >
-                                    La expansión es
-                                    información de la
-                                    partida, no una opción
-                                    de voto independiente.
-                                </p>
-                            </div>
-
-                            <!-- ============================== -->
-                            <!-- HISTORIAL                      -->
-                            <!-- ============================== -->
-
-                            <div
-                                class="mt-5 rounded-2xl border bg-zinc-50 p-4"
-                            >
-                                <p
-                                    class="font-bold"
-                                >
-                                    📚 Historial contigo
-                                </p>
-
-                                <!-- SIN PARTIDAS -->
-
-                                <p
-                                    v-if="
-                                        candidate.history
-                                            .total_plays ===
-                                        0
-                                    "
-                                    class="mt-2 text-sm text-zinc-500"
-                                >
-                                    Todavía no has
-                                    registrado ninguna
-                                    partida de este juego.
-                                </p>
-
-                                <!-- CON PARTIDAS -->
-
+                            <div class="min-w-0 flex-1">
                                 <div
-                                    v-else
-                                    class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm"
+                                    v-if="form.first_candidate_id === candidate.id || form.second_candidate_id === candidate.id"
+                                    class="mb-2"
                                 >
                                     <span
-                                        class="font-semibold text-[#5200FF]"
+                                        v-if="form.first_candidate_id === candidate.id"
+                                        class="inline-block rounded-full bg-[#CCFF00] px-2.5 py-1 text-xs font-black text-black"
                                     >
-                                        🎲
-                                        {{
-                                            candidate
-                                                .history
-                                                .total_plays
-                                        }}
-                                        {{
-                                            candidate
-                                                .history
-                                                .total_plays ===
-                                            1
-                                                ? 'partida registrada'
-                                                : 'partidas registradas'
-                                        }}
+                                        🥇 Primera opción
                                     </span>
-
                                     <span
-                                        v-if="
-                                            candidate
-                                                .history
-                                                .last_played_at
-                                        "
-                                        class="text-zinc-500"
+                                        v-else
+                                        class="inline-block rounded-full bg-orange-100 px-2.5 py-1 text-xs font-black text-orange-900"
                                     >
-                                        📅 Última:
-                                        {{
-                                            formatDate(
-                                                candidate
-                                                    .history
-                                                    .last_played_at
-                                            )
-                                        }}
+                                        🥈 Segunda opción
                                     </span>
                                 </div>
 
-                                <!-- JUGADORES DE HOY -->
+                                <h2 class="break-words text-lg font-black leading-snug sm:text-xl">
+                                    {{ candidate.game.name }}
+                                </h2>
+
+                                <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-600 sm:text-sm">
+                                    <span>👥 {{ candidate.game.min_players }}–{{ candidate.game.max_players }}</span>
+                                    <span v-if="candidate.game.min_playtime">
+                                        ⏱ {{ candidate.game.min_playtime }}<template v-if="candidate.game.max_playtime && candidate.game.max_playtime !== candidate.game.min_playtime">–{{ candidate.game.max_playtime }}</template> min
+                                    </span>
+                                    <span v-if="candidate.game.complexity !== null">🧠 {{ candidate.game.complexity }}/5</span>
+                                    <span v-if="candidate.game.game_mode">🎲 {{ modeLabel(candidate.game.game_mode) }}</span>
+                                </div>
 
                                 <div
-                                    class="mt-4 border-t pt-3"
+                                    v-if="candidate.game.ideal_player_counts.length"
+                                    class="mt-2 flex flex-wrap gap-1.5"
                                 >
-                                    <p
-                                        class="text-xs font-bold uppercase tracking-wide text-zinc-500"
+                                    <span
+                                        v-for="number in candidate.game.ideal_player_counts"
+                                        :key="number"
+                                        class="rounded-full bg-lime-100 px-2 py-1 text-xs font-semibold text-lime-900"
                                     >
-                                        Jugadores de hoy
-                                    </p>
+                                        Ideal a {{ number }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
 
-                                    <div
-                                        class="mt-3 space-y-2"
-                                    >
+                        <!-- La expansión prevista es información, no un candidato independiente. -->
+                        <p
+                            v-if="candidate.expansion"
+                            class="mx-3 mb-3 rounded-lg bg-violet-50 px-3 py-2 text-sm text-violet-900 sm:mx-4"
+                        >
+                            🧩 Con expansión: <strong>{{ candidate.expansion.name }}</strong>
+                        </p>
+
+                        <p
+                            v-if="candidate.note"
+                            class="mx-3 mb-3 break-words rounded-lg bg-zinc-100 px-3 py-2 text-sm text-zinc-700 sm:mx-4"
+                        >
+                            ℹ️ {{ candidate.note }}
+                        </p>
+
+                        <!-- Los jugadores del grupo son visibles sin desplegar nada. -->
+                        <div class="border-t border-zinc-100 px-3 py-3 sm:px-4">
+                            <p class="text-xs font-bold uppercase tracking-wide text-zinc-500">
+                                👥 Jugadores de hoy ({{ candidate.history.participants.length }})
+                            </p>
+                            <div class="mt-2 flex flex-wrap gap-1.5">
+                                <span
+                                    v-for="participant in candidate.history.participants"
+                                    :key="participant.participant_id"
+                                    class="max-w-full break-words rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700"
+                                >
+                                    {{ participant.display_name }}<template v-if="participant.participant_id === currentParticipantId"> (tú)</template>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Los botones quedan antes de las secciones secundarias. -->
+                        <div
+                            class="grid gap-2 px-3 pb-3 sm:px-4"
+                            :class="needsSecondChoice ? 'grid-cols-2' : 'grid-cols-1'"
+                        >
+                            <button
+                                type="button"
+                                :aria-pressed="form.first_candidate_id === candidate.id"
+                                class="min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-bold transition-colors sm:text-base"
+                                :class="form.first_candidate_id === candidate.id
+                                    ? 'border-[#9bcb00] bg-[#CCFF00] text-black'
+                                    : 'border-zinc-200 bg-white text-zinc-900 hover:border-[#9bcb00] hover:bg-lime-50'"
+                                @click="selectFirst(candidate.id)"
+                            >
+                                {{ needsSecondChoice ? '🥇 1.ª opción' : '✓ Mi voto' }}
+                            </button>
+                            <button
+                                v-if="needsSecondChoice"
+                                type="button"
+                                :aria-pressed="form.second_candidate_id === candidate.id"
+                                class="min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-bold transition-colors sm:text-base"
+                                :class="form.second_candidate_id === candidate.id
+                                    ? 'border-[#FF6B00] bg-orange-100 text-orange-950'
+                                    : 'border-zinc-200 bg-white text-zinc-900 hover:border-orange-400 hover:bg-orange-50'"
+                                @click="selectSecond(candidate.id)"
+                            >
+                                🥈 2.ª opción
+                            </button>
+                        </div>
+
+                        <!-- La descripción, el historial y los enlaces siguen disponibles. -->
+                        <details class="group border-t border-zinc-200 bg-zinc-50/70">
+                            <summary class="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-semibold text-[#5200FF] [&::-webkit-details-marker]:hidden">
+                                Ver descripción e historial
+                                <span aria-hidden="true" class="ml-2 transition-transform group-open:rotate-180">⌄</span>
+                            </summary>
+                            <div class="space-y-3 border-t border-zinc-200 px-4 py-4 text-sm">
+                                <p v-if="candidate.game.short_description" class="whitespace-pre-line leading-relaxed text-zinc-700">
+                                    {{ candidate.game.short_description }}
+                                </p>
+                                <p v-else class="text-zinc-500">Este juego no tiene descripción breve.</p>
+
+                                <div class="rounded-xl bg-white p-3">
+                                    <p class="font-bold">📚 Historial registrado</p>
+                                    <p class="mt-1 text-zinc-600">
+                                        {{ candidate.history.total_plays }}
+                                        {{ candidate.history.total_plays === 1 ? 'partida registrada' : 'partidas registradas' }}
+                                        <template v-if="candidate.history.last_played_at">
+                                            · Última: {{ formatDate(candidate.history.last_played_at) }}
+                                        </template>
+                                    </p>
+                                    <div class="mt-3 space-y-1.5 border-t border-zinc-100 pt-3">
                                         <div
                                             v-for="participant in candidate.history.participants"
-                                            :key="
-                                                participant.participant_id
-                                            "
-                                            class="flex items-center justify-between gap-3 text-sm"
+                                            :key="participant.participant_id"
+                                            class="flex items-start justify-between gap-2"
                                         >
-                                            <span>
-                                                👤
-                                                {{
-                                                    participant
-                                                        .display_name
-                                                }}
-                                            </span>
-
-                                            <span
-                                                v-if="
-                                                    !participant
-                                                        .tracked
-                                                "
-                                                class="text-zinc-400"
-                                            >
-                                                Sin historial
-                                            </span>
-
-                                            <span
-                                                v-else-if="
-                                                    participant
-                                                        .play_count ===
-                                                    0
-                                                "
-                                                class="text-zinc-400"
-                                            >
-                                                Nunca
-                                            </span>
-
-                                            <span
-                                                v-else
-                                                class="font-semibold"
-                                            >
-                                                {{
-                                                    participant
-                                                        .play_count
-                                                }}
-                                                {{
-                                                    participant
-                                                        .play_count ===
-                                                    1
-                                                        ? 'partida'
-                                                        : 'partidas'
-                                                }}
+                                            <span class="min-w-0 break-words text-zinc-700">{{ participant.display_name }}</span>
+                                            <span class="shrink-0 text-zinc-500">
+                                                {{ !participant.tracked ? 'Sin historial' : participant.play_count === 0 ? 'Nunca' : `${participant.play_count} ${participant.play_count === 1 ? 'partida' : 'partidas'}` }}
                                             </span>
                                         </div>
                                     </div>
                                 </div>
+
+                                <div v-if="candidate.game.bgg_url || candidate.game.youtube_url" class="flex flex-wrap gap-4">
+                                    <a
+                                        v-if="candidate.game.bgg_url"
+                                        :href="candidate.game.bgg_url"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="font-bold text-[#5200FF] underline-offset-2 hover:underline"
+                                    >BGG ↗</a>
+                                    <a
+                                        v-if="candidate.game.youtube_url"
+                                        :href="candidate.game.youtube_url"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="font-bold text-[#5200FF] underline-offset-2 hover:underline"
+                                    >▶ Tutorial</a>
+                                </div>
                             </div>
-
-                            <!-- NOTA -->
-
-                            <div
-                                v-if="
-                                    candidate.note
-                                "
-                                class="mt-5 rounded-2xl bg-zinc-100 p-4"
-                            >
-                                <p class="font-bold">
-                                    ℹ️ Información adicional
-                                </p>
-
-                                <p
-                                    class="mt-1 text-sm text-zinc-600"
-                                >
-                                    {{
-                                        candidate.note
-                                    }}
-                                </p>
-                            </div>
-
-                            <!-- ENLACES -->
-
-                            <div
-                                class="mt-5 flex flex-wrap gap-3"
-                            >
-                                <a
-                                    v-if="
-                                        candidate.game
-                                            .bgg_url
-                                    "
-                                    :href="
-                                        candidate.game
-                                            .bgg_url
-                                    "
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="text-sm font-semibold text-[#5200FF]"
-                                >
-                                    BGG ↗
-                                </a>
-
-                                <a
-                                    v-if="
-                                        candidate.game
-                                            .youtube_url
-                                    "
-                                    :href="
-                                        candidate.game
-                                            .youtube_url
-                                    "
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="text-sm font-semibold text-[#FF6B00]"
-                                >
-                                    ▶ Tutorial
-                                </a>
-                            </div>
-
-                            <!-- VOTO -->
-
-                            <div
-                                class="mt-6 grid gap-3"
-                                :class="
-                                    needsSecondChoice
-                                        ? 'grid-cols-2'
-                                        : 'grid-cols-1'
-                                "
-                            >
-                                <button
-                                    type="button"
-                                    class="rounded-xl border-2 px-3 py-3 font-bold"
-                                    :class="
-                                        form.first_candidate_id ===
-                                        candidate.id
-                                            ? 'border-[#CCFF00] bg-[#CCFF00] text-black'
-                                            : 'border-zinc-200'
-                                    "
-                                    @click="
-                                        selectFirst(
-                                            candidate.id
-                                        )
-                                    "
-                                >
-                                    {{ needsSecondChoice ? '🥇 1ª opción' : '✓ Mi voto' }}
-                                </button>
-
-                                <button
-                                    v-if="needsSecondChoice"
-                                    type="button"
-                                    class="rounded-xl border-2 px-3 py-3 font-bold"
-                                    :class="
-                                        form.second_candidate_id ===
-                                        candidate.id
-                                            ? 'border-[#FF6B00] bg-[#FF6B00] text-black'
-                                            : 'border-zinc-200'
-                                    "
-                                    @click="
-                                        selectSecond(
-                                            candidate.id
-                                        )
-                                    "
-                                >
-                                    🥈 2ª opción
-                                </button>
-                            </div>
-                        </div>
+                        </details>
                     </article>
                 </div>
 
                 <!-- CONFIRMAR -->
 
-                <div
-                    class="sticky bottom-0 mt-8 border-t bg-zinc-50/95 py-4 backdrop-blur"
-                >
-                    <div
-                        v-if="singleCandidate"
-                        class="mb-3 rounded-xl bg-lime-100 px-3 py-2 text-sm font-bold"
-                    >
-                        🎲
-                        {{ selectedFirstGame?.name }}
-                    </div>
-
-                    <div
-                        v-else
-                        class="mb-3 grid gap-2 text-sm sm:grid-cols-2"
-                    >
-                        <div
-                            class="rounded-xl bg-lime-100 px-3 py-2"
+                <div class="sticky bottom-0 z-20 -mx-4 mt-5 border-t border-zinc-200 bg-zinc-50/95 px-4 py-3 shadow-[0_-5px_25px_rgba(0,0,0,0.06)] backdrop-blur">
+                    <div class="mb-2 grid min-w-0 gap-2 text-xs sm:text-sm" :class="needsSecondChoice ? 'grid-cols-2' : 'grid-cols-1'">
+                        <p class="min-w-0 truncate rounded-lg bg-lime-100 px-3 py-2" :title="selectedFirstGame?.name ?? ''">
+                            🥇 {{ selectedFirstGame?.name ?? 'Elige primera opción' }}
+                        </p>
+                        <p
+                            v-if="needsSecondChoice"
+                            class="min-w-0 truncate rounded-lg bg-orange-100 px-3 py-2"
+                            :title="selectedSecondGame?.name ?? ''"
                         >
-                            <span class="font-black">
-                                🥇
-                            </span>
-
-                            {{ selectedFirstGame?.name ?? 'Elige primera opción' }}
-                        </div>
-
-                        <div
-                            class="rounded-xl bg-orange-100 px-3 py-2"
-                        >
-                            <span class="font-black">
-                                🥈
-                            </span>
-
-                            {{ selectedSecondGame?.name ?? 'Elige segunda opción' }}
-                        </div>
+                            🥈 {{ selectedSecondGame?.name ?? 'Elige segunda opción' }}
+                        </p>
                     </div>
 
-                    <div
-                        v-if="
-                            form.hasErrors
-                        "
-                        class="mb-3 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-700"
-                    >
-                        Revisa los datos antes de
-                        confirmar tu voto.
-                    </div>
-
-                    <div
-                        v-if="canSubmit"
-                        class="mb-3 text-sm"
-                    >
-                        <template v-if="needsSecondChoice">
-                            🥇 Primera opción seleccionada
-                            ·
-                            🥈 Segunda opción seleccionada
-                        </template>
-
-                        <template v-else>
-                            ✓ Juego seleccionado
-                        </template>
-                    </div>
+                    <p v-if="form.hasErrors" class="mb-2 text-sm font-semibold text-red-700">
+                        Revisa los datos antes de confirmar tu voto.
+                    </p>
 
                     <button
                         type="button"
-                        :disabled="
-                            !canSubmit ||
-                            form.processing
-                        "
-                        class="w-full rounded-2xl bg-[#5200FF] px-6 py-4 text-lg font-black text-white disabled:cursor-not-allowed disabled:opacity-40"
+                        :disabled="!canSubmit || form.processing"
+                        class="w-full rounded-xl bg-[#5200FF] px-4 py-3 text-base font-black text-white transition hover:bg-[#4100cc] disabled:cursor-not-allowed disabled:opacity-40 sm:py-3.5"
                         @click="submit"
                     >
-                        {{
-                            form.processing
-                                ? 'Guardando...'
-                                : needsSecondChoice
-                                  ? 'Confirmar mis votos'
-                                  : 'Confirmar mi voto'
-                        }}
+                        {{ form.processing ? 'Guardando...' : needsSecondChoice ? 'Confirmar mis votos' : 'Confirmar mi voto' }}
                     </button>
                 </div>
             </template>

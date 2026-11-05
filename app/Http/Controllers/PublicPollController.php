@@ -29,8 +29,22 @@ class PublicPollController extends Controller
 
         $participant->load('votes');
 
-        // Esta lista también se utiliza en el historial de cada candidato.
-        $poll->setRelation('participants', $participant->newCollection([$participant]));
+        // El historial de cada juego necesita a TODOS los jugadores de la
+        // votación, no únicamente al participante que abre este enlace.
+        // Por privacidad, solo incluimos los votos de quien está autenticado
+        // mediante su token personal; nunca enviamos los votos de los demás.
+        $allParticipants = $poll->participants()->get();
+
+        $allParticipants->each(function ($pollParticipant) use ($participant) {
+            $pollParticipant->setRelation(
+                'votes',
+                $pollParticipant->id === $participant->id
+                    ? $participant->votes
+                    : $participant->votes->take(0)
+            );
+        });
+
+        $poll->setRelation('participants', $allParticipants);
 
         return $this->renderPoll($poll)->with([
             'currentParticipantId' => $participant->id,
