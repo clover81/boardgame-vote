@@ -1,0 +1,771 @@
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue';
+import { Head, Link } from '@inertiajs/vue3';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
+
+interface Collection {
+    id: number;
+    name: string;
+}
+
+interface Game {
+    id: number;
+    name: string;
+    image_url: string | null;
+    min_players: number;
+    max_players: number;
+    min_playtime: number | null;
+    max_playtime: number | null;
+    complexity: string | number | null;
+    game_mode: string | null;
+    game_modes: string[];
+    short_description: string | null;
+    bgg_url: string | null;
+    youtube_url: string | null;
+    ideal_player_counts: number[];
+    collections: Collection[];
+}
+
+const props = defineProps<{
+    catalogToken: string;
+    collections: Collection[];
+    games: Game[];
+}>();
+
+const search = ref('');
+const playerCount = ref<number | ''>('');
+const collectionId = ref<number | ''>('');
+const durationLimit = ref<number | ''>('');
+const difficulty = ref<'' | 'light' | 'medium' | 'heavy'>('');
+const onlyIdealPlayers = ref(false);
+const selectedGameMode = ref('');
+const showAdvancedFilters = ref(false);
+
+const brokenCoverIds = ref<number[]>([]);
+
+const markCoverAsBroken = (gameId: number) => {
+    if (!brokenCoverIds.value.includes(gameId)) {
+        brokenCoverIds.value.push(gameId);
+    }
+};
+
+const gameModeLabels: Record<string, string> = {
+    competitive: 'Competitivo',
+    cooperative: 'Cooperativo',
+    semi_cooperative: 'Semicooperativo',
+};
+
+const playerOptions = computed(() =>
+    Array.from(
+        {
+            length: Math.max(
+                8,
+                ...props.games.map(g => g.max_players),
+            ),
+        },
+        (_, index) => index + 1,
+    ),
+);
+
+const normalizeText = (text: string): string =>
+    text
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLocaleLowerCase()
+        .trim();
+
+const filteredGames = computed(() => {
+    const text = normalizeText(search.value);
+    const players = Number(playerCount.value);
+    const collection = Number(collectionId.value);
+
+    return props.games.filter(game => {
+        const matchesSearch =
+            !text ||
+            normalizeText(game.name).includes(text);
+
+        const matchesPlayers =
+            !players ||
+            (game.min_players <= players &&
+                game.max_players >= players);
+
+        const matchesIdealPlayers =
+            !onlyIdealPlayers.value ||
+            !players ||
+            game.ideal_player_counts.includes(players);
+
+        const matchesCollection =
+            !collection ||
+            game.collections.some(c => c.id === collection);
+
+        const duration =
+            game.max_playtime ?? game.min_playtime;
+
+        const matchesDuration =
+            durationLimit.value === '' ||
+            (duration !== null &&
+                duration <= Number(durationLimit.value));
+
+        const complexity = game.complexity === null
+            ? null
+            : Number(game.complexity);
+
+        const matchesDifficulty =
+            difficulty.value === '' ||
+            (complexity !== null &&
+                Number.isFinite(complexity) &&
+                (
+                    (difficulty.value === 'light' && complexity <= 2) ||
+                    (difficulty.value === 'medium' && complexity > 2 && complexity <= 3) ||
+                    (difficulty.value === 'heavy' && complexity > 3)
+                ));
+
+        const matchesGameMode =
+            !selectedGameMode.value ||
+            game.game_modes.includes(selectedGameMode.value);
+
+        return matchesSearch &&
+            matchesPlayers &&
+            matchesIdealPlayers &&
+            matchesCollection &&
+            matchesDuration &&
+            matchesDifficulty &&
+            matchesGameMode;
+    });
+});
+
+type SortBy =
+    | 'name'
+    | 'duration_asc'
+    | 'duration_desc'
+    | 'difficulty_asc'
+    | 'difficulty_desc';
+
+const sortBy = ref<SortBy>('name');
+
+const filtersStorageKey = `catalog-filters:${props.catalogToken}`;
+
+// Recuperar los filtros al regresar al catálogo.
+onMounted(() => {
+    const saved = sessionStorage.getItem(filtersStorageKey);
+
+    if (!saved) return;
+
+    try {
+        const filters = JSON.parse(saved);
+
+        search.value = filters.search ?? '';
+        playerCount.value = filters.playerCount ?? '';
+        collectionId.value = filters.collectionId ?? '';
+        durationLimit.value = filters.durationLimit ?? '';
+        difficulty.value = filters.difficulty ?? '';
+        onlyIdealPlayers.value = filters.onlyIdealPlayers ?? false;
+        selectedGameMode.value = filters.selectedGameMode ?? '';
+        sortBy.value = filters.sortBy ?? 'name';
+    } catch {
+        sessionStorage.removeItem(filtersStorageKey);
+    }
+});
+
+// Guardar los cambios automáticamente.
+watch(
+    [
+        search,
+        playerCount,
+        collectionId,
+        durationLimit,
+        difficulty,
+        onlyIdealPlayers,
+        selectedGameMode,
+        sortBy,
+    ],
+    () => {
+        sessionStorage.setItem(
+            filtersStorageKey,
+            JSON.stringify({
+                search: search.value,
+                playerCount: playerCount.value,
+                collectionId: collectionId.value,
+                durationLimit: durationLimit.value,
+                difficulty: difficulty.value,
+                onlyIdealPlayers: onlyIdealPlayers.value,
+                selectedGameMode: selectedGameMode.value,
+                sortBy: sortBy.value,
+            }),
+        );
+    },
+);
+
+const sortedGames = computed(() => {
+    const getDuration = (game: Game): number | null =>
+        game.max_playtime ?? game.min_playtime;
+
+    const getDifficulty = (game: Game): number | null => {
+        if (game.complexity === null) return null;
+
+        const value = Number(game.complexity);
+
+        return Number.isFinite(value) ? value : null;
+    };
+
+    const compareNumbers = (
+        a: number | null,
+        b: number | null,
+        descending = false,
+    ): number => {
+        // Juegos sin datos siempre al final.
+        if (a === null && b === null) return 0;
+        if (a === null) return 1;
+        if (b === null) return -1;
+
+        return descending ? b - a : a - b;
+    };
+
+    return [...filteredGames.value].sort((a, b) => {
+        let result = 0;
+
+        switch (sortBy.value) {
+            case 'duration_asc':
+                result = compareNumbers(
+                    getDuration(a), getDuration(b)
+                );
+                break;
+
+            case 'duration_desc':
+                result = compareNumbers(
+                    getDuration(a), getDuration(b), true
+                );
+                break;
+
+            case 'difficulty_asc':
+                result = compareNumbers(
+                    getDifficulty(a), getDifficulty(b)
+                );
+                break;
+
+            case 'difficulty_desc':
+                result = compareNumbers(
+                    getDifficulty(a), getDifficulty(b), true
+                );
+                break;
+        }
+
+        // En caso de empate, ordenar por nombre.
+        return result || a.name.localeCompare(b.name, 'es');
+    });
+});
+
+const clearFilters = () => {
+    search.value = '';
+    playerCount.value = '';
+    collectionId.value = '';
+    durationLimit.value = '';
+    difficulty.value = '';
+    onlyIdealPlayers.value = false;
+    selectedGameMode.value = '';
+};
+
+const hasFilters = computed(() =>
+    search.value.trim() !== '' ||
+    playerCount.value !== '' ||
+    collectionId.value !== '' ||
+    durationLimit.value !== '' ||
+    difficulty.value !== '' ||
+    selectedGameMode.value !== ''
+);
+
+const formatDuration = (game: Game) => {
+    if (game.min_playtime === null) {
+        return 'Sin datos';
+    }
+
+    if (
+        game.max_playtime === null ||
+        game.max_playtime === game.min_playtime
+    ) {
+        return `${game.min_playtime} min`;
+    }
+
+    return `${game.min_playtime}–${game.max_playtime} min`;
+};
+
+const externalUrl = (url: string | null): string | undefined => {
+    if (!url) return undefined;
+
+    try {
+        const parsed = new URL(url);
+
+        return ['http:', 'https:'].includes(parsed.protocol)
+            ? parsed.href
+            : undefined;
+    } catch {
+        return undefined;
+    }
+};
+</script>
+
+<template>
+    <Head title="Catálogo de juegos de mesa" />
+
+    <div class="min-h-screen bg-[#f7f7f5] text-zinc-950">
+        <!-- CABECERA -->
+        <header class="bg-[#181424] text-white">
+            <div class="mx-auto max-w-7xl px-5 py-7 sm:px-8">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#CCFF00] text-2xl"
+                    >
+                        🎲
+                    </div>
+
+                    <div>
+                        <p class="text-lg font-black tracking-tight">
+                            BOARDGAME<span class="text-[#CCFF00]">VOTE</span>
+                        </p>
+                        <p class="text-xs text-zinc-400">
+                            Biblioteca de juegos de mesa
+                        </p>
+                    </div>
+                </div>
+
+                <div class="max-w-3xl py-12 sm:py-16">
+                    <span
+                        class="inline-block rounded-full border border-white/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[#CCFF00]"
+                    >
+                        Catálogo compartido
+                    </span>
+
+                    <h1 class="mt-5 text-4xl font-black leading-tight tracking-tight sm:text-6xl">
+                        ¿A qué jugamos
+                        <span class="text-[#CCFF00]">hoy?</span>
+                    </h1>
+
+                    <p class="mt-5 max-w-xl text-base leading-relaxed text-zinc-300 sm:text-lg">
+                        Explora la colección, descubre nuevos juegos
+                        y encuentra el perfecto para tu próxima partida.
+                    </p>
+
+                    <div class="mt-7 flex flex-wrap gap-3 text-sm font-semibold">
+                        <span class="rounded-full bg-white/10 px-4 py-2">
+                            {{ games.length }} juegos
+                        </span>
+                        <span class="rounded-full bg-white/10 px-4 py-2">
+                            {{ collections.length }} colecciones
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="mx-auto max-w-7xl px-5 py-10 sm:px-8">
+            <!-- FILTROS -->
+            <section class="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7">
+                <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+                    <h2 class="text-xl font-black">
+                        Encuentra tu juego
+                    </h2>
+
+                    <button
+                        type="button"
+                        class="inline-flex items-center gap-2 rounded-xl border border-[#5200FF]/20 bg-[#f0ebff] px-4 py-2 text-sm font-bold text-[#5200FF] transition hover:bg-[#e5dcff] md:hidden"
+                        :aria-expanded="showAdvancedFilters"
+                        @click="showAdvancedFilters = !showAdvancedFilters"
+                    >
+                        <span aria-hidden="true">⚙️</span>
+
+                        {{ showAdvancedFilters ? 'Ocultar filtros' : 'Más filtros' }}
+
+                        <span aria-hidden="true">
+                            {{ showAdvancedFilters ? '⌃' : '⌄' }}
+                        </span>
+                    </button>
+
+                    <button
+                        v-if="hasFilters"
+                        type="button"
+                        class="text-sm font-bold text-[#5200FF] hover:underline"
+                        @click="clearFilters"
+                    >
+                        Limpiar filtros
+                    </button>
+                </div>
+
+                <div
+                    class="catalog-filters-grid grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+                    :class="{ 'catalog-filters-collapsed': !showAdvancedFilters }"
+                >
+                    <div>
+                        <label for="catalog-search" class="text-sm font-bold">
+                            Buscar juego
+                        </label>
+
+                        <input
+                            id="catalog-search"
+                            v-model="search"
+                            type="search"
+                            placeholder="Nombre del juego..."
+                            class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
+                        />
+                    </div>
+
+                    <div>
+                        <label for="catalog-players" class="text-sm font-bold">
+                            ¿Cuántos vais a jugar?
+                        </label>
+
+                        <select
+                            id="catalog-players"
+                            v-model.number="playerCount"
+                            @change="onlyIdealPlayers = false"
+                            class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
+                        >
+                            <option value="">Cualquier número</option>
+                            <option
+                                v-for="number in playerOptions"
+                                :key="number"
+                                :value="number"
+                            >
+                                {{ number }} {{ number === 1 ? 'jugador' : 'jugadores' }}
+                            </option>
+                        </select>
+
+                        <label
+                            v-if="playerCount !== ''"
+                            class="mt-3 flex cursor-pointer items-center gap-2 text-sm text-zinc-700"
+                        >
+                            <input
+                                v-model="onlyIdealPlayers"
+                                type="checkbox"
+                                class="h-4 w-4 rounded border-zinc-300 accent-[#5200FF]"
+                            />
+
+                            <span>
+                                Solo juegos ideales para
+                                <strong>{{ playerCount }}</strong>
+                                jugadores
+                            </span>
+                        </label>
+                    </div>
+
+                    <div>
+                        <label for="catalog-collection" class="text-sm font-bold">
+                            Colección
+                        </label>
+
+                        <select
+                            id="catalog-collection"
+                            v-model.number="collectionId"
+                            class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
+                        >
+                            <option value="">Todas las colecciones</option>
+                            <option
+                                v-for="collection in collections"
+                                :key="collection.id"
+                                :value="collection.id"
+                            >
+                                {{ collection.name }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label
+                            for="catalog-duration"
+                            class="text-sm font-bold"
+                        >
+                            Tiempo disponible
+                        </label>
+
+                        <select
+                            id="catalog-duration"
+                            v-model.number="durationLimit"
+                            class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
+                        >
+                            <option value="">Cualquier duración</option>
+                            <option :value="30">Hasta 30 minutos</option>
+                            <option :value="60">Hasta 1 hora</option>
+                            <option :value="90">Hasta 1 h 30 min</option>
+                            <option :value="120">Hasta 2 horas</option>
+                            <option :value="180">Hasta 3 horas</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label
+                            for="catalog-difficulty"
+                            class="text-sm font-bold"
+                        >
+                            Dificultad
+                        </label>
+
+                        <select
+                            id="catalog-difficulty"
+                            v-model="difficulty"
+                            class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
+                        >
+                            <option value="">Cualquier dificultad</option>
+                            <option value="light">🟢 Ligero (hasta 2)</option>
+                            <option value="medium">🟡 Medio (2–3)</option>
+                            <option value="heavy">🔴 Exigente (más de 3)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label
+                            for="catalog-game-mode"
+                            class="text-sm font-bold"
+                        >
+                            Tipo de juego
+                        </label>
+
+                        <select
+                            id="catalog-game-mode"
+                            v-model="selectedGameMode"
+                            class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
+                        >
+                            <option value="">Todos los tipos</option>
+                            <option value="competitive">Competitivo</option>
+                            <option value="cooperative">Cooperativo</option>
+                            <option value="semi_cooperative">Semicooperativo</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RESULTADOS -->
+            <div class="mb-6 mt-10 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <p class="text-sm font-bold uppercase tracking-wider text-[#5200FF]">
+                        Explorar biblioteca
+                    </p>
+                    <h2 class="mt-1 text-2xl font-black">
+                        Todos los juegos
+                    </h2>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <p class="text-sm text-zinc-500">
+                        {{ filteredGames.length }} de {{ games.length }} juegos
+                    </p>
+
+                    <label for="catalog-sort" class="sr-only">
+                        Ordenar juegos
+                    </label>
+
+                    <select
+                        id="catalog-sort"
+                        v-model="sortBy"
+                        class="rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold outline-none focus:border-[#5200FF]"
+                    >
+                        <option value="name">Nombre (A–Z)</option>
+                        <option value="duration_asc">Duración: más cortos</option>
+                        <option value="duration_desc">Duración: más largos</option>
+                        <option value="difficulty_asc">Dificultad: más fáciles</option>
+                        <option value="difficulty_desc">Dificultad: más difíciles</option>
+                    </select>
+                </div>
+            </div>
+
+            <div
+                v-if="filteredGames.length"
+                class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            >
+                <article
+                    v-for="game in sortedGames"
+                    :key="game.id"
+                    class="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#5200FF] hover:shadow-xl"
+                >
+                    <!-- Enlace que permite abrir la ficha pulsando
+                         sobre cualquier zona libre de la tarjeta -->
+                    <Link
+                        :href="`/catalog/${catalogToken}/games/${game.id}`"
+                        :aria-label="`Ver ficha de ${game.name}`"
+                        class="absolute inset-0 z-10 rounded-3xl focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#5200FF]"
+                    />
+
+                    <!-- PORTADA DEL JUEGO -->
+                    <div
+                        class="relative flex h-60 items-center justify-center overflow-hidden bg-gradient-to-br from-[#f0ebff] via-white to-[#eef2fa] p-6 sm:aspect-square sm:h-auto"
+                    >
+                        <img
+                            v-if="game.image_url && !brokenCoverIds.includes(game.id)"
+                            :src="game.image_url"
+                            @error="markCoverAsBroken(game.id)"
+                            :alt="`Portada de ${game.name}`"
+                            loading="lazy"
+                            class="h-full w-full object-contain drop-shadow-xl transition-transform duration-500 group-hover:scale-105"
+                        />
+
+                        <div
+                            v-else
+                            class="flex flex-col items-center gap-2 text-zinc-400"
+                        >
+                            <span class="text-5xl">🎲</span>
+                            <span class="text-sm font-medium">
+                                Sin portada disponible
+                            </span>
+                        </div>
+
+                        <!-- DISTINTIVO DE JUGADORES IDEALES -->
+                        <div
+                            v-if="game.ideal_player_counts.length"
+                            class="absolute bottom-3 left-3 rounded-xl border border-white/80 bg-white/95 px-3 py-2 shadow-md"
+                        >
+                            <span class="text-xs font-black text-[#5200FF]">
+                                ⭐ Ideal:
+                                {{ game.ideal_player_counts.join(', ') }}
+                                jugadores
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-1 flex-col p-5">
+                        <div class="min-h-14">
+                            <h3 class="line-clamp-2 text-lg font-black leading-snug">
+                                {{ game.name }}
+                            </h3>
+                        </div>
+
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <span
+                                v-for="mode in game.game_modes"
+                                :key="mode"
+                                class="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold"
+                                :class="{
+                                    'bg-blue-100 text-blue-800':
+                                        mode === 'cooperative',
+                                    'bg-orange-100 text-orange-800':
+                                        mode === 'competitive',
+                                    'bg-purple-100 text-purple-800':
+                                        mode === 'semi_cooperative',
+                                }"
+                            >
+                                {{ gameModeLabels[mode] ?? mode }}
+                            </span>
+
+                            <span
+                                v-if="game.game_modes.length === 0"
+                                class="inline-flex items-center rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-bold text-zinc-600"
+                            >
+                                {{ game.max_players === 1 ? 'Solitario' : 'Sin clasificar' }}
+                            </span>
+                        </div>
+
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <span
+                                v-for="(collection, index) in game.collections"
+                                :key="collection.id"
+                                class="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700"
+                                :class="index >= 2 ? 'hidden sm:inline-flex' : ''"
+                            >
+                                {{ collection.name }}
+                            </span>
+
+                            <!-- Resumen de colecciones adicionales en móvil -->
+                            <span
+                                v-if="game.collections.length > 2"
+                                class="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-bold text-zinc-600 sm:hidden"
+                            >
+                                +{{ game.collections.length - 2 }}
+                                más
+                            </span>
+                        </div>
+
+                        <div class="mt-auto grid grid-cols-2 gap-3 pt-5 text-sm">
+                            <div class="rounded-xl bg-zinc-50 p-3">
+                                <p class="text-xs text-zinc-500">Jugadores</p>
+                                <p class="mt-1 font-black">
+                                    👥 {{ game.min_players }}–{{ game.max_players }}
+                                </p>
+                            </div>
+
+                            <div class="rounded-xl bg-zinc-50 p-3">
+                                <p class="text-xs text-zinc-500">Duración</p>
+                                <p class="mt-1 font-black">
+                                    ⏱ {{ formatDuration(game) }}
+                                </p>
+                            </div>
+
+                            <div
+                                v-if="game.complexity !== null"
+                                class="col-span-2 flex items-center justify-between rounded-xl bg-zinc-50 px-3 py-2.5 text-sm"
+                            >
+                                <span class="text-zinc-500">Dificultad</span>
+                                <span class="font-black">
+                                    🧠 {{ Number(game.complexity).toFixed(1) }} / 5
+                                </span>
+                            </div>
+                        </div>
+
+                        <p
+                            v-if="game.short_description"
+                            class="mt-3 line-clamp-2 text-sm leading-relaxed text-zinc-600 sm:mt-4 sm:line-clamp-3"
+                        >
+                            {{ game.short_description }}
+                        </p>
+
+                        <!-- ENLACES EXTERNOS -->
+                        <div
+                            v-if="externalUrl(game.bgg_url) || externalUrl(game.youtube_url)"
+                            class="relative z-20 mt-5 flex flex-wrap gap-2 border-t border-zinc-100 pt-4"
+                        >
+                            <a
+                                v-if="externalUrl(game.bgg_url)"
+                                :href="externalUrl(game.bgg_url)"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="flex-1 rounded-xl bg-[#5200FF] px-3 py-2.5 text-center text-sm font-bold text-white transition hover:bg-[#4000cc]"
+                            >
+                                BGG ↗
+                            </a>
+
+                            <a
+                                v-if="externalUrl(game.youtube_url)"
+                                :href="externalUrl(game.youtube_url)"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-center text-sm font-bold text-zinc-800 transition hover:bg-zinc-100"
+                            >
+                                ▶ Tutorial
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <div
+                v-else
+                class="rounded-3xl border border-dashed border-zinc-300 bg-white px-6 py-16 text-center"
+            >
+                <p class="text-4xl">🎲</p>
+                <h3 class="mt-4 text-xl font-black">
+                    No hay juegos que coincidan
+                </h3>
+                <p class="mt-2 text-sm text-zinc-500">
+                    Prueba con otros filtros o consulta otra colección.
+                </p>
+                <button
+                    v-if="hasFilters"
+                    class="mt-5 font-bold text-[#5200FF] hover:underline"
+                    @click="clearFilters"
+                >
+                    Mostrar todos
+                </button>
+            </div>
+        </main>
+
+        <footer class="mt-12 border-t border-zinc-200 py-8 text-center text-sm text-zinc-500">
+            Boardgame Vote · Catálogo de juegos compartidos
+        </footer>
+
+        <ScrollToTopProgress />
+    </div>
+</template>
+
+<style scoped>
+@media (max-width: 767px) {
+    .catalog-filters-collapsed > div:not(:first-child) {
+        display: none;
+    }
+}
+</style>
