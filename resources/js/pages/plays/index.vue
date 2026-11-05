@@ -79,6 +79,14 @@ const sortBy = ref<
     'newest' | 'oldest'
 >('newest');
 
+// En móvil mantenemos los filtros secundarios plegados.
+const showAdvancedFilters = ref(false);
+const hasSecondaryFilters = computed(() =>
+    selectedGameId.value !== null ||
+    selectedPlayerId.value !== null ||
+    sortBy.value !== 'newest'
+);
+
 /*
 |--------------------------------------------------------------------------
 | Juegos presentes en el historial
@@ -450,21 +458,21 @@ const confirmDeletePlay = () => {
             <!-- ================================================== -->
 
             <div
-                class="mb-8 grid gap-4 sm:grid-cols-3"
+                class="mb-6 grid grid-cols-3 gap-2 sm:gap-4"
             >
                 <!-- PARTIDAS -->
 
                 <div
-                    class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+                    class="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-5 dark:border-zinc-800 dark:bg-zinc-950"
                 >
                     <p
-                        class="text-sm font-semibold text-zinc-500 dark:text-zinc-400"
+                        class="text-xs font-semibold leading-snug text-zinc-500 sm:text-sm dark:text-zinc-400"
                     >
-                        Partidas registradas
+                        Partidas
                     </p>
 
                     <p
-                        class="mt-2 text-3xl font-black text-[#5200FF]"
+                        class="mt-2 text-2xl font-black text-[#5200FF] sm:text-3xl"
                     >
                         {{
                             stats.total_plays
@@ -475,16 +483,16 @@ const confirmDeletePlay = () => {
                 <!-- JUEGOS -->
 
                 <div
-                    class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+                    class="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-5 dark:border-zinc-800 dark:bg-zinc-950"
                 >
                     <p
-                        class="text-sm font-semibold text-zinc-500 dark:text-zinc-400"
+                        class="text-xs font-semibold leading-snug text-zinc-500 sm:text-sm dark:text-zinc-400"
                     >
-                        Juegos diferentes
+                        Juegos distintos
                     </p>
 
                     <p
-                        class="mt-2 text-3xl font-black text-zinc-900 dark:text-zinc-100"
+                        class="mt-2 text-2xl font-black text-zinc-900 sm:text-3xl dark:text-zinc-100"
                     >
                         {{
                             stats.unique_games
@@ -495,16 +503,16 @@ const confirmDeletePlay = () => {
                 <!-- JUGADORES -->
 
                 <div
-                    class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+                    class="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-5 dark:border-zinc-800 dark:bg-zinc-950"
                 >
                     <p
-                        class="text-sm font-semibold text-zinc-500 dark:text-zinc-400"
+                        class="text-xs font-semibold leading-snug text-zinc-500 sm:text-sm dark:text-zinc-400"
                     >
-                        Jugadores diferentes
+                        Jugadores distintos
                     </p>
 
                     <p
-                        class="mt-2 text-3xl font-black text-zinc-900 dark:text-zinc-100"
+                        class="mt-2 text-2xl font-black text-zinc-900 sm:text-3xl dark:text-zinc-100"
                     >
                         {{
                             stats.unique_players
@@ -519,18 +527,20 @@ const confirmDeletePlay = () => {
 
             <section
                 v-if="plays.length"
-                class="mb-8 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+                class="mb-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5 dark:border-zinc-800 dark:bg-zinc-950"
             >
                 <!-- BUSCAR -->
 
                 <div>
                     <label
+                        for="history-search"
                         class="text-sm font-bold text-zinc-800 dark:text-zinc-200"
                     >
                         Buscar
                     </label>
 
                     <input
+                        id="history-search"
                         v-model="search"
                         type="search"
                         class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
@@ -538,8 +548,22 @@ const confirmDeletePlay = () => {
                     />
                 </div>
 
+                <!-- En móvil, los filtros secundarios no ocupan espacio al entrar. -->
+                <button
+                    type="button"
+                    class="mt-3 inline-flex items-center gap-2 rounded-xl border border-zinc-200 px-3 py-2 text-sm font-semibold text-[#5200FF] sm:hidden dark:border-zinc-700 dark:text-[#CCFF00]"
+                    :aria-expanded="showAdvancedFilters"
+                    aria-controls="history-advanced-filters"
+                    @click="showAdvancedFilters = !showAdvancedFilters"
+                >
+                    ⚙️ {{ showAdvancedFilters ? 'Ocultar filtros' : 'Más filtros' }}
+                    <span v-if="hasSecondaryFilters" class="text-xs">(activos)</span>
+                </button>
+
                 <div
-                    class="mt-5 grid gap-4 md:grid-cols-3"
+                    id="history-advanced-filters"
+                    class="mt-4 gap-3 sm:grid sm:grid-cols-3"
+                    :class="showAdvancedFilters ? 'grid' : 'hidden'"
                 >
                     <!-- JUEGO -->
 
@@ -633,6 +657,7 @@ const confirmDeletePlay = () => {
                     class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800"
                 >
                     <p
+                        aria-live="polite"
                         class="text-sm text-zinc-500 dark:text-zinc-400"
                     >
                         Mostrando
@@ -688,166 +713,96 @@ const confirmDeletePlay = () => {
                     :key="play.id"
                     class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
                 >
-                    <div
-                        class="flex flex-col sm:flex-row"
-                    >
-                        <!-- PORTADA -->
-
-                        <div
-                            class="shrink-0 bg-zinc-100 dark:bg-zinc-900 sm:w-40"
-                        >
+                    <!-- La portada y los datos principales comparten una sola fila. -->
+                    <div class="flex items-start gap-3 p-3 sm:gap-5 sm:p-4">
+                        <div class="flex w-24 shrink-0 items-center justify-center rounded-xl bg-zinc-100 p-2 dark:bg-zinc-900 sm:w-36 sm:p-3">
                             <img
-                                v-if="
-                                    play.game.image_url
-                                "
-                                :src="
-                                    play.game.image_url
-                                "
-                                :alt="
-                                    play.game.name
-                                "
-                                class="h-44 w-full object-cover sm:h-full"
+                                v-if="play.game.image_url"
+                                :src="play.game.image_url"
+                                :alt="`Portada de ${play.game.name}`"
+                                loading="lazy"
+                                class="max-h-36 w-full object-contain sm:max-h-44"
                             />
-
-                            <div
-                                v-else
-                                class="flex h-44 items-center justify-center text-sm text-zinc-400 dark:text-zinc-500 sm:h-full"
-                            >
-                                Sin portada
+                            <div v-else class="flex min-h-28 items-center justify-center text-center text-xs text-zinc-500 dark:text-zinc-400">
+                                🎲 Sin portada
                             </div>
                         </div>
 
-                        <!-- INFORMACIÓN -->
-
-                        <div
-                            class="flex-1 p-5"
-                        >
-                            <!-- CABECERA PARTIDA -->
-
-                            <div
-                                class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+                        <div class="min-w-0 flex-1">
+                            <Link
+                                :href="`/games/${play.game.id}`"
+                                class="block break-words text-lg font-bold leading-snug text-zinc-900 transition hover:text-[#5200FF] sm:text-xl dark:text-zinc-100 dark:hover:text-[#CCFF00]"
                             >
-                                <div>
-                                    <Link
-                                        :href="`/games/${play.game.id}`"
-                                        class="text-xl font-bold text-zinc-900 transition hover:text-[#5200FF] dark:text-zinc-100 dark:hover:text-[#CCFF00]"
-                                    >
-                                        {{
-                                            play.game.name
-                                        }}
-                                    </Link>
+                                {{ play.game.name }}
+                            </Link>
+                            <p class="mt-1 text-sm font-semibold text-[#5200FF] dark:text-[#CCFF00]">
+                                📅 {{ formatDate(play.played_at) }}
+                            </p>
 
-                                    <p
-                                        class="mt-1 text-sm font-semibold text-[#5200FF] dark:text-[#CCFF00]"
-                                    >
-                                        📅
-                                        {{
-                                            formatDate(
-                                                play.played_at
-                                            )
-                                        }}
-                                    </p>
-                                </div>
-
-                                <span
-                                    class="self-start rounded-full bg-[#CCFF00] px-3 py-1 text-xs font-bold text-black"
-                                >
-                                    🎲 Partida
-                                    #{{ play.id }}
-                                </span>
-                            </div>
-
-                            <!-- ================================================== -->
-                            <!-- EXPANSIÓN                                          -->
-                            <!-- ================================================== -->
-
-                            <div
-                                v-if="
-                                    play.expansion
-                                "
-                                class="mt-4 inline-flex rounded-xl bg-violet-50 px-4 py-2 text-sm font-bold text-[#5200FF] dark:bg-violet-950/40 dark:text-violet-300"
+                            <p
+                                v-if="play.expansion"
+                                class="mt-2 break-words text-sm font-semibold text-violet-700 dark:text-violet-300"
                             >
-                                🧩
-                                {{
-                                    play.expansion
-                                        .name
-                                }}
-                            </div>
+                                🧩 {{ play.expansion.name }}
+                            </p>
 
-                            <!-- PARTICIPANTES -->
-
-                            <div class="mt-5">
-                                <p
-                                    class="text-xs font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400"
-                                >
-                                    Participantes
+                            <div class="mt-3">
+                                <p class="text-xs font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                                    Participantes ({{ play.players.length }})
                                 </p>
-
-                                <div
-                                    class="mt-2 flex flex-wrap gap-2"
-                                >
+                                <div class="mt-2 flex flex-wrap gap-1.5">
                                     <span
                                         v-for="player in play.players"
                                         :key="player.id"
-                                        class="rounded-full bg-zinc-100 px-3 py-1 text-sm font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                                        class="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 sm:text-sm dark:bg-zinc-800 dark:text-zinc-200"
                                     >
-                                        👤
-                                        {{ player.name }}
+                                        👤 {{ player.name }}
+                                    </span>
+                                    <span
+                                        v-if="play.players.length === 0"
+                                        class="text-xs text-zinc-500 dark:text-zinc-400"
+                                    >
+                                        Sin participantes registrados
                                     </span>
                                 </div>
                             </div>
-
-                            <!-- NOTAS -->
-
-                            <div
-                                v-if="play.notes"
-                                class="mt-5 rounded-xl bg-zinc-50 p-4 dark:bg-zinc-900"
-                            >
-                                <p
-                                    class="text-xs font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400"
-                                >
-                                    Notas
-                                </p>
-
-                                <p
-                                    class="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-300"
-                                >
-                                    {{ play.notes }}
-                                </p>
-                            </div>
-
-                            <!-- ACCIONES -->
-
-                            <div
-                                class="mt-5 flex flex-wrap items-center gap-5 border-t border-zinc-200 pt-4 dark:border-zinc-800"
-                            >
-                                <Link
-                                    :href="`/games/${play.game.id}`"
-                                    class="font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
-                                >
-                                    Ver ficha →
-                                </Link>
-
-                                <Link
-                                    :href="`/plays/${play.id}/edit`"
-                                    class="font-semibold text-zinc-600 hover:text-[#5200FF] hover:underline dark:text-zinc-300 dark:hover:text-[#CCFF00]"
-                                >
-                                    ✏️ Editar
-                                </Link>
-
-                                <button
-                                    type="button"
-                                    class="font-semibold text-red-600 hover:underline dark:text-red-400"
-                                    @click="
-                                        deletePlay(
-                                            play
-                                        )
-                                    "
-                                >
-                                    🗑️ Eliminar
-                                </button>
-                            </div>
                         </div>
+                    </div>
+
+                    <!-- Las notas siguen disponibles sin alargar todas las tarjetas. -->
+                    <details
+                        v-if="play.notes"
+                        class="mx-3 border-t border-zinc-200 sm:mx-4 dark:border-zinc-800"
+                    >
+                        <summary class="cursor-pointer py-3 text-sm font-semibold text-zinc-600 hover:text-[#5200FF] dark:text-zinc-300 dark:hover:text-[#CCFF00]">
+                            📝 Ver notas de la partida
+                        </summary>
+                        <p class="whitespace-pre-line break-words pb-3 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+                            {{ play.notes }}
+                        </p>
+                    </details>
+
+                    <div class="mx-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-zinc-200 py-3 text-sm sm:mx-4 dark:border-zinc-800">
+                        <Link
+                            :href="`/games/${play.game.id}`"
+                            class="font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
+                        >
+                            Ver ficha →
+                        </Link>
+                        <Link
+                            :href="`/plays/${play.id}/edit`"
+                            class="font-semibold text-zinc-600 hover:underline dark:text-zinc-300"
+                        >
+                            ✏️ Editar
+                        </Link>
+                        <button
+                            type="button"
+                            class="ml-auto font-semibold text-red-600 hover:underline dark:text-red-400"
+                            :aria-label="`Eliminar partida de ${play.game.name} del ${formatDate(play.played_at)}`"
+                            @click="deletePlay(play)"
+                        >
+                            Eliminar
+                        </button>
                     </div>
                 </article>
             </div>
