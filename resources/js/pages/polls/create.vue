@@ -595,9 +595,12 @@ const matchesGameSearch = (game: Game): boolean => {
         return true;
     }
 
-    return normalizeGameName(game.name).includes(
-        normalizedGameSearch.value
-    );
+    const normalizedName = normalizeGameName(game.name);
+
+    return normalizedGameSearch.value
+        .split(/\s+/)
+        .filter(Boolean)
+        .every(term => normalizedName.includes(term));
 };
 
 /*
@@ -1119,13 +1122,13 @@ const submit = () => {
                                 id="game-search"
                                 v-model="gameSearch"
                                 type="search"
-                                placeholder="Buscar por nombre: Níjar, Maracaibo..."
+                                placeholder="Buscar por nombre: castillo blanco..."
                                 class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                             />
                         </div>
 
                         <p
-                            v-if="gameSearch.trim()"
+                            v-if="hasActiveGameFilters"
                             class="mt-2 text-sm text-zinc-500"
                         >
                             {{
@@ -1313,6 +1316,37 @@ const submit = () => {
                     </div>
 
                     <!-- ============================================== -->
+
+                    <!-- CANDIDATOS SELECCIONADOS -->
+                    <div
+                        v-if="selectedCandidateGames.length"
+                        class="mt-5 rounded-2xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-900 dark:bg-violet-950/20"
+                    >
+                        <p class="text-sm font-bold text-violet-900 dark:text-violet-200">
+                            Juegos seleccionados ({{ selectedCandidateGames.length }})
+                        </p>
+
+                        <p class="mt-1 text-xs text-violet-700 dark:text-violet-300">
+                            Pulsa la × para quitar un juego de la votación.
+                        </p>
+
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <button
+                                v-for="game in selectedCandidateGames"
+                                :key="game.id"
+                                type="button"
+                                :aria-label="`Quitar ${game.name} de los candidatos`"
+                                class="inline-flex max-w-full items-center gap-2 rounded-full border border-violet-200 bg-white px-3 py-2 text-xs font-bold text-violet-800 transition hover:border-red-300 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 dark:border-violet-800 dark:bg-zinc-900 dark:text-violet-200"
+                                @click="form.candidate_ids = form.candidate_ids.filter(id => id !== game.id)"
+                            >
+                                <span class="max-w-[220px] truncate">
+                                    {{ game.name }}
+                                </span>
+                                <span aria-hidden="true">×</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- IDEALES                                        -->
                     <!-- ============================================== -->
 
@@ -1325,7 +1359,10 @@ const submit = () => {
                         <article
                             v-for="game in visibleIdealGames"
                             :key="game.id"
-                            class="overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+                            class="self-start overflow-hidden rounded-2xl border border-zinc-200 bg-white transition-colors dark:border-zinc-800 dark:bg-zinc-900 sm:flex sm:items-start"
+                            :class="form.candidate_ids.includes(game.id)
+                                ? 'border-violet-500 ring-2 ring-violet-500/50 dark:border-violet-400'
+                                : ''"
                         >
                             <!-- PORTADA -->
 
@@ -1333,7 +1370,7 @@ const submit = () => {
                                 v-if="
                                     game.image_url
                                 "
-                                class="aspect-[16/9] bg-zinc-100 dark:bg-zinc-800"
+                                class="flex h-36 items-center justify-center overflow-hidden bg-zinc-100 p-3 dark:bg-zinc-800 sm:h-44 sm:w-40 sm:shrink-0"
                             >
                                 <img
                                     :src="
@@ -1342,18 +1379,18 @@ const submit = () => {
                                     :alt="
                                         game.name
                                     "
-                                    class="h-full w-full object-cover"
+                                    class="h-full w-full object-contain"
                                 />
                             </div>
 
                             <div
                                 v-else
-                                class="flex aspect-[16/9] items-center justify-center bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500"
+                                class="flex h-36 items-center justify-center bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500 sm:h-44 sm:w-40 sm:shrink-0"
                             >
                                 Sin portada
                             </div>
 
-                            <div class="p-5">
+                            <div class="min-w-0 flex-1 p-4">
                                 <!-- SELECCIÓN -->
 
                                 <label
@@ -1369,7 +1406,7 @@ const submit = () => {
                                     />
 
                                     <span
-                                        class="text-lg font-bold"
+                                        class="min-w-0 break-words text-base font-bold leading-snug sm:text-lg"
                                     >
                                         {{ game.name }}
                                     </span>
@@ -1430,7 +1467,7 @@ const submit = () => {
                                 <!-- HISTORIAL -->
 
                                 <div
-                                    class="mt-4 rounded-xl bg-zinc-50 p-3 dark:bg-zinc-800"
+                                    class="mt-3 rounded-lg bg-zinc-50 px-3 py-2 dark:bg-zinc-800"
                                 >
                                     <p
                                         v-if="
@@ -1658,7 +1695,10 @@ const submit = () => {
                             <article
                                 v-for="game in visibleOtherGames"
                                 :key="game.id"
-                                class="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+                                class="self-start rounded-2xl border border-zinc-200 bg-white p-4 transition-colors dark:border-zinc-800 dark:bg-zinc-900"
+                                    :class="form.candidate_ids.includes(game.id)
+                                        ? 'border-violet-500 ring-2 ring-violet-500/50 dark:border-violet-400'
+                                        : ''"
                             >
                                 <label
                                     class="flex cursor-pointer items-start gap-3"
@@ -1669,10 +1709,21 @@ const submit = () => {
                                         "
                                         type="checkbox"
                                         :value="game.id"
-                                        class="mt-1 h-5 w-5 accent-[#5200FF]"
+                                        class="mt-1 h-5 w-5 shrink-0 accent-[#5200FF]"
                                     />
 
-                                    <div class="flex-1">
+                                    <div class="flex h-20 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
+                                            <img
+                                                v-if="game.image_url"
+                                                :src="game.image_url"
+                                                :alt="`Portada de ${game.name}`"
+                                                loading="lazy"
+                                                class="h-full w-full object-contain"
+                                            />
+                                            <span v-else aria-hidden="true" class="text-lg">🎲</span>
+                                        </div>
+
+                                        <div class="min-w-0 flex-1">
                                         <p
                                             class="font-bold"
                                         >
@@ -1718,7 +1769,7 @@ const submit = () => {
                                         </div>
 
                                         <div
-                                            class="mt-3 rounded-xl bg-zinc-50 p-3 dark:bg-zinc-800"
+                                            class="mt-3 rounded-lg bg-zinc-50 px-3 py-2 dark:bg-zinc-800"
                                         >
                                             <p
                                                 v-if="
