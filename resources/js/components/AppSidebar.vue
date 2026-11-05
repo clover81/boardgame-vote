@@ -1,22 +1,15 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-
 import {
     BarChart3,
-    BookOpen,
-    FolderGit2,
+    Dices,
     Gamepad2,
     History,
-    LayoutGrid,
     LibraryBig,
     Users,
     Vote,
 } from '@lucide/vue';
 
-
-
-import AppLogo from '@/components/AppLogo.vue';
-import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 
@@ -30,77 +23,18 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 
-import { dashboard } from '@/routes';
-
 import type { NavItem } from '@/types';
 
-/*
-|--------------------------------------------------------------------------
-| Navegación principal
-|--------------------------------------------------------------------------
-*/
-
 const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-
-    {
-        title: 'Mi colección',
-        href: '/games',
-        icon: Gamepad2,
-    },
-
-    {
-        title: 'Votaciones',
-        href: '/polls',
-        icon: Vote,
-    },
-
-    {
-        title: 'Historial',
-        href: '/plays',
-        icon: History,
-    },
-
-    {
-        title: 'Colecciones',
-        href: '/collections',
-        icon: LibraryBig,
-    },
-
-    {
-        title: 'Jugadores',
-        href: '/players',
-        icon: Users,
-    },
-
+    { title: 'Mi colección', href: '/games', icon: Gamepad2 },
+    { title: 'Votaciones', href: '/polls', icon: Vote },
+    { title: 'Mis partidas', href: '/plays', icon: History },
+    { title: 'Colecciones', href: '/collections', icon: LibraryBig },
+    { title: 'Jugadores', href: '/players', icon: Users },
     {
         title: 'Estadísticas',
         href: '/statistics/decisions',
         icon: BarChart3,
-    },
-];
-
-/*
-|--------------------------------------------------------------------------
-| Enlaces del footer
-|--------------------------------------------------------------------------
-*/
-
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
-    },
-
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
     },
 ];
 </script>
@@ -109,30 +43,41 @@ const footerNavItems: NavItem[] = [
     <Sidebar
         collapsible="icon"
         variant="inset"
+        class="border-r border-[#5200FF]/10 dark:border-[#CCFF00]/10"
     >
-        <!-- CABECERA -->
-
-        <SidebarHeader>
+        <SidebarHeader class="gap-4 px-3 pb-4 pt-4">
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton
-                        size="lg"
-                        as-child
-                    >
-                        <Link :href="dashboard()">
-                            <AppLogo />
+                    <SidebarMenuButton size="lg" as-child>
+                        <Link href="/games">
+                            <div
+                                class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#5200FF]"
+                            >
+                                <Dices class="size-5 text-[#CCFF00]" />
+                            </div>
+
+                            <div class="grid min-w-0 flex-1 text-left">
+                                <span class="truncate text-sm font-extrabold">
+                                    Boardgame Vote
+                                </span>
+                                <span class="truncate text-xs text-muted-foreground">
+                                    Tu mesa, tus juegos
+                                </span>
+                            </div>
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
+            </SidebarMenu>
 
+            <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton
                         as-child
                         tooltip="Crear votación"
-                        class="bg-[#5200FF] font-bold text-white hover:bg-[#5200FF]/90 hover:text-white active:bg-[#5200FF]/90 active:text-white"
+                        class="h-11 rounded-xl bg-[#5200FF] px-3 font-bold text-white hover:bg-[#4200D0] hover:text-white active:bg-[#4200D0] active:text-white"
                     >
                         <Link href="/polls/create">
-                            <Vote />
+                            <Vote class="size-4 text-[#CCFF00]" />
                             <span>Crear votación</span>
                         </Link>
                     </SidebarMenuButton>
@@ -140,21 +85,11 @@ const footerNavItems: NavItem[] = [
             </SidebarMenu>
         </SidebarHeader>
 
-        <!-- NAVEGACIÓN PRINCIPAL -->
-
         <SidebarContent>
-            <NavMain
-                :items="mainNavItems"
-            />
+            <NavMain :items="mainNavItems" />
         </SidebarContent>
 
-        <!-- FOOTER -->
-
-        <SidebarFooter>
-            <NavFooter
-                :items="footerNavItems"
-            />
-
+        <SidebarFooter class="border-t border-border pt-3">
             <NavUser />
         </SidebarFooter>
     </Sidebar>
