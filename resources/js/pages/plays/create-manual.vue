@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
     computed,
+    ref,
     watch,
 } from 'vue';
 
@@ -104,6 +105,40 @@ const form = useForm({
 | Juego seleccionado
 |--------------------------------------------------------------------------
 */
+
+
+// Buscar juegos sin distinguir tildes, mayúsculas ni orden de palabras.
+const gameSearch = ref('');
+
+const normalizeGameText = (value: string): string =>
+    value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLocaleLowerCase('es')
+        .trim();
+
+const gameSearchTerms = computed(() =>
+    normalizeGameText(gameSearch.value)
+        .split(/\s+/)
+        .filter(Boolean)
+);
+
+const matchingGamesCount = computed(() =>
+    props.games.filter(game =>
+        gameSearchTerms.value.every(term =>
+            normalizeGameText(game.name).includes(term)
+        )
+    ).length
+);
+
+const searchableGames = computed(() =>
+    props.games.filter(game =>
+        game.id === Number(form.game_id) ||
+        gameSearchTerms.value.every(term =>
+            normalizeGameText(game.name).includes(term)
+        )
+    )
+);
 
 const selectedGame = computed(
     () =>
@@ -236,7 +271,7 @@ const submit = () => {
                         class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
                     >
                         <label
-                            v-for="game in games"
+                            v-for="game in searchableGames"
                             :key="game.id"
                             class="cursor-pointer"
                         >
@@ -308,6 +343,32 @@ const submit = () => {
                                 (opcional)
                             </span>
                         </label>
+
+                        <div class="mb-4">
+                            <label
+                                for="manual-game-search"
+                                class="block text-sm font-semibold text-zinc-700 dark:text-zinc-200"
+                            >
+                                Buscar juego
+                            </label>
+
+                            <input
+                                id="manual-game-search"
+                                v-model="gameSearch"
+                                type="search"
+                                autocomplete="off"
+                                placeholder="Ej.: castillo blanco, agrícola..."
+                                class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                            />
+
+                            <p
+                                v-if="gameSearch.trim()"
+                                class="mt-2 text-xs text-zinc-500 dark:text-zinc-400"
+                                aria-live="polite"
+                            >
+                                {{ matchingGamesCount }} juegos encontrados
+                            </p>
+                        </div>
 
                         <select
                             id="played-expansion"
