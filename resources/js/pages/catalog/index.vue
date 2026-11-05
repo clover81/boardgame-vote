@@ -152,6 +152,116 @@ type SortBy =
 
 const sortBy = ref<SortBy>('name');
 
+
+type FilterKey =
+    | 'search'
+    | 'players'
+    | 'ideal'
+    | 'collection'
+    | 'duration'
+    | 'difficulty'
+    | 'mode';
+
+interface FilterChip {
+    key: FilterKey;
+    label: string;
+}
+
+const activeFilterChips = computed<FilterChip[]>(() => {
+    const chips: FilterChip[] = [];
+
+    if (search.value.trim()) {
+        chips.push({
+            key: 'search',
+            label: `Buscar: ${search.value.trim()}`,
+        });
+    }
+
+    if (playerCount.value !== '') {
+        chips.push({
+            key: 'players',
+            label: `${playerCount.value} ${
+                Number(playerCount.value) === 1 ? 'jugador' : 'jugadores'
+            }`,
+        });
+    }
+
+    if (onlyIdealPlayers.value && playerCount.value !== '') {
+        chips.push({
+            key: 'ideal',
+            label: 'Solo ideales',
+        });
+    }
+
+    if (collectionId.value !== '') {
+        const collection = props.collections.find(
+            c => c.id === Number(collectionId.value)
+        );
+
+        chips.push({
+            key: 'collection',
+            label: `Colección: ${collection?.name ?? 'Seleccionada'}`,
+        });
+    }
+
+    if (durationLimit.value !== '') {
+        chips.push({
+            key: 'duration',
+            label: `Hasta ${durationLimit.value} min`,
+        });
+    }
+
+    if (difficulty.value !== '') {
+        const labels = {
+            light: 'Ligera',
+            medium: 'Media',
+            heavy: 'Exigente',
+        };
+
+        chips.push({
+            key: 'difficulty',
+            label: `Dificultad: ${labels[difficulty.value]}`,
+        });
+    }
+
+    if (selectedGameMode.value !== '') {
+        chips.push({
+            key: 'mode',
+            label: gameModeLabels[selectedGameMode.value]
+                ?? selectedGameMode.value,
+        });
+    }
+
+    return chips;
+});
+
+const removeFilter = (key: FilterKey) => {
+    switch (key) {
+        case 'search':
+            search.value = '';
+            break;
+        case 'players':
+            playerCount.value = '';
+            onlyIdealPlayers.value = false;
+            break;
+        case 'ideal':
+            onlyIdealPlayers.value = false;
+            break;
+        case 'collection':
+            collectionId.value = '';
+            break;
+        case 'duration':
+            durationLimit.value = '';
+            break;
+        case 'difficulty':
+            difficulty.value = '';
+            break;
+        case 'mode':
+            selectedGameMode.value = '';
+            break;
+    }
+};
+
 const filtersStorageKey = `catalog-filters:${props.catalogToken}`;
 
 // Recuperar los filtros al regresar al catálogo.
@@ -541,19 +651,45 @@ const externalUrl = (url: string | null): string | undefined => {
                 </div>
             </section>
 
+
+            <!-- FILTROS ACTIVOS -->
+            <div
+                v-if="activeFilterChips.length"
+                class="mt-6 flex flex-wrap items-center gap-2"
+                aria-label="Filtros aplicados"
+            >
+                <span class="mr-1 text-sm font-semibold text-zinc-600">
+                    Filtros aplicados:
+                </span>
+
+                <button
+                    v-for="chip in activeFilterChips"
+                    :key="chip.key"
+                    type="button"
+                    :aria-label="`Quitar filtro ${chip.label}`"
+                    class="inline-flex max-w-full items-center gap-2 rounded-full bg-violet-100 px-3 py-2 text-xs font-bold text-violet-800 transition hover:bg-violet-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+                    @click="removeFilter(chip.key)"
+                >
+                    <span class="max-w-[180px] truncate sm:max-w-xs">
+                        {{ chip.label }}
+                    </span>
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+
             <!-- RESULTADOS -->
-            <div class="mb-6 mt-10 flex flex-wrap items-end justify-between gap-3">
+            <div class="mb-6 flex flex-wrap items-end justify-between gap-3" :class="activeFilterChips.length ? 'mt-5' : 'mt-10'">
                 <div>
                     <p class="text-sm font-bold uppercase tracking-wider text-[#5200FF]">
                         Explorar biblioteca
                     </p>
                     <h2 class="mt-1 text-2xl font-black">
-                        Todos los juegos
+                        {{ hasFilters ? 'Resultados filtrados' : 'Todos los juegos' }}
                     </h2>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3">
-                    <p class="text-sm text-zinc-500">
+                    <p class="text-sm text-zinc-500" aria-live="polite" aria-atomic="true">
                         {{ filteredGames.length }} de {{ games.length }} juegos
                     </p>
 
