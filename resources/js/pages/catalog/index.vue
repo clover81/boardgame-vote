@@ -594,7 +594,7 @@ const externalUrl = (url: string | null): string | undefined => {
 
                     <!-- PORTADA DEL JUEGO -->
                     <div
-                        class="relative flex h-60 items-center justify-center overflow-hidden bg-gradient-to-br from-[#f0ebff] via-white to-[#eef2fa] p-6 sm:aspect-square sm:h-auto"
+                        class="relative flex h-60 items-center justify-center overflow-hidden bg-gradient-to-br from-[#f0ebff] via-white to-[#eef2fa] p-4 sm:aspect-square sm:h-auto sm:p-6"
                     >
                         <img
                             v-if="game.image_url && !brokenCoverIds.includes(game.id)"
@@ -618,7 +618,7 @@ const externalUrl = (url: string | null): string | undefined => {
                         <!-- DISTINTIVO DE JUGADORES IDEALES -->
                         <div
                             v-if="game.ideal_player_counts.length"
-                            class="absolute bottom-3 left-3 rounded-xl border border-white/80 bg-white/95 px-3 py-2 shadow-md"
+                            class="absolute bottom-2 left-2 rounded-xl border border-white/80 bg-white/95 px-2.5 py-1.5 shadow-md sm:bottom-3 sm:left-3 sm:px-3 sm:py-2"
                         >
                             <span class="text-xs font-black text-[#5200FF]">
                                 ⭐ Ideal:
@@ -630,7 +630,7 @@ const externalUrl = (url: string | null): string | undefined => {
 
                     <div class="flex flex-1 flex-col p-4 sm:p-5">
                         <div class="min-h-14">
-                            <h3 class="line-clamp-2 text-lg font-black leading-snug">
+                            <h3 class="line-clamp-2 text-lg font-black leading-snug tracking-tight sm:text-xl">
                                 {{ game.name }}
                             </h3>
                         </div>
@@ -639,7 +639,7 @@ const externalUrl = (url: string | null): string | undefined => {
                             <span
                                 v-for="mode in game.game_modes"
                                 :key="mode"
-                                class="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold"
+                                class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold sm:px-3 sm:py-1.5"
                                 :class="{
                                     'bg-blue-100 text-blue-800':
                                         mode === 'cooperative',
@@ -660,11 +660,11 @@ const externalUrl = (url: string | null): string | undefined => {
                             </span>
                         </div>
 
-                        <div class="mt-3 flex flex-wrap gap-2">
+                        <div v-if="game.collections.length" class="mt-3 flex flex-wrap gap-2">
                             <span
                                 v-for="(collection, index) in game.collections"
                                 :key="collection.id"
-                                class="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700"
+                                class="inline-block max-w-full truncate rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700"
                                 :class="index >= 2 ? 'hidden sm:inline-flex' : ''"
                             >
                                 {{ collection.name }}
@@ -681,14 +681,14 @@ const externalUrl = (url: string | null): string | undefined => {
                         </div>
 
                         <div class="mt-auto grid grid-cols-2 gap-2 pt-4 text-sm sm:gap-3 sm:pt-5">
-                            <div class="rounded-xl bg-zinc-50 p-3">
+                            <div class="rounded-xl bg-zinc-50 p-2.5 sm:p-3">
                                 <p class="text-xs text-zinc-500">Jugadores</p>
                                 <p class="mt-1 font-black">
                                     👥 {{ game.min_players }}–{{ game.max_players }}
                                 </p>
                             </div>
 
-                            <div class="rounded-xl bg-zinc-50 p-3">
+                            <div class="rounded-xl bg-zinc-50 p-2.5 sm:p-3">
                                 <p class="text-xs text-zinc-500">Duración</p>
                                 <p class="mt-1 font-black">
                                     ⏱ {{ formatDuration(game) }}
@@ -716,7 +716,7 @@ const externalUrl = (url: string | null): string | undefined => {
                         <!-- ENLACES EXTERNOS -->
                         <div
                             v-if="externalUrl(game.bgg_url) || externalUrl(game.youtube_url)"
-                            class="relative z-20 mt-5 flex flex-wrap gap-2 border-t border-zinc-100 pt-4"
+                            class="relative z-20 mt-4 flex flex-wrap gap-2 border-t border-zinc-100 pt-4 sm:mt-5"
                         >
                             <a
                                 v-if="externalUrl(game.bgg_url)"

@@ -245,7 +245,7 @@ const externalUrl = (url: string | null): string | undefined => {
                     </div>
 
                     <!-- DATOS PRINCIPALES -->
-                    <div class="mt-5 grid grid-cols-2 gap-2 sm:mt-8 sm:grid-cols-3 sm:gap-3">
+                    <div class="catalog-stats mt-5 grid grid-cols-2 gap-2 sm:mt-8 sm:grid-cols-3 sm:gap-3">
                         <div class="rounded-2xl bg-white p-4 shadow-sm">
                             <p class="text-xs text-zinc-500">Jugadores</p>
                             <p class="mt-2 text-xl font-black">
@@ -506,3 +506,13 @@ const externalUrl = (url: string | null): string | undefined => {
         </footer>
     </div>
 </template>
+
+<style scoped>
+
+/* La última característica ocupa toda la fila cuando queda sola. */
+@media (max-width: 639px) {
+    .catalog-stats > :last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+    }
+}
+</style>
