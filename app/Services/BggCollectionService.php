@@ -18,7 +18,7 @@ class BggCollectionService
         ]);
 
         // Espaciamos las peticiones a BGG.
-        sleep(5);
+        \Illuminate\Support\Sleep::sleep(5);
 
         $expansions = $this->fetchOwned($username, [
             'subtype' => 'boardgameexpansion',
@@ -201,7 +201,7 @@ class BggCollectionService
 
             // Dar tiempo a BGG para preparar los datos.
             if ($attempt < $maxAttempts) {
-                sleep(10);
+                \Illuminate\Support\Sleep::sleep(10);
             }
         }
 

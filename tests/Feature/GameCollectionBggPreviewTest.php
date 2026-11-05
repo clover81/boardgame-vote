@@ -11,7 +11,7 @@ beforeEach(function () {
         'name' => 'Mi colección',
     ]);
     $this->url = route('collections.bgg.preview', $this->collection);
-    config(['services.bgg.collection_username' => '  clover81  ']);
+    $this->collection->forceFill(['bgg_username' => '  clover81  '])->save();
 });
 
 test('the owner can preview the configured BGG collection without importing records', function () {
@@ -24,8 +24,19 @@ test('the owner can preview the configured BGG collection without importing reco
         'expansions' => [['bgg_id' => 200, 'name' => 'Expansión nueva', 'status' => 'new']],
     ];
     $before = $this->collection->fresh()->getAttributes();
-    $this->mock(BggCollectionService::class)->shouldReceive('preview')
+    $bgg = $this->mock(BggCollectionService::class);
+
+    $bgg->shouldReceive('preview')
         ->once()->with('clover81')->andReturn($preview);
+
+    foreach (['removalCandidates', 'expansionRemovalCandidates'] as $method) {
+        $bgg->shouldReceive($method)
+            ->once()
+            ->withArgs(fn (GameCollection $collection, array $data) =>
+                $collection->is($this->collection) && $data === $preview
+            )
+            ->andReturn([]);
+    }
 
     $this->actingAs($this->user)->getJson($this->url)
         ->assertOk()
@@ -33,6 +44,8 @@ test('the owner can preview the configured BGG collection without importing reco
             'collection' => ['id' => $this->collection->id, 'name' => 'Mi colección'],
             'username' => 'clover81',
             ...$preview,
+            'removal_candidates' => [],
+            'expansion_removal_candidates' => [],
         ]);
 
     $this->assertDatabaseCount('games', 0);
@@ -62,12 +75,12 @@ test('a missing collection returns not found without requesting a BGG preview', 
 });
 
 test('a missing configured BGG username returns an explanatory validation response', function ($username) {
-    config(['services.bgg.collection_username' => $username]);
+    $this->collection->forceFill(['bgg_username' => $username])->save();
     $this->mock(BggCollectionService::class)->shouldNotReceive('preview');
 
     $this->actingAs($this->user)->getJson($this->url)
         ->assertUnprocessable()
-        ->assertExactJson(['message' => 'Configura el usuario de BGG.']);
+        ->assertExactJson(['message' => 'Esta colección no está vinculada a ninguna cuenta de BoardGameGeek.']);
 })->with(['not configured' => [null], 'empty' => [''], 'whitespace' => ['   ']]);
 
 test('BGG preview failures return a service unavailable response', function ($message) {
@@ -81,6 +94,6 @@ test('BGG preview failures return a service unavailable response', function ($me
     $this->assertDatabaseCount('games', 0);
     $this->assertDatabaseCount('expansions', 0);
 })->with([
-    'collection pending' => ['BGG está preparando la colección. Repite la consulta más tarde.'],
+    'collection pending' => ['BGG sigue preparando la colección tras varios intentos.'],
     'BGG error' => ['BGG ha respondido con HTTP 500'],
 ]);

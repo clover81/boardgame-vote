@@ -16,6 +16,7 @@ beforeEach(function () {
         'min_players' => 1,
         'max_players' => 4,
         'game_mode' => 'competitive',
+        'game_modes' => ['competitive'],
         'ideal_player_counts' => [3, 4],
         'collection_ids' => [$this->collection->id],
         'bgg_id' => 123,

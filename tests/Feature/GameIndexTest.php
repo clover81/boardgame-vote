@@ -74,7 +74,7 @@ test('game summaries count only the signed in users plays and agree with the gam
             ])
             ->has('collections', 2)
             ->where('selected_collection_id', null)
-            ->where('filters', ['q' => '', 'players' => null])
+            ->where('filters', ['mode' => '', 'players' => null, 'q' => ''])
         );
 
     $this->get(route('games.show', $this->castle))
@@ -143,7 +143,7 @@ test('collection name and player filters combine', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->has('games', 1)
             ->where('games.0.id', $this->castle->id)
-            ->where('filters', ['q' => 'Castle', 'players' => 4])
+            ->where('filters', ['mode' => '', 'players' => 4, 'q' => 'Castle'])
         );
 });
 

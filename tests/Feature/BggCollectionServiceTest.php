@@ -10,6 +10,11 @@ use Illuminate\Support\Facades\Http;
 beforeEach(function () {
     config(['services.bgg.token' => 'test-token']);
     Http::preventStrayRequests();
+    \Illuminate\Support\Sleep::fake();
+});
+
+afterEach(function () {
+    \Illuminate\Support\Sleep::fake(false);
 });
 
 test('collection previews distinguish games and expansions without changing local records', function () {
@@ -129,9 +134,10 @@ test('collection HTTP errors stop the preview with an explanatory message', func
 
     expect(fn () => app(BggCollectionService::class)->preview('mi-usuario'))
         ->toThrow(RuntimeException::class, $message);
-    Http::assertSentCount(1);
+    Http::assertSentCount($status === 202 ? 8 : 1);
+    \Illuminate\Support\Sleep::assertSleptTimes($status === 202 ? 7 : 0);
 })->with([
-    'collection pending' => [202, 'BGG está preparando la colección. Repite la consulta más tarde.'],
+    'collection pending' => [202, 'BGG sigue preparando la colección tras varios intentos.'],
     'unauthorized' => [401, 'BGG ha respondido con HTTP 401'],
     'server error' => [500, 'BGG ha respondido con HTTP 500'],
 ]);

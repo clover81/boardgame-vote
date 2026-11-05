@@ -18,6 +18,7 @@ test('a new game is attached to the selected collections owned by its creator', 
         'min_players' => 2,
         'max_players' => 2,
         'game_mode' => 'cooperative',
+        'game_modes' => ['cooperative'],
         'ideal_player_counts' => [2],
         'collection_ids' => $collections->pluck('id')->map('strval')->all(),
     ])->assertSessionHasNoErrors()->assertRedirect(route('games.index'));
@@ -47,6 +48,7 @@ test('new game creation saves the explicit fields and ignores unvalidated input'
         'max_playtime' => 90,
         'complexity' => 2.5,
         'game_mode' => 'cooperative',
+        'game_modes' => ['cooperative'],
         'short_description' => 'Mi descripción',
         'additional_information' => 'Mis notas',
         'bgg_url' => 'https://boardgamegeek.com/boardgame/371942',
@@ -96,6 +98,7 @@ test('invalid collection selections are rejected before a game is created', func
         'min_players' => 2,
         'max_players' => 2,
         'game_mode' => 'cooperative',
+        'game_modes' => ['cooperative'],
         'ideal_player_counts' => [2],
         'collection_ids' => $collectionIds,
     ]);

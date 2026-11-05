@@ -10,7 +10,11 @@ return new class extends Migration
     {
         Schema::table('games', function (Blueprint $table) {
             $table->string('game_mode', 255)
-                ->collation('utf8mb4_unicode_ci')
+                ->collation(
+    \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'sqlite'
+        ? 'BINARY'
+        : 'utf8mb4_unicode_ci'
+)
                 ->nullable()
                 ->change();
         });
@@ -20,7 +24,11 @@ return new class extends Migration
     {
         Schema::table('games', function (Blueprint $table) {
             $table->string('game_mode', 255)
-                ->collation('utf8mb4_unicode_ci')
+                ->collation(
+    \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'sqlite'
+        ? 'BINARY'
+        : 'utf8mb4_unicode_ci'
+)
                 ->nullable(false)
                 ->change();
         });

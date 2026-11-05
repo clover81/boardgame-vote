@@ -185,7 +185,7 @@ test('a personal link identifies its participant and preserves the public page d
         );
 })->with(['open', 'closed']);
 
-test('personal links only expose their own participant and previous choices', function ($name, $status) {
+test('personal links show group names without revealing other participants votes', function ($name, $status) {
     $this->poll->update(['status' => $status]);
     $ana = $this->poll->participants()->create([
         'display_name' => 'Ana',
@@ -216,23 +216,48 @@ test('personal links only expose their own participant and previous choices', fu
             ->component('vote/show')
             ->where('currentParticipantId', $participant->id)
             ->where('voteToken', $participant->vote_token)
-            ->where('poll.participants', [[
-                'id' => $participant->id,
-                'display_name' => $participant->display_name,
-                'votes' => $expectedVotes,
-            ]])
+            ->where('poll.participants', function ($participants) use ($participant, $expectedVotes) {
+                $visible = collect($participants);
+                $own = $visible->firstWhere('id', $participant->id);
+
+                return $visible->count() === 2
+                    && $own !== null
+                    && $own['display_name'] === $participant->display_name
+                    && $own['votes'] === $expectedVotes
+                    && $visible->every(function ($entry) use ($participant) {
+                        return array_diff(
+                            array_keys($entry),
+                            ['id', 'display_name', 'votes']
+                        ) === []
+                        && (
+                            $entry['id'] === $participant->id
+                            || $entry['votes'] === []
+                        );
+                    });
+            })
             ->has('poll.candidates', 2)
-            ->has('poll.candidates.0.history.participants', 1)
-            ->where('poll.candidates.0.history.participants.0.participant_id', $participant->id)
-            ->where('poll.candidates.0.history.participants.0.display_name', $participant->display_name)
-            ->has('poll.candidates.1.history.participants', 1)
-            ->where('poll.candidates.1.history.participants.0.participant_id', $participant->id)
-            ->where('poll.candidates.1.history.participants.0.display_name', $participant->display_name)
+            ->where('poll.candidates.0.history.participants', function ($history) use ($participant, $otherParticipant) {
+                $players = collect($history);
+
+                return $players->count() === 2
+                    && $players->pluck('display_name', 'participant_id')->all() == [
+                        $participant->id => $participant->display_name,
+                        $otherParticipant->id => $otherParticipant->display_name,
+                    ];
+            })
+            ->where('poll.candidates.1.history.participants', function ($history) use ($participant, $otherParticipant) {
+                $players = collect($history);
+
+                return $players->count() === 2
+                    && $players->pluck('display_name', 'participant_id')->all() == [
+                        $participant->id => $participant->display_name,
+                        $otherParticipant->id => $otherParticipant->display_name,
+                    ];
+            })
             ->has('results', $status === 'closed' ? 2 : 0)
         );
 
-    $response->assertDontSee($otherParticipant->display_name, false)
-        ->assertDontSee($otherParticipant->vote_token, false);
+    $response->assertDontSee($otherParticipant->vote_token, false);
     expect($this->poll->votes()->orderBy('id')->get()->toArray())->toBe($votesBefore);
 
     if ($status === 'closed') {
