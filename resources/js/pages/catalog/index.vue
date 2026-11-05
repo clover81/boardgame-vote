@@ -84,14 +84,18 @@ const normalizeText = (text: string): string =>
         .trim();
 
 const filteredGames = computed(() => {
-    const text = normalizeText(search.value);
+    const terms = normalizeText(search.value).split(/\s+/).filter(Boolean);
     const players = Number(playerCount.value);
     const collection = Number(collectionId.value);
 
     return props.games.filter(game => {
-        const matchesSearch =
-            !text ||
-            normalizeText(game.name).includes(text);
+        const searchable = normalizeText(
+            `${game.name} ${game.short_description ?? ''}`
+        );
+
+        const matchesSearch = terms.every(
+            term => searchable.includes(term)
+        );
 
         const matchesPlayers =
             !players ||
@@ -522,7 +526,7 @@ const externalUrl = (url: string | null): string | undefined => {
                             id="catalog-search"
                             v-model="search"
                             type="search"
-                            placeholder="Nombre del juego..."
+                            placeholder="Busca por nombre o temática..."
                             class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
                         />
                     </div>
@@ -887,7 +891,7 @@ const externalUrl = (url: string | null): string | undefined => {
                     No hay juegos que coincidan
                 </h3>
                 <p class="mt-2 text-sm text-zinc-500">
-                    Prueba con otros filtros o consulta otra colección.
+                    Prueba con otras palabras o elimina alguno de los filtros aplicados.
                 </p>
                 <button
                     v-if="hasFilters"
