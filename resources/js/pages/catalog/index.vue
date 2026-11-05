@@ -41,6 +41,15 @@ const onlyIdealPlayers = ref(false);
 const selectedGameMode = ref('');
 const showAdvancedFilters = ref(false);
 
+const advancedFiltersActive = computed(() =>
+    playerCount.value !== '' ||
+    collectionId.value !== '' ||
+    durationLimit.value !== '' ||
+    difficulty.value !== '' ||
+    onlyIdealPlayers.value ||
+    selectedGameMode.value !== ''
+);
+
 const brokenCoverIds = ref<number[]>([]);
 
 const markCoverAsBroken = (gameId: number) => {
@@ -357,9 +366,9 @@ const externalUrl = (url: string | null): string | undefined => {
             </div>
         </header>
 
-        <main class="mx-auto max-w-7xl px-5 py-10 sm:px-8">
+        <main class="mx-auto max-w-7xl px-4 py-6 sm:px-8 sm:py-10">
             <!-- FILTROS -->
-            <section class="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7">
+            <section class="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-7">
                 <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
                     <h2 class="text-xl font-black">
                         Encuentra tu juego
@@ -373,7 +382,7 @@ const externalUrl = (url: string | null): string | undefined => {
                     >
                         <span aria-hidden="true">⚙️</span>
 
-                        {{ showAdvancedFilters ? 'Ocultar filtros' : 'Más filtros' }}
+                        {{ showAdvancedFilters ? 'Ocultar filtros' : advancedFiltersActive ? 'Filtros activos' : 'Más filtros' }}
 
                         <span aria-hidden="true">
                             {{ showAdvancedFilters ? '⌃' : '⌄' }}
@@ -568,7 +577,7 @@ const externalUrl = (url: string | null): string | undefined => {
 
             <div
                 v-if="filteredGames.length"
-                class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                class="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4"
             >
                 <article
                     v-for="game in sortedGames"
@@ -619,7 +628,7 @@ const externalUrl = (url: string | null): string | undefined => {
                         </div>
                     </div>
 
-                    <div class="flex flex-1 flex-col p-5">
+                    <div class="flex flex-1 flex-col p-4 sm:p-5">
                         <div class="min-h-14">
                             <h3 class="line-clamp-2 text-lg font-black leading-snug">
                                 {{ game.name }}
@@ -671,7 +680,7 @@ const externalUrl = (url: string | null): string | undefined => {
                             </span>
                         </div>
 
-                        <div class="mt-auto grid grid-cols-2 gap-3 pt-5 text-sm">
+                        <div class="mt-auto grid grid-cols-2 gap-2 pt-4 text-sm sm:gap-3 sm:pt-5">
                             <div class="rounded-xl bg-zinc-50 p-3">
                                 <p class="text-xs text-zinc-500">Jugadores</p>
                                 <p class="mt-1 font-black">
