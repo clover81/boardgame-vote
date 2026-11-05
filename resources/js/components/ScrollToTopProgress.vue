@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
+const props = withDefaults(defineProps<{ rememberPosition?: boolean }>(), {
+    rememberPosition: true,
+});
+
 const scrollY = ref(0);
 const progress = ref(0);
 
@@ -25,7 +29,9 @@ const updateScroll = () => {
         ? Math.min(100, (scrollY.value / maxScroll) * 100)
         : 0;
 
-    sessionStorage.setItem(storageKey, String(scrollY.value));
+    if (props.rememberPosition) {
+        sessionStorage.setItem(storageKey, String(scrollY.value));
+    }
 };
 
 const scrollToTop = () => {
@@ -36,12 +42,13 @@ const scrollToTop = () => {
 };
 
 onMounted(async () => {
-    // Cada catálogo conserva su propia posición.
+    // El catálogo recuerda la posición; un formulario nuevo no debe
+    // regresar a una posición antigua con su selección vacía.
     storageKey = `catalog-scroll:${window.location.pathname}`;
 
-    const savedPosition = Number(
-        sessionStorage.getItem(storageKey) ?? 0,
-    );
+    const savedPosition = props.rememberPosition
+        ? Number(sessionStorage.getItem(storageKey) ?? 0)
+        : 0;
 
     await nextTick();
 
@@ -64,7 +71,9 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-    sessionStorage.setItem(storageKey, String(window.scrollY));
+    if (props.rememberPosition) {
+        sessionStorage.setItem(storageKey, String(window.scrollY));
+    }
 
     window.removeEventListener('scroll', updateScroll);
     window.removeEventListener('resize', updateScroll);

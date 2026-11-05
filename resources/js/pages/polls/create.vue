@@ -3,6 +3,7 @@ import { computed, onUnmounted, ref, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import InputError from '@/components/InputError.vue';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
 interface Player {
     id: number;
@@ -609,6 +610,8 @@ const matchesGameSearch = (game: Game): boolean => {
 |--------------------------------------------------------------------------
 */
 
+const showAdvancedFilters = ref(false);
+
 const gameDifficultyFilter = ref('all');
 const gameDurationFilter = ref('all');
 const gameModeFilter = ref('all');
@@ -618,6 +621,13 @@ const hasActiveGameFilters = computed(() =>
     gameDifficultyFilter.value !== 'all' ||
     gameDurationFilter.value !== 'all' ||
     gameModeFilter.value !== 'all'
+);
+
+const advancedFilterCount = computed(() =>
+    Number(gameDifficultyFilter.value !== 'all') +
+    Number(gameDurationFilter.value !== 'all') +
+    Number(gameModeFilter.value !== 'all') +
+    Number(gameSort.value !== 'name')
 );
 
 const matchesGameFilters = (game: Game): boolean => {
@@ -732,9 +742,9 @@ watch(
             (id) => availableIds.has(id)
         );
 
-        form.candidate_notes = {};
-        form.candidate_expansion_ids = {};
-
+        // El watch de candidate_ids borra solo los datos de juegos
+        // descartados. Los candidatos que siguen válidos conservan
+        // su nota y su expansión prevista.
         showOtherGames.value = false;
     }
 );
@@ -860,8 +870,32 @@ const submit = () => {
                 </p>
             </div>
 
+            <!-- Resumen persistente de la preparación de la votación. -->
+            <nav
+                aria-label="Progreso de creación de la votación"
+                class="sticky top-2 z-30 mt-6 rounded-2xl border border-zinc-200 bg-white/95 p-3 shadow-md backdrop-blur dark:border-zinc-700 dark:bg-zinc-950/95"
+            >
+                <div class="flex flex-wrap items-center gap-2 text-xs font-bold sm:text-sm">
+                    <a href="#poll-collections" class="rounded-full px-3 py-2 transition hover:opacity-80"
+                        :class="form.collection_ids.length ? 'bg-violet-100 text-[#5200FF] dark:bg-violet-950 dark:text-violet-200' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300'">
+                        {{ form.collection_ids.length ? '✓' : '1' }} Colecciones · {{ form.collection_ids.length }}
+                    </a>
+                    <a href="#poll-players" class="rounded-full px-3 py-2 transition hover:opacity-80"
+                        :class="playerCount >= 2 ? 'bg-violet-100 text-[#5200FF] dark:bg-violet-950 dark:text-violet-200' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300'">
+                        {{ playerCount >= 2 ? '✓' : '2' }} Jugadores · {{ playerCount }}
+                    </a>
+                    <a href="#poll-candidates" class="rounded-full px-3 py-2 transition hover:opacity-80"
+                        :class="form.candidate_ids.length ? 'bg-violet-100 text-[#5200FF] dark:bg-violet-950 dark:text-violet-200' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300'">
+                        {{ form.candidate_ids.length ? '✓' : '3' }} Juegos · {{ form.candidate_ids.length }}
+                    </a>
+                    <a href="#poll-review" class="ml-auto whitespace-nowrap px-2 py-2 text-[#5200FF] hover:underline dark:text-[#CCFF00]">
+                        Revisar ↓
+                    </a>
+                </div>
+            </nav>
+
             <form
-                class="mt-8 w-full min-w-0 space-y-10"
+                class="mt-5 w-full min-w-0 space-y-6 sm:space-y-8"
                 @submit.prevent="submit"
             >
                 <!-- ================================================== -->
@@ -869,7 +903,7 @@ const submit = () => {
                 <!-- ================================================== -->
 
                 <section
-                    class="box-border w-full min-w-0 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950"
+                    class="box-border w-full min-w-0 scroll-mt-24 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:p-6"
                 >
                     <label
                         class="mb-2 block font-semibold"
@@ -892,7 +926,8 @@ const submit = () => {
                 <!-- ================================================== -->
 
                 <section
-                    class="box-border w-full min-w-0 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950"
+                    id="poll-collections"
+                    class="box-border w-full min-w-0 scroll-mt-24 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:p-6"
                 >
                     <div class="flex items-center gap-3">
                         <div
@@ -1006,7 +1041,8 @@ const submit = () => {
                 <!-- ================================================== -->
 
                 <section
-                    class="box-border w-full min-w-0 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950"
+                    id="poll-players"
+                    class="box-border w-full min-w-0 scroll-mt-24 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:p-6"
                 >
                     <div class="flex items-center gap-3">
                         <div
@@ -1032,28 +1068,28 @@ const submit = () => {
                     </div>
 
                     <!-- Tarjetas de tamaño fijo: seleccionar solo cambia colores y marca -->
-                    <div class="mt-5 grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div class="mt-4 grid w-full grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-4">
                         <button
                             v-for="player in players"
                             :key="player.id"
                             type="button"
                             @click="togglePlayer(player.id)"
                             :aria-pressed="isPlayerSelected(player.id)"
-                            class="box-border flex h-20 w-full min-w-0 items-center justify-between gap-3 rounded-2xl border-2 px-5 text-left transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CCFF00]"
+                            class="box-border flex h-14 w-full min-w-0 items-center justify-between gap-2 rounded-xl border-2 px-3 text-left transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CCFF00] sm:h-16"
                             :class="
                                 isPlayerSelected(player.id)
                                     ? 'border-[#5200FF] bg-[#5200FF]/15 dark:bg-[#5200FF]/20'
                                     : 'border-zinc-200 bg-zinc-50 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600'
                             "
                         >
-                            <span class="min-w-0 truncate text-lg font-bold text-zinc-900 dark:text-white">
+                            <span class="min-w-0 truncate text-sm font-bold text-zinc-900 dark:text-white sm:text-base">
                                 {{ player.name }}
                             </span>
 
                             <!-- Mantener el espacio del check también al deseleccionar -->
                             <span
                                 aria-hidden="true"
-                                class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#CCFF00] font-black text-black transition-opacity duration-150"
+                                class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#CCFF00] text-sm font-black text-black transition-opacity duration-150"
                                 :class="isPlayerSelected(player.id) ? 'opacity-100' : 'opacity-0'"
                             >
                                 ✓
@@ -1082,8 +1118,9 @@ const submit = () => {
                 <!-- ================================================== -->
 
                 <section
+                    id="poll-candidates"
                     v-if="playerCount >= 2"
-                    class="box-border w-full min-w-0 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950"
+                    class="box-border w-full min-w-0 scroll-mt-24 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:p-6"
                 >
                     <div class="flex items-center gap-3">
                         <div
@@ -1140,6 +1177,20 @@ const submit = () => {
                     </div>
 
                     <!-- FILTROS DE JUEGOS -->
+                    <button
+                        type="button"
+                        :aria-expanded="showAdvancedFilters"
+                        aria-controls="poll-advanced-filters"
+                        class="mt-3 flex w-full items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-left text-sm font-bold text-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-[#CCFF00] sm:hidden"
+                        @click="showAdvancedFilters = !showAdvancedFilters"
+                    >
+                        <span>Filtros y orden <span v-if="advancedFilterCount">({{ advancedFilterCount }} activos)</span></span>
+                        <span aria-hidden="true">{{ showAdvancedFilters ? '−' : '+' }}</span>
+                    </button>
+                    <div
+                        id="poll-advanced-filters"
+                        :class="showAdvancedFilters ? 'block' : 'hidden sm:block'"
+                    >
                     <div class="mt-4 grid gap-4 sm:grid-cols-2">
                         <div>
                             <label class="text-sm font-bold">
@@ -1272,6 +1323,19 @@ const submit = () => {
                         </select>
                     </div>
 
+                    <p v-if="gameSort === 'group_history' && recommendationsLoading"
+                        role="status"
+                        class="mt-3 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+                        <span class="h-4 w-4 animate-spin rounded-full border-2 border-[#5200FF] border-t-transparent" aria-hidden="true"></span>
+                        Calculando sugerencias para el grupo...
+                    </p>
+                    <div v-else-if="gameSort === 'group_history' && recommendationsError"
+                        class="mt-3 flex flex-wrap items-center gap-2 text-sm text-orange-700 dark:text-orange-300">
+                        <span>{{ recommendationsError }}</span>
+                        <button type="button" class="font-bold underline" @click="loadGroupRecommendations">Reintentar</button>
+                    </div>
+                    </div>
+
                     <div
                         v-if="playerCount >= 2"
                         class="mt-6 flex flex-wrap items-center justify-between gap-3"
@@ -1347,8 +1411,23 @@ const submit = () => {
                         </div>
                     </div>
 
+                    <div
+                        v-if="hasActiveGameFilters && !visibleIdealGames.length && !visibleOtherGames.length"
+                        class="mt-6 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-5 text-center dark:border-zinc-700 dark:bg-zinc-900"
+                    >
+                        <p class="font-bold text-zinc-800 dark:text-zinc-100">No hay juegos que coincidan con los filtros.</p>
+                        <button type="button" class="mt-2 text-sm font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
+                            @click="gameSearch = ''; gameDifficultyFilter = 'all'; gameDurationFilter = 'all'; gameModeFilter = 'all'">
+                            Limpiar filtros
+                        </button>
+                    </div>
+
                     <!-- IDEALES                                        -->
                     <!-- ============================================== -->
+                    <div v-if="visibleIdealGames.length" class="mt-7 flex flex-wrap items-baseline justify-between gap-2">
+                        <h2 class="text-lg font-black text-zinc-900 dark:text-zinc-100">Ideales para {{ playerCount }} jugadores</h2>
+                        <span class="text-sm font-semibold text-zinc-500 dark:text-zinc-400">{{ visibleIdealGames.length }} juegos</span>
+                    </div>
 
                     <div
                         v-if="
@@ -1359,7 +1438,7 @@ const submit = () => {
                         <article
                             v-for="game in visibleIdealGames"
                             :key="game.id"
-                            class="self-start overflow-hidden rounded-2xl border border-zinc-200 bg-white transition-colors dark:border-zinc-800 dark:bg-zinc-900 sm:flex sm:items-start"
+                            class="flex self-start min-w-0 items-start overflow-hidden rounded-2xl border border-zinc-200 bg-white transition-colors dark:border-zinc-800 dark:bg-zinc-900"
                             :class="form.candidate_ids.includes(game.id)
                                 ? 'border-violet-500 ring-2 ring-violet-500/50 dark:border-violet-400'
                                 : ''"
@@ -1370,7 +1449,7 @@ const submit = () => {
                                 v-if="
                                     game.image_url
                                 "
-                                class="flex h-36 items-center justify-center overflow-hidden bg-zinc-100 p-3 dark:bg-zinc-800 sm:h-44 sm:w-40 sm:shrink-0"
+                                class="flex h-32 w-24 shrink-0 items-center justify-center overflow-hidden bg-zinc-100 p-2 dark:bg-zinc-800 sm:h-40 sm:w-28"
                             >
                                 <img
                                     :src="
@@ -1379,18 +1458,19 @@ const submit = () => {
                                     :alt="
                                         game.name
                                     "
+                                    loading="lazy"
                                     class="h-full w-full object-contain"
                                 />
                             </div>
 
                             <div
                                 v-else
-                                class="flex h-36 items-center justify-center bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500 sm:h-44 sm:w-40 sm:shrink-0"
+                                class="flex h-32 w-24 shrink-0 items-center justify-center bg-zinc-100 px-2 text-center text-xs text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500 sm:h-40 sm:w-28"
                             >
                                 Sin portada
                             </div>
 
-                            <div class="min-w-0 flex-1 p-4">
+                            <div class="min-w-0 flex-1 p-3 sm:p-4">
                                 <!-- SELECCIÓN -->
 
                                 <label
@@ -1626,7 +1706,7 @@ const submit = () => {
                     </div>
 
                     <div
-                        v-if="playerCount >= 2 && idealGames.length === 0"
+                        v-if="playerCount >= 2 && idealGames.length === 0 && !hasActiveGameFilters"
                         class="mt-6 rounded-2xl border border-orange-200 bg-orange-50 p-5 dark:border-orange-900 dark:bg-orange-950/20"
                     >
                         <p
@@ -1674,7 +1754,7 @@ const submit = () => {
                             {{
                                 showOtherGames
                                     ? '− Ocultar otros juegos'
-                                    : '+ Añadir otro juego'
+                                    : `+ Ver otros juegos compatibles (${visibleOtherGames.length})`
                             }}
                         </button>
 
@@ -1922,7 +2002,8 @@ const submit = () => {
                 <!-- ================================================== -->
 
                 <section
-                    class="box-border w-full min-w-0 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950"
+                    id="poll-review"
+                    class="box-border w-full min-w-0 scroll-mt-24 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:p-6"
                 >
                     <div class="flex items-center gap-3">
                         <div
@@ -2146,6 +2227,10 @@ const submit = () => {
                     revisarla antes de compartirla con el grupo.
                 </p>
             </form>
+
+            <!-- Mismo indicador circular del catálogo, sin restaurar la posición
+                 anterior al iniciar una votación nueva. -->
+            <ScrollToTopProgress :remember-position="false" />
         </div>
     </AppLayout>
 </template>
