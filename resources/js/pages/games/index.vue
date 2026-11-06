@@ -373,7 +373,7 @@ const formatDate = (date: string | null): string => {
                 <article
                     v-for="game in games"
                     :key="game.id"
-                    class="overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
+                    class="group flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-md focus-within:ring-2 focus-within:ring-[#5200FF]/20 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-violet-700"
                 >
                     <!-- PORTADA -->
 
@@ -402,7 +402,7 @@ const formatDate = (date: string | null): string => {
                         </div>
                     </Link>
 
-                    <div class="p-5">
+                    <div class="flex flex-1 flex-col p-5">
 
                         <!-- NOMBRE -->
 
@@ -586,11 +586,11 @@ const formatDate = (date: string | null): string => {
                         <!-- ACCIONES -->
 
                         <div
-                            class="mt-5 grid grid-cols-2 gap-2"
+                            class="mt-auto grid grid-cols-2 gap-2 pt-5"
                         >
                             <Link
                                 :href="`/games/${game.id}?back=${encodeURIComponent($page.url)}`"
-                                class="rounded-xl bg-[#5200FF] px-4 py-2.5 text-center text-sm font-bold text-white"
+                                class="flex min-h-11 items-center justify-center rounded-xl bg-[#5200FF] px-3 py-2.5 text-center text-sm font-bold text-white transition hover:bg-[#3F00C7] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                             >
                                 Ver ficha
                             </Link>
@@ -599,7 +599,7 @@ const formatDate = (date: string | null): string => {
                                 :href="
                                     `/games/${game.id}/edit`
                                 "
-                                class="rounded-xl border border-zinc-300 px-4 py-2.5 text-center text-sm font-bold dark:border-zinc-700"
+                                class="flex min-h-11 items-center justify-center rounded-xl border border-zinc-300 px-3 py-2.5 text-center text-sm font-bold transition hover:border-[#5200FF] hover:text-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-[#CCFF00] dark:hover:text-[#CCFF00]"
                             >
                                 Editar
                             </Link>
