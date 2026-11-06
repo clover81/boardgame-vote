@@ -541,6 +541,11 @@ class GameController extends Controller
         $playerCount = $request->integer('players') ?: null;
 
         $gameMode = (string) $request->query('mode', '');
+        $requestedSort = $request->query('sort', 'name');
+        $allowedSorts = ['name', 'name_desc', 'recent', 'most_played'];
+        $sort = is_string($requestedSort) && in_array($requestedSort, $allowedSorts, true)
+            ? $requestedSort
+            : 'name';
 
         $allowedModes = [
             'competitive',
@@ -596,7 +601,11 @@ class GameController extends Controller
                     ->where('created_by', $userId),
             ], 'played_at')
             ->withCasts(['last_played_at' => 'date'])
-            ->orderBy('name')
+            ->when($sort === 'recent', fn ($query) => $query
+                ->orderByDesc('last_played_at'))
+            ->when($sort === 'most_played', fn ($query) => $query
+                ->orderByDesc('total_plays'))
+            ->orderBy('name', $sort === 'name_desc' ? 'desc' : 'asc')
             ->get()
             ->map(fn (Game $game) => [
                 'id' => $game->id,
@@ -641,6 +650,7 @@ class GameController extends Controller
                 'q' => $search,
                 'players' => $playerCount,
                 'mode' => $gameMode,
+                'sort' => $sort,
             ],
         ]);
     }

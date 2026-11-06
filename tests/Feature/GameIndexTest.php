@@ -74,7 +74,7 @@ test('game summaries count only the signed in users plays and agree with the gam
             ])
             ->has('collections', 2)
             ->where('selected_collection_id', null)
-            ->where('filters', ['mode' => '', 'players' => null, 'q' => ''])
+            ->where('filters', ['mode' => '', 'players' => null, 'q' => '', 'sort' => 'name'])
         );
 
     $this->get(route('games.show', $this->castle))
@@ -143,7 +143,7 @@ test('collection name and player filters combine', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->has('games', 1)
             ->where('games.0.id', $this->castle->id)
-            ->where('filters', ['mode' => '', 'players' => 4, 'q' => 'Castle'])
+            ->where('filters', ['mode' => '', 'players' => 4, 'q' => 'Castle', 'sort' => 'name'])
         );
 });
 
@@ -153,5 +153,80 @@ test('users with no collections see no games', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->has('games', 0)
             ->has('collections', 0)
+        );
+});
+
+test('games can be sorted by name descending', function () {
+    $this->actingAs($this->user)->get(route('games.index', ['sort' => 'name_desc']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('games', fn ($games) => $games->pluck('name')->all() === [
+                'The White Castle', 'Sky Team', 'Heat',
+            ])
+            ->where('filters.sort', 'name_desc')
+        );
+});
+
+test('recently played sorting uses the signed in users history and puts unplayed games last', function () {
+    foreach ([
+        [$this->user, $this->castle, '2026-10-02'],
+        [$this->user, $this->heat, '2026-10-20'],
+        [$this->otherUser, $this->sky, '2026-11-01'],
+    ] as [$user, $game, $date]) {
+        Play::create([
+            'created_by' => $user->id,
+            'game_id' => $game->id,
+            'played_at' => $date,
+        ]);
+    }
+
+    $this->actingAs($this->user)->get(route('games.index', [
+        'sort' => 'recent',
+        'players' => 2,
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('games', fn ($games) => $games->pluck('name')->all() === [
+                'Heat', 'The White Castle', 'Sky Team',
+            ])
+            ->where('filters.sort', 'recent')
+            ->where('filters.players', 2)
+        );
+});
+
+test('most played sorting counts only the signed in users plays', function () {
+    foreach ([
+        [$this->user, $this->castle],
+        [$this->user, $this->castle],
+        [$this->user, $this->heat],
+        [$this->otherUser, $this->sky],
+        [$this->otherUser, $this->sky],
+        [$this->otherUser, $this->sky],
+    ] as [$user, $game]) {
+        Play::create([
+            'created_by' => $user->id,
+            'game_id' => $game->id,
+            'played_at' => '2026-10-20',
+        ]);
+    }
+
+    $this->actingAs($this->user)->get(route('games.index', ['sort' => 'most_played']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('games', fn ($games) => $games->pluck('name')->all() === [
+                'The White Castle', 'Heat', 'Sky Team',
+            ])
+            ->where('filters.sort', 'most_played')
+        );
+});
+
+test('invalid sorting options fall back to alphabetical ordering', function () {
+    $this->actingAs($this->user)->get(route('games.index', ['sort' => 'invalid']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('games', fn ($games) => $games->pluck('name')->all() === [
+                'Heat', 'Sky Team', 'The White Castle',
+            ])
+            ->where('filters.sort', 'name')
         );
 });

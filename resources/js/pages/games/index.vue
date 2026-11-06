@@ -60,6 +60,7 @@ const props = defineProps<{
         q: string;
         players: number | null;
         mode: string;
+        sort: string;
     };
 }>();
 
@@ -73,6 +74,7 @@ const search = ref(props.filters.q);
 // En móvil, los filtros secundarios se pueden plegar para ver los juegos antes.
 const showMobileFilters = ref(Boolean(props.filters.players || props.filters.mode));
 const gameMode = ref(props.filters.mode ?? '');
+const sortOrder = ref(props.filters.sort ?? 'name');
 const playerCount = ref<number | ''>(props.filters.players ?? '');
 const selectedCollectionId = ref(props.selected_collection_id);
 
@@ -90,6 +92,7 @@ const applyFilters = () => {
         q: search.value.trim() || undefined,
         players: Number(playerCount.value) || undefined,
         mode: gameMode.value || undefined,
+        sort: sortOrder.value === 'name' ? undefined : sortOrder.value,
     }, {
         preserveScroll: true,
     });
@@ -329,14 +332,33 @@ const formatDate = (date: string | null): string => {
                         <strong class="text-zinc-900 dark:text-zinc-100">{{ games.length }}</strong>
                         {{ games.length === 1 ? 'juego' : 'juegos' }}
                     </p>
-                    <button
-                        v-if="hasActiveFilters"
-                        type="button"
-                        class="text-sm font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
-                        @click="clearFilters"
-                    >
-                        Limpiar filtros
-                    </button>
+                    <div class="flex w-full flex-wrap items-center gap-3 sm:w-auto sm:justify-end">
+                        <label
+                            for="game-sort"
+                            class="shrink-0 text-sm font-bold text-zinc-700 dark:text-zinc-300"
+                        >
+                            Ordenar por
+                        </label>
+                        <select
+                            id="game-sort"
+                            v-model="sortOrder"
+                            class="min-w-0 flex-1 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 sm:flex-none"
+                            @change="applyFilters"
+                        >
+                            <option value="name">Nombre (A–Z)</option>
+                            <option value="name_desc">Nombre (Z–A)</option>
+                            <option value="recent">Últimos jugados</option>
+                            <option value="most_played">Más jugados</option>
+                        </select>
+                        <button
+                            v-if="hasActiveFilters"
+                            type="button"
+                            class="text-sm font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
+                            @click="clearFilters"
+                        >
+                            Limpiar filtros
+                        </button>
+                    </div>
                 </div>
             </form>
 
