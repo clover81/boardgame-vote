@@ -10,6 +10,7 @@ import {
 } from '@inertiajs/vue3';
 
 import AppLayout from '@/layouts/AppLayout.vue';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 import {
     Dialog,
     DialogContent,
@@ -667,12 +668,12 @@ const formatGameMode = (
                             <!-- IMAGEN -->
                             <div
                                 v-if="expansion.image_url && !brokenExpansionIds.includes(expansion.id)"
-                                class="aspect-video bg-zinc-100 dark:bg-zinc-900"
+                                class="flex aspect-[4/3] items-center justify-center bg-zinc-100 p-3 dark:bg-zinc-900"
                             >
                                 <img
                                     :src="expansion.image_url"
                                     :alt="expansion.name"
-                                    class="h-full w-full object-cover"
+                                    class="h-full w-full object-contain"
                                     @error="markExpansionAsBroken(expansion.id)"
                                 />
                             </div>
@@ -680,7 +681,7 @@ const formatGameMode = (
                             <!-- PORTADA ALTERNATIVA -->
                             <div
                                 v-else
-                                class="flex aspect-video flex-col items-center justify-center gap-2 bg-zinc-100 text-zinc-400 dark:bg-zinc-900"
+                                class="flex aspect-[4/3] flex-col items-center justify-center gap-2 bg-zinc-100 text-zinc-400 dark:bg-zinc-900"
                             >
                                 <span class="text-4xl">🧩</span>
                                 <span class="text-sm font-medium">
@@ -1221,6 +1222,7 @@ const formatGameMode = (
                     </div>
                 </template>
             </section>
+            <ScrollToTopProgress />
         </div>
         <Dialog v-model:open="deleteExpansionDialogOpen">
             <DialogContent class="sm:max-w-md">
