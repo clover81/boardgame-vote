@@ -1147,62 +1147,49 @@ watch(
                 <article
                     v-for="collection in collections"
                     :key="collection.id"
-                    class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-6"
+                    class="group rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/30 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-violet-500 sm:p-6"
                 >
                     <div
                         class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"
                     >
                         <!-- INFO -->
 
-                        <div>
-                            <div
-                                class="flex flex-wrap items-center gap-3"
+                        <div class="flex min-w-0 items-start gap-3">
+                            <span
+                                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-xl shadow-sm transition-colors duration-200 group-hover:bg-violet-200 dark:bg-violet-950/60 dark:group-hover:bg-violet-900/70"
+                                aria-hidden="true"
                             >
-                                <h2
-                                    class="text-xl font-bold text-zinc-900 dark:text-zinc-100"
-                                >
-                                    {{
-                                        collection.name
-                                    }}
-                                </h2>
-
-                                <span
-                                    v-if="
-                                        collection.is_default
-                                    "
-                                    class="rounded-full bg-[#CCFF00] px-3 py-1 text-xs font-bold text-black"
-                                >
-                                    Predeterminada
-                                </span>
+                                🗂️
+                            </span>
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <h2 class="min-w-0 break-words text-xl font-bold text-zinc-900 dark:text-zinc-100">
+                                        {{ collection.name }}
+                                    </h2>
+                                    <span
+                                        v-if="collection.is_default"
+                                        class="rounded-full bg-[#CCFF00] px-3 py-1 text-xs font-bold text-black"
+                                    >
+                                        Predeterminada
+                                    </span>
+                                </div>
+                                <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                                    🎲 {{ collection.games_count }}
+                                    {{ collection.games_count === 1 ? 'juego' : 'juegos' }}
+                                </p>
                             </div>
-
-                            <p
-                                class="mt-2 text-sm text-zinc-500 dark:text-zinc-400"
-                            >
-                                🎲
-                                {{
-                                    collection.games_count
-                                }}
-
-                                {{
-                                    collection.games_count ===
-                                    1
-                                        ? 'juego'
-                                        : 'juegos'
-                                }}
-                            </p>
                         </div>
 
                         <!-- ACCIONES -->
 
                         <div
-                            class="flex flex-wrap gap-3"
+                            class="flex flex-wrap gap-2 sm:justify-end"
                         >
                             <!-- VER -->
 
                             <Link
                                 :href="`/games?collection_id=${collection.id}`"
-                                class="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:border-[#5200FF] hover:text-[#5200FF] dark:border-zinc-700 dark:text-zinc-200"
+                                class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#5200FF] px-4 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#4000cc] hover:shadow-md hover:shadow-violet-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                             >
                                 Ver juegos
                             </Link>
@@ -1214,7 +1201,7 @@ watch(
                                     !collection.is_default
                                 "
                                 type="button"
-                                class="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:border-[#5200FF] hover:text-[#5200FF] dark:border-zinc-700 dark:text-zinc-200"
+                                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition-colors hover:border-[#5200FF] hover:text-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-zinc-700 dark:text-zinc-200"
                                 @click="
                                     makeDefault(
                                         collection
@@ -1228,7 +1215,7 @@ watch(
 
                             <button
                                 type="button"
-                                class="rounded-xl border px-4 py-2 text-sm font-semibold transition"
+                                class="inline-flex min-h-11 items-center justify-center rounded-xl border px-4 py-2 text-center text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                                 :class="collection.is_public
                                     ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
                                     : 'border-zinc-300 text-zinc-600 hover:border-[#5200FF] hover:text-[#5200FF] dark:border-zinc-700 dark:text-zinc-300'"
@@ -1247,7 +1234,7 @@ watch(
                                     !collection.is_default
                                 "
                                 type="button"
-                                class="rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30"
+                                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30"
                                 @click="
                                     deleteCollection(
                                         collection
