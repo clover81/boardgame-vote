@@ -8,6 +8,7 @@ import {
 } from '@inertiajs/vue3';
 
 import AppLayout from '@/layouts/AppLayout.vue';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 import {
     Dialog,
     DialogContent,
@@ -158,6 +159,15 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
+
+// Si BGG no sirve una imagen, mostramos la alternativa sin iconos rotos.
+const failedGameImageIds = ref<number[]>([]);
+
+const markGameImageFailed = (gameId: number) => {
+    if (!failedGameImageIds.value.includes(gameId)) {
+        failedGameImageIds.value.push(gameId);
+    }
+};
 
 const pollError = computed(() => {
     const errors = page.props.errors as Record<string, string>;
@@ -702,16 +712,17 @@ const modeLabel = (
                     <article
                         v-for="candidate in poll.candidates"
                         :key="candidate.id"
-                        class="overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
+                        class="group overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/30 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-violet-500"
                     >
                         <!-- PORTADA -->
 
                         <div
                             v-if="
                                 candidate.game
-                                    .image_url
+                                    .image_url &&
+                                !failedGameImageIds.includes(candidate.game.id)
                             "
-                            class="aspect-[4/3] bg-zinc-100 dark:bg-zinc-900"
+                            class="flex aspect-[4/3] items-center justify-center bg-zinc-100 p-3 dark:bg-zinc-900"
                         >
                             <img
                                 :src="
@@ -722,25 +733,28 @@ const modeLabel = (
                                     candidate.game
                                         .name
                                 "
-                                class="h-full w-full object-cover"
+                                class="h-full w-full object-contain transition-transform duration-300 motion-safe:group-hover:scale-[1.03]"
+                                loading="lazy"
+                                @error="markGameImageFailed(candidate.game.id)"
                             />
                         </div>
 
                         <div
                             v-else
-                            class="flex aspect-[4/3] items-center justify-center bg-zinc-100 text-zinc-400 dark:bg-zinc-900 dark:text-zinc-500"
+                            class="flex aspect-[4/3] flex-col items-center justify-center gap-2 bg-zinc-100 text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400"
                         >
-                            Sin portada
+                            <span class="text-3xl" aria-hidden="true">🎲</span>
+                            <span class="text-sm font-medium">Sin portada</span>
                         </div>
 
                         <div class="p-5">
-                            <h3
-                                class="text-xl font-bold text-zinc-900 dark:text-zinc-100"
-                            >
-                                {{
-                                    candidate.game
-                                        .name
-                                }}
+                            <h3 class="text-xl font-bold">
+                                <Link
+                                    :href="`/games/${candidate.game.id}`"
+                                    class="rounded text-zinc-900 transition-colors hover:text-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-zinc-100 dark:hover:text-violet-300"
+                                >
+                                    {{ candidate.game.name }}
+                                </Link>
                             </h3>
 
                             <!-- IDEALES -->
@@ -965,7 +979,7 @@ const modeLabel = (
                         :key="
                             result.candidate_id
                         "
-                        class="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center dark:border-zinc-800 dark:bg-zinc-950"
+                        class="group flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/30 sm:flex-row sm:items-center dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-violet-500"
                     >
                         <!-- POSICIÓN -->
 
@@ -1003,7 +1017,8 @@ const modeLabel = (
                         >
                             <img
                                 v-if="
-                                    result.game.image_url
+                                    result.game.image_url &&
+                                    !failedGameImageIds.includes(result.game.id)
                                 "
                                 :src="
                                     result.game.image_url
@@ -1011,26 +1026,30 @@ const modeLabel = (
                                 :alt="
                                     result.game.name
                                 "
-                                class="h-full w-full object-cover"
+                                class="h-full w-full object-contain p-1 transition-transform duration-300 motion-safe:group-hover:scale-[1.04]"
+                                loading="lazy"
+                                @error="markGameImageFailed(result.game.id)"
                             />
 
                             <div
                                 v-else
-                                class="flex h-full items-center justify-center text-xs text-zinc-400"
+                                class="flex h-full flex-col items-center justify-center gap-1 text-xs text-zinc-500 dark:text-zinc-400"
                             >
-                                Sin portada
+                                <span aria-hidden="true">🎲</span>
+                                <span>Sin portada</span>
                             </div>
                         </div>
 
                         <!-- INFO -->
 
                         <div class="flex-1">
-                            <h3
-                                class="text-lg font-bold text-zinc-900 dark:text-zinc-100"
-                            >
-                                {{
-                                    result.game.name
-                                }}
+                            <h3 class="text-lg font-bold">
+                                <Link
+                                    :href="`/games/${result.game.id}`"
+                                    class="rounded text-zinc-900 transition-colors hover:text-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-zinc-100 dark:hover:text-violet-300"
+                                >
+                                    {{ result.game.name }}
+                                </Link>
                             </h3>
 
                             <p
@@ -1159,6 +1178,7 @@ const modeLabel = (
                     </Link>
                 </div>
             </section>
+            <ScrollToTopProgress />
         </div>
         <Dialog v-model:open="closePollDialogOpen">
             <DialogContent class="sm:max-w-md">
