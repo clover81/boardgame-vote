@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
     computed,
+    ref,
     watch,
 } from 'vue';
 
@@ -123,6 +124,22 @@ const toggleGame = (gameId: number) => {
 
 const isGameSelected = (gameId: number) => {
     return form.game_ids.includes(gameId);
+};
+
+// Las portadas vienen de la lista de juegos, no de los candidatos.
+const gameById = computed(() =>
+    new Map(props.games.map((game) => [game.id, game]))
+);
+
+const brokenCoverIds = ref<number[]>([]);
+
+const coverFor = (gameId: number): string | null =>
+    gameById.value.get(gameId)?.image_url ?? null;
+
+const markCoverAsBroken = (gameId: number) => {
+    if (!brokenCoverIds.value.includes(gameId)) {
+        brokenCoverIds.value.push(gameId);
+    }
 };
 
 const candidateGameIds = computed(() =>
@@ -287,32 +304,56 @@ const submit = () => {
                                 v-for="candidate in candidates"
                                 :key="candidate.id"
                                 type="button"
-                                class="rounded-2xl border p-4 text-left transition disabled:cursor-not-allowed disabled:opacity-50"
+                                class="group flex min-w-0 items-center gap-3 rounded-2xl border-2 p-3 text-left shadow-sm transition-[transform,border-color,box-shadow,background-color] duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-400/40 motion-reduce:transform-none motion-reduce:transition-none enabled:hover:-translate-y-0.5 enabled:hover:border-violet-500 enabled:hover:shadow-[0_12px_26px_rgba(82,0,255,0.14)] disabled:cursor-not-allowed disabled:opacity-50 sm:gap-4 sm:p-4"
                                 :class="isGameSelected(candidate.game.id)
-                                    ? 'border-[#5200FF] bg-violet-50 ring-2 ring-[#5200FF] dark:bg-violet-950/30'
+                                    ? 'border-[#5200FF] bg-violet-50 ring-2 ring-[#5200FF]/30 dark:bg-violet-950/30'
                                     : 'border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900'"
                                 :aria-pressed="isGameSelected(candidate.game.id)"
                                 :disabled="!games.some((game) => game.id === candidate.game.id)"
                                 @click="toggleGame(candidate.game.id)"
                             >
-                                <p class="font-black text-zinc-900 dark:text-zinc-100">
-                                    <span v-if="isGameSelected(candidate.game.id)" aria-hidden="true">✓ </span>
-                                    {{ candidate.game.name }}
-                                </p>
-
-                                <p
-                                    v-if="!games.some((game) => game.id === candidate.game.id)"
-                                    class="mt-1 text-sm text-zinc-500 dark:text-zinc-400"
+                                <span
+                                    class="flex h-24 w-[4.75rem] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 p-1.5 dark:bg-zinc-800 sm:h-28 sm:w-20"
                                 >
-                                    Este juego está inactivo o ya no pertenece a tus colecciones.
-                                </p>
+                                    <img
+                                        v-if="coverFor(candidate.game.id) && !brokenCoverIds.includes(candidate.game.id)"
+                                        :src="coverFor(candidate.game.id) ?? undefined"
+                                        :alt="`Portada de ${candidate.game.name}`"
+                                        loading="lazy"
+                                        class="h-full w-full object-contain transition-transform duration-200 group-hover:scale-105 motion-reduce:transition-none"
+                                        @error="markCoverAsBroken(candidate.game.id)"
+                                    />
+                                    <span v-else class="text-center text-xs text-zinc-500 dark:text-zinc-400">
+                                        🎲 Sin portada
+                                    </span>
+                                </span>
 
-                                <p
-                                    v-if="candidate.planned_expansion_id"
-                                    class="mt-1 text-sm font-semibold text-[#5200FF] dark:text-violet-300"
-                                >
-                                    🧩 Expansión prevista
-                                </p>
+                                <span class="min-w-0 flex-1">
+                                    <span class="block break-words font-black leading-snug text-zinc-900 dark:text-zinc-100">
+                                        {{ candidate.game.name }}
+                                    </span>
+
+                                    <span
+                                        v-if="isGameSelected(candidate.game.id)"
+                                        class="mt-2 inline-flex rounded-full bg-[#5200FF] px-2.5 py-1 text-xs font-bold text-white"
+                                    >
+                                        ✓ Seleccionado
+                                    </span>
+
+                                    <span
+                                        v-if="!games.some((game) => game.id === candidate.game.id)"
+                                        class="mt-2 block text-sm text-zinc-500 dark:text-zinc-400"
+                                    >
+                                        Este juego está inactivo o ya no pertenece a tus colecciones.
+                                    </span>
+
+                                    <span
+                                        v-if="candidate.planned_expansion_id"
+                                        class="mt-2 block text-sm font-semibold text-[#5200FF] dark:text-violet-300"
+                                    >
+                                        🧩 Expansión prevista
+                                    </span>
+                                </span>
                             </button>
                         </div>
 
@@ -476,7 +517,7 @@ const submit = () => {
                             />
 
                             <div
-                                class="rounded-xl border border-zinc-200 p-4 font-semibold transition peer-checked:border-[#5200FF] peer-checked:bg-[#5200FF] peer-checked:text-white dark:border-zinc-800"
+                                class="rounded-xl border-2 border-zinc-200 p-4 font-semibold transition-[transform,border-color,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-[0_8px_20px_rgba(82,0,255,0.10)] peer-focus-visible:ring-4 peer-focus-visible:ring-violet-400/40 peer-checked:border-[#5200FF] peer-checked:bg-[#5200FF] peer-checked:text-white motion-reduce:transform-none motion-reduce:transition-none dark:border-zinc-800"
                             >
                                 {{
                                     participant.name
@@ -522,7 +563,7 @@ const submit = () => {
                         form.game_ids.length === 0 ||
                         form.player_ids.length === 0
                     "
-                    class="w-full rounded-2xl bg-[#5200FF] px-6 py-4 text-lg font-black text-white transition hover:opacity-90 disabled:opacity-40"
+                    class="w-full rounded-2xl bg-[#5200FF] px-6 py-4 text-lg font-black text-white shadow-[0_12px_28px_rgba(82,0,255,0.18)] transition-[background-color,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-[#4100cc] hover:shadow-[0_14px_32px_rgba(82,0,255,0.28)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-400/40 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none"
                 >
                     {{
                         form.processing
