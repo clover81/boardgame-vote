@@ -263,3 +263,104 @@ test('a guest cannot create a manual expansion', function () {
 
     $this->assertDatabaseCount('expansions', 1);
 });
+
+
+test('a shared game prevents global expansion deletion and preserves foreign history', function () {
+    $otherUser = User::factory()->create();
+    $otherCollection = GameCollection::create([
+        'created_by' => $otherUser->id,
+        'name' => 'Colección de otra persona',
+    ]);
+    $this->game->collections()->attach($otherCollection);
+    $play = Play::create([
+        'created_by' => $otherUser->id,
+        'game_id' => $this->game->id,
+        'expansion_id' => $this->expansion->id,
+        'played_at' => '2026-11-01',
+    ]);
+    $poll = Poll::create([
+        'created_by' => $otherUser->id,
+        'name' => 'Votación ajena',
+        'token' => 'SHAREDEXPANSION',
+        'status' => 'closed',
+    ]);
+    $candidate = $poll->candidates()->create([
+        'game_id' => $this->game->id,
+        'expansion_id' => $this->expansion->id,
+    ]);
+    $participant = $poll->participants()->create(['display_name' => 'Ana']);
+    $vote = $participant->votes()->create([
+        'poll_id' => $poll->id,
+        'poll_candidate_id' => $candidate->id,
+        'position' => 1,
+    ]);
+
+    $this->actingAs($this->user)->delete($this->deleteUrl)
+        ->assertRedirect($this->editUrl)
+        ->assertSessionHas('error', 'No se ha eliminado la expansión: otra cuenta la utiliza en su colección.');
+
+    $this->assertDatabaseHas('expansions', ['id' => $this->expansion->id]);
+    $this->assertDatabaseHas('plays', ['id' => $play->id, 'expansion_id' => $this->expansion->id]);
+    $this->assertDatabaseHas('poll_candidates', ['id' => $candidate->id, 'expansion_id' => $this->expansion->id]);
+    $this->assertDatabaseHas('votes', ['id' => $vote->id, 'poll_candidate_id' => $candidate->id]);
+    $this->assertDatabaseHas('game_collection_game', [
+        'game_id' => $this->game->id,
+        'game_collection_id' => $otherCollection->id,
+    ]);
+});
+
+test('a BGG expansion linked to another users collection cannot be deleted globally', function () {
+    $otherCollection = GameCollection::create([
+        'created_by' => User::factory()->create()->id,
+        'name' => 'BGG de otra persona',
+    ]);
+    $otherCollection->expansions()->attach($this->expansion);
+
+    $this->actingAs($this->user)->delete($this->deleteUrl)
+        ->assertRedirect($this->editUrl)
+        ->assertSessionHas('error', 'No se ha eliminado la expansión: otra cuenta la utiliza en su colección.');
+
+    $this->assertDatabaseHas('expansions', ['id' => $this->expansion->id]);
+    $this->assertDatabaseHas('game_collection_expansion', [
+        'game_collection_id' => $otherCollection->id,
+        'expansion_id' => $this->expansion->id,
+    ]);
+});
+
+test('a historical play from another account prevents expansion deletion even if the game is no longer shared', function () {
+    $otherUser = User::factory()->create();
+    $play = Play::create([
+        'created_by' => $otherUser->id,
+        'game_id' => $this->game->id,
+        'expansion_id' => $this->expansion->id,
+        'played_at' => '2026-11-01',
+    ]);
+
+    $this->actingAs($this->user)->delete($this->deleteUrl)
+        ->assertRedirect($this->editUrl)
+        ->assertSessionHas('error', 'No se ha eliminado la expansión: figura en partidas o votaciones de otra cuenta.');
+
+    $this->assertDatabaseHas('expansions', ['id' => $this->expansion->id]);
+    $this->assertDatabaseHas('plays', ['id' => $play->id, 'expansion_id' => $this->expansion->id]);
+});
+
+test('a historical poll from another account prevents expansion deletion even if the game is no longer shared', function () {
+    $otherUser = User::factory()->create();
+    $poll = Poll::create([
+        'created_by' => $otherUser->id,
+        'name' => 'Votación ajena',
+        'token' => 'HISTORICALPOLL',
+        'status' => 'closed',
+    ]);
+    $candidate = $poll->candidates()->create([
+        'game_id' => $this->game->id,
+        'expansion_id' => $this->expansion->id,
+    ]);
+
+    $this->actingAs($this->user)->delete($this->deleteUrl)
+        ->assertRedirect($this->editUrl)
+        ->assertSessionHas('error', 'No se ha eliminado la expansión: figura en partidas o votaciones de otra cuenta.');
+
+    $this->assertDatabaseHas('expansions', ['id' => $this->expansion->id]);
+    $this->assertDatabaseHas('poll_candidates', ['id' => $candidate->id, 'expansion_id' => $this->expansion->id]);
+});

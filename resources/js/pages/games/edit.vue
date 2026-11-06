@@ -1151,7 +1151,7 @@ const confirmDeleteGame = () => {
                         <strong class="font-bold text-foreground">
                             {{ expansionToDelete?.name }}
                         </strong>
-                        de tu colección.
+                        del catálogo del juego en todas tus colecciones.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -1163,7 +1163,8 @@ const confirmDeleteGame = () => {
                     </p>
 
                     <p class="mt-2">
-                        Las partidas registradas se conservarán.
+                        Las partidas se conservarán, pero dejarán de indicar esta expansión.
+                        Si otra cuenta la utiliza, el borrado se bloqueará.
                     </p>
                 </div>
 

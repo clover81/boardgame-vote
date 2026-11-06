@@ -107,42 +107,69 @@ class ExpansionController extends Controller
             404
         );
 
-        DB::transaction(function () use ($expansion) {
+        // Las expansiones son globales. No podemos borrar referencias de otras cuentas.
+        // La comprobación y la eliminación se hacen dentro de una sola transacción.
+        $blockedReason = DB::transaction(function () use ($request, $game, $expansion): ?string {
+            $current = Expansion::query()->lockForUpdate()->findOrFail($expansion->id);
+            $userId = (int) $request->user()->id;
 
-            /*
-             * Conservamos las partidas.
-             * Simplemente dejan de indicar
-             * esta expansión.
-             */
+            $sharedGame = DB::table('game_collection_game as gcg')
+                ->join('game_collections as gc', 'gc.id', '=', 'gcg.game_collection_id')
+                ->where('gcg.game_id', $game->id)
+                ->where('gc.created_by', '<>', $userId)
+                ->exists();
+
+            $sharedExpansion = DB::table('game_collection_expansion as gce')
+                ->join('game_collections as gc', 'gc.id', '=', 'gce.game_collection_id')
+                ->where('gce.expansion_id', $current->id)
+                ->where('gc.created_by', '<>', $userId)
+                ->exists();
+
+            if ($sharedGame || $sharedExpansion) {
+                return 'No se ha eliminado la expansión: otra cuenta la utiliza en su colección.';
+            }
+
+            $foreignPlays = DB::table('plays')
+                ->where('expansion_id', $current->id)
+                ->where(function ($query) use ($userId) {
+                    $query->where('created_by', '<>', $userId)
+                        ->orWhereNull('created_by');
+                })
+                ->exists();
+
+            $foreignPolls = DB::table('poll_candidates as pc')
+                ->join('polls as p', 'p.id', '=', 'pc.poll_id')
+                ->where('pc.expansion_id', $current->id)
+                ->where(function ($query) use ($userId) {
+                    $query->where('p.created_by', '<>', $userId)
+                        ->orWhereNull('p.created_by');
+                })
+                ->exists();
+
+            if ($foreignPlays || $foreignPolls) {
+                return 'No se ha eliminado la expansión: figura en partidas o votaciones de otra cuenta.';
+            }
+
+            // Si no hay referencias ajenas, se conserva el historial de esta cuenta.
             DB::table('plays')
-                ->where(
-                    'expansion_id',
-                    $expansion->id
-                )
-                ->update([
-                    'expansion_id' => null,
-                ]);
+                ->where('expansion_id', $current->id)
+                ->update(['expansion_id' => null]);
 
-            /*
-             * Lo mismo para votaciones
-             * antiguas.
-             */
             DB::table('poll_candidates')
-                ->where(
-                    'expansion_id',
-                    $expansion->id
-                )
-                ->update([
-                    'expansion_id' => null,
-                ]);
+                ->where('expansion_id', $current->id)
+                ->update(['expansion_id' => null]);
 
-            $expansion->delete();
+            $current->delete();
+
+            return null;
         });
 
-        return back()->with(
-            'success',
-            'Expansión eliminada.'
-        );
+        if ($blockedReason !== null) {
+            // Flash global: visible desde la ficha y desde la página de edición.
+            return back()->with('error', $blockedReason);
+        }
+
+        return back()->with('success', 'Expansión eliminada.');
     }
 
     private function authorizeGame(
