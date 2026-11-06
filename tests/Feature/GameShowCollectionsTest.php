@@ -15,6 +15,7 @@ test('the game page shows only its current users collections in the requested or
     $user = User::factory()->create();
     $game = Game::create([
         'name' => 'The White Castle',
+        'bgg_id' => 112233,
         'min_players' => 1,
         'max_players' => 4,
         'game_mode' => 'competitive',
@@ -41,6 +42,7 @@ test('the game page shows only its current users collections in the requested or
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('games/show')
+            ->where('game.bgg_id', 112233)
             ->where('collections', [
                 ['id' => $collections[2]->id, 'name' => 'Alfa', 'is_default' => false],
                 ['id' => $collections[1]->id, 'name' => 'Principal', 'is_default' => true],

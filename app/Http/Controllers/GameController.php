@@ -55,6 +55,9 @@ class GameController extends Controller
                     'id' =>
                     $game->id,
 
+                    'bgg_id' =>
+                    $game->bgg_id,
+
                     'name' =>
                     $game->name,
 

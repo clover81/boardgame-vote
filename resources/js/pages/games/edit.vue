@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import GameCollectionsField from '@/components/GameCollectionsField.vue';
+import BggExpansionsImporter from '@/components/BggExpansionsImporter.vue';
 import InputError from '@/components/InputError.vue';
 import {
     Dialog,
@@ -28,19 +29,6 @@ interface Expansion {
     youtube_url: string | null;
     notes: string | null;
     is_active: boolean;
-}
-
-interface BggExpansion {
-    bgg_id: number;
-    name: string;
-
-    year_published: number | null;
-    image_url: string | null;
-    thumbnail_url: string | null;
-
-    bgg_url: string;
-
-    already_imported: boolean;
 }
 
 interface BggSearchResult {
@@ -162,8 +150,7 @@ const searchBgg = async () => {
 const linkWithBgg = (result: BggSearchResult) => {
     if (
         bggLinkingId.value !== null || form.processing || deleting.value ||
-        removingCollectionId.value !== null || importingExpansionId.value !== null ||
-        bggExpansionsLoading.value
+        removingCollectionId.value !== null
     ) {
         return;
     }
@@ -183,9 +170,6 @@ const linkWithBgg = (result: BggSearchResult) => {
             form.min_playtime ??= props.game.min_playtime;
             form.max_playtime ??= props.game.max_playtime;
             form.complexity ??= props.game.complexity !== null ? Number(props.game.complexity) : null;
-            bggExpansions.value = [];
-            bggExpansionsLoaded.value = false;
-            bggExpansionsError.value = '';
         },
         onError: (errors) => {
             bggError.value = String(errors.bgg_link ?? 'No se ha podido vincular el juego.');
@@ -266,83 +250,6 @@ const confirmDeleteExpansion = () => {
                 deletingExpansion.value = false;
             },
         },
-    );
-};
-
-const bggExpansions = ref<BggExpansion[]>([]);
-const bggExpansionsLoading = ref(false);
-const bggExpansionsError = ref('');
-const bggExpansionsLoaded = ref(false);
-const importingExpansionId = ref<number | null>(null);
-
-const loadBggExpansions = async () => {
-    if (!props.game.bgg_id) {
-        bggExpansionsError.value = 'Este juego todavía no está vinculado con BoardGameGeek.';
-        return;
-    }
-
-    bggExpansionsLoading.value = true;
-    bggExpansionsError.value = '';
-
-    try {
-        const response = await fetch(
-            `/games/${props.game.id}/bgg-expansions`,
-            {
-                headers: {
-                    Accept: 'application/json',
-                },
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            bggExpansions.value = [];
-            bggExpansionsError.value =
-                data?.message ?? 'No se han podido consultar las expansiones.';
-            return;
-        }
-
-        bggExpansions.value = data.expansions ?? [];
-        bggExpansionsLoaded.value = true;
-    } catch {
-        bggExpansions.value = [];
-        bggExpansionsError.value =
-            'No se ha podido conectar con BoardGameGeek.';
-    } finally {
-        bggExpansionsLoading.value = false;
-    }
-};
-
-const importBggExpansion = (expansion: BggExpansion) => {
-    if (
-        expansion.already_imported ||
-        importingExpansionId.value !== null ||
-        bggExpansionsLoading.value
-    ) {
-        return;
-    }
-
-    importingExpansionId.value = expansion.bgg_id;
-    bggExpansionsError.value = '';
-
-    router.post(
-        `/games/${props.game.id}/bgg-expansions/${expansion.bgg_id}`,
-        {},
-        {
-            preserveScroll: true,
-            onSuccess: () => {
-                expansion.already_imported = true;
-            },
-            onError: (errors) => {
-                bggExpansionsError.value = String(
-                    errors.bgg_expansion ?? 'No se ha podido importar la expansión.'
-                );
-            },
-            onFinish: () => {
-                importingExpansionId.value = null;
-            },
-        }
     );
 };
 
@@ -518,7 +425,7 @@ const confirmDeleteGame = () => {
                             </div>
                             <button
                                 type="button"
-                                :disabled="bggLinkingId !== null || form.processing || deleting || removingCollectionId !== null || importingExpansionId !== null || bggExpansionsLoading"
+                                :disabled="bggLinkingId !== null || form.processing || deleting || removingCollectionId !== null"
                                 class="shrink-0 rounded-xl bg-[#CCFF00] px-4 py-2.5 font-black text-black disabled:cursor-not-allowed disabled:opacity-40"
                                 @click="linkWithBgg(result)"
                             >
@@ -760,146 +667,12 @@ const confirmDeleteGame = () => {
                 </button>
             </form>
 
-            <section
-                class="mt-10 rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6 dark:border-zinc-800 dark:bg-zinc-950"
-            >
-                <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                        <p class="text-xs font-black uppercase tracking-wider text-[#5200FF] dark:text-[#CCFF00]">
-                            BOARDGAMEGEEK
-                        </p>
-
-                        <h2 class="mt-1 text-xl font-black">
-                            Expansiones
-                        </h2>
-
-                        <p class="mt-2 max-w-2xl text-sm text-zinc-500 dark:text-zinc-400">
-                            Busca las expansiones vinculadas a este juego en
-                            BoardGameGeek y añádelas a tu colección.
-                        </p>
-                    </div>
-
-                    <button
-                        v-if="game.bgg_id"
-                        type="button"
-                        :disabled="bggExpansionsLoading || importingExpansionId !== null || bggLinkingId !== null"
-                        class="shrink-0 rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                        @click="loadBggExpansions"
-                    >
-                        {{ bggExpansionsLoading
-                            ? 'Buscando...'
-                            : bggExpansionsLoaded
-                              ? 'Actualizar'
-                              : 'Buscar expansiones' }}
-                    </button>
-                </div>
-
-                <!-- SIN BGG -->
-
-                <div
-                    v-if="!game.bgg_id"
-                    class="mt-5 rounded-xl bg-zinc-100 p-4 text-sm text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300"
-                >
-                    Este juego todavía no está
-                    vinculado con BoardGameGeek.
-                </div>
-
-                <!-- ERROR -->
-
-                <div
-                    v-if="bggExpansionsError"
-                    role="alert"
-                    class="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-600 dark:border-red-900 dark:bg-red-950/20 dark:text-red-300"
-                >
-                    {{ bggExpansionsError }}
-                </div>
-
-                <!-- SIN RESULTADOS -->
-
-                <div
-                    v-if="bggExpansionsLoaded && !bggExpansionsLoading && !bggExpansions.length && !bggExpansionsError"
-                    class="mt-5 rounded-xl border border-dashed border-zinc-300 p-7 text-center dark:border-zinc-700"
-                >
-                    <p class="font-bold">No se han encontrado expansiones</p>
-                    <p class="mt-1 text-sm text-zinc-500">
-                        BoardGameGeek no muestra expansiones vinculadas a este juego.
-                    </p>
-                </div>
-
-                <!-- RESULTADOS -->
-
-                <div
-                    v-if="bggExpansions.length"
-                    class="mt-6 grid gap-4 md:grid-cols-2"
-                >
-                    <article
-                        v-for="expansion in bggExpansions"
-                        :key="expansion.bgg_id"
-                        class="flex gap-4 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"
-                    >
-                        <!-- PORTADA -->
-
-                        <div class="h-32 w-24 shrink-0 overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-900">
-                            <img
-                                v-if="expansion.image_url"
-                                :src="expansion.image_url"
-                                :alt="expansion.name"
-                                class="h-full w-full object-contain p-1"
-                            />
-
-                            <div v-else class="flex h-full items-center justify-center text-3xl">
-                                🧩
-                            </div>
-                        </div>
-
-                        <!-- INFO -->
-
-                        <div class="min-w-0 flex-1">
-                            <h3 class="font-black leading-tight">
-                                {{ expansion.name }}
-                            </h3>
-
-                            <p class="mt-1 text-xs text-zinc-500">
-                                BGG #{{ expansion.bgg_id }}
-
-                                <template v-if="expansion.year_published">
-                                    · {{ expansion.year_published }}
-                                </template>
-                            </p>
-
-                            <a
-                                :href="expansion.bgg_url"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="mt-2 inline-block text-xs font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
-                            >
-                                Ver en BGG ↗
-                            </a>
-
-                            <div class="mt-4">
-                                <span
-                                    v-if="expansion.already_imported"
-                                    class="inline-flex rounded-lg bg-green-100 px-3 py-2 text-sm font-bold text-green-700 dark:bg-green-950/30 dark:text-green-300"
-                                >
-                                    ✓ Ya importada
-                                </span>
-
-                                <button
-                                    v-else
-                                    type="button"
-                                    :disabled="importingExpansionId !== null || bggExpansionsLoading || bggLinkingId !== null"
-                                    class="rounded-lg bg-[#CCFF00] px-4 py-2 text-sm font-black text-black transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
-                                    @click="importBggExpansion(expansion)"
-                                >
-                                    {{ importingExpansionId === expansion.bgg_id
-                                        ? 'Importando...'
-                                        : 'Importar expansión' }}
-                                </button>
-                            </div>
-                        </div>
-                    </article>
-                </div>
-            </section>
+            <BggExpansionsImporter
+                class="mt-10"
+                :game-id="game.id"
+                :bgg-id="game.bgg_id"
+                :disabled="bggLinkingId !== null"
+            />
 
             <section
                 class="mt-8 rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6 dark:border-zinc-800 dark:bg-zinc-950"

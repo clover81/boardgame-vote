@@ -10,6 +10,7 @@ import {
 } from '@inertiajs/vue3';
 
 import AppLayout from '@/layouts/AppLayout.vue';
+import BggExpansionsImporter from '@/components/BggExpansionsImporter.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 import {
     Dialog,
@@ -45,6 +46,7 @@ interface Expansion {
 
 interface Game {
     id: number;
+    bgg_id: number | null;
     name: string;
     image_url: string | null;
 
@@ -161,6 +163,8 @@ const detachCollection = (collection: Collection) => {
 | Nueva expansión
 |--------------------------------------------------------------------------
 */
+const manualExpansionOpen = ref(false);
+
 const expansionForm = useForm({
     name: '',
     image_url: '',
@@ -177,6 +181,7 @@ const submitExpansion = () => {
 
             onSuccess: () => {
                 expansionForm.reset();
+                manualExpansionOpen.value = false;
             },
         }
     );
@@ -646,6 +651,13 @@ const formatGameMode = (
                     </p>
                 </div>
 
+                <!-- Importación de BGG disponible sin entrar en Editar juego -->
+                <BggExpansionsImporter
+                    class="mt-6"
+                    :game-id="game.id"
+                    :bgg-id="game.bgg_id"
+                />
+
                 <!-- LISTADO -->
 
                 <div
@@ -887,11 +899,23 @@ const formatGameMode = (
                 <!-- AÑADIR EXPANSIÓN                              -->
                 <!-- ============================================== -->
 
+                <div class="mt-6">
+                    <button
+                        type="button"
+                        :aria-expanded="manualExpansionOpen"
+                        aria-controls="manual-expansion-form"
+                        class="rounded-xl border border-zinc-300 px-5 py-3 text-sm font-bold text-zinc-800 transition hover:border-[#5200FF] hover:text-[#5200FF] dark:border-zinc-700 dark:text-zinc-200 dark:hover:text-[#CCFF00]"
+                        @click="manualExpansionOpen = !manualExpansionOpen"
+                    >
+                        {{ manualExpansionOpen ? '− Ocultar formulario manual' : '+ Añadir manualmente' }}
+                    </button>
+                </div>
+
                 <form
-                    class="mt-8 rounded-2xl border bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950"
-                    @submit.prevent="
-                        submitExpansion
-                    "
+                    v-if="manualExpansionOpen"
+                    id="manual-expansion-form"
+                    class="mt-4 rounded-2xl border bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950"
+                    @submit.prevent="submitExpansion"
                 >
                     <h3
                         class="text-lg font-bold"

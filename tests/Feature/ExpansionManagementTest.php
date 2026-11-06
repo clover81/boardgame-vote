@@ -187,3 +187,79 @@ test('expansion actions require authentication', function ($method) {
 
     $this->assertDatabaseHas('expansions', ['id' => $this->expansion->id]);
 })->with(['patch', 'delete']);
+
+
+test('an owner can add a manual expansion without overriding its parent or BGG identifier', function () {
+    $data = [
+        'name' => 'Matcha manual',
+        'image_url' => 'https://example.com/manual.jpg',
+        'bgg_url' => 'https://boardgamegeek.com/boardgame/456',
+        'youtube_url' => 'https://example.com/tutorial',
+        'notes' => 'Nueva expansión',
+        'game_id' => 999999,
+        'bgg_id' => 456,
+        'is_active' => false,
+    ];
+
+    $this->actingAs($this->user)
+        ->post(route('expansions.store', $this->game), $data)
+        ->assertRedirect($this->editUrl)
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('success', 'Expansión añadida.');
+
+    $created = Expansion::query()
+        ->where('game_id', $this->game->id)
+        ->where('name', 'Matcha manual')
+        ->firstOrFail();
+
+    expect($created->bgg_id)->toBeNull()
+        ->and($created->is_active)->toBeTrue()
+        ->and($created->notes)->toBe('Nueva expansión')
+        ->and($created->image_url)->toBe($data['image_url'])
+        ->and($created->bgg_url)->toBe($data['bgg_url'])
+        ->and($created->youtube_url)->toBe($data['youtube_url']);
+});
+
+test('manual expansion creation validates its fields and rejects duplicate names', function ($changes, $field) {
+    $data = array_replace([
+        'name' => 'Expansión nueva',
+        'image_url' => 'https://example.com/cover.jpg',
+    ], $changes);
+
+    $before = Expansion::count();
+
+    $this->actingAs($this->user)
+        ->post(route('expansions.store', $this->game), $data)
+        ->assertRedirect($this->editUrl)
+        ->assertSessionHasErrors($field);
+
+    $this->assertDatabaseCount('expansions', $before);
+})->with([
+    'duplicate name' => [['name' => 'Zeta'], 'name'],
+    'missing name' => [['name' => ''], 'name'],
+    'invalid image URL' => [['image_url' => 'not-a-url'], 'image_url'],
+    'URL exceeds column length' => [['image_url' => 'https://example.com/'.str_repeat('a', 240)], 'image_url'],
+]);
+
+test('a user cannot create an expansion for a game outside their collections', function () {
+    $otherUser = User::factory()->create();
+    $otherCollection = GameCollection::create([
+        'created_by' => $otherUser->id,
+        'name' => 'Colección ajena',
+    ]);
+    $this->game->collections()->detach();
+    $this->game->collections()->attach($otherCollection);
+
+    $this->actingAs($this->user)
+        ->post(route('expansions.store', $this->game), ['name' => 'No permitida'])
+        ->assertForbidden();
+
+    $this->assertDatabaseCount('expansions', 1);
+});
+
+test('a guest cannot create a manual expansion', function () {
+    $this->post(route('expansions.store', $this->game), ['name' => 'No permitida'])
+        ->assertRedirect(route('login'));
+
+    $this->assertDatabaseCount('expansions', 1);
+});
