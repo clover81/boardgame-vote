@@ -68,6 +68,15 @@ const props = defineProps<{
     games: Game[];
 }>();
 
+// Si una portada externa falla, mostramos la alternativa en todas sus apariciones.
+const brokenCoverIds = ref<number[]>([]);
+
+const markCoverAsBroken = (gameId: number) => {
+    if (!brokenCoverIds.value.includes(gameId)) {
+        brokenCoverIds.value.push(gameId);
+    }
+};
+
 const defaultCollectionIds =
     props.collections
         .filter(
@@ -1457,9 +1466,7 @@ const submit = () => {
                             <!-- PORTADA -->
 
                             <div
-                                v-if="
-                                    game.image_url
-                                "
+                                v-if="game.image_url && !brokenCoverIds.includes(game.id)"
                                 class="flex h-28 w-20 shrink-0 items-center justify-center overflow-hidden bg-zinc-100 p-2 dark:bg-zinc-800 sm:h-40 sm:w-28"
                             >
                                 <img
@@ -1471,6 +1478,7 @@ const submit = () => {
                                     "
                                     loading="lazy"
                                     class="h-full w-full object-contain"
+                                    @error="markCoverAsBroken(game.id)"
                                 />
                             </div>
 
@@ -1805,11 +1813,12 @@ const submit = () => {
 
                                     <div class="flex h-20 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
                                             <img
-                                                v-if="game.image_url"
+                                                v-if="game.image_url && !brokenCoverIds.includes(game.id)"
                                                 :src="game.image_url"
                                                 :alt="`Portada de ${game.name}`"
                                                 loading="lazy"
                                                 class="h-full w-full object-contain"
+                                                @error="markCoverAsBroken(game.id)"
                                             />
                                             <span v-else aria-hidden="true" class="text-lg">🎲</span>
                                         </div>
@@ -2151,14 +2160,17 @@ const submit = () => {
                                 class="flex items-center gap-3 rounded-xl bg-zinc-50 p-3 dark:bg-zinc-900"
                             >
                                 <div
-                                    class="h-12 w-10 shrink-0 overflow-hidden rounded-md bg-zinc-200 dark:bg-zinc-800"
+                                    class="flex h-12 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-zinc-200 dark:bg-zinc-800"
                                 >
                                     <img
-                                        v-if="game.image_url"
+                                        v-if="game.image_url && !brokenCoverIds.includes(game.id)"
                                         :src="game.image_url"
                                         :alt="game.name"
-                                        class="h-full w-full object-cover"
+                                        loading="lazy"
+                                        class="h-full w-full object-contain p-0.5"
+                                        @error="markCoverAsBroken(game.id)"
                                     />
+                                    <span v-else aria-hidden="true">🎲</span>
                                 </div>
 
                                 <div class="min-w-0">

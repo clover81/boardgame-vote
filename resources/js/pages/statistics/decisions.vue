@@ -5,6 +5,7 @@ import {
 } from '@inertiajs/vue3';
 
 import AppLayout from '@/layouts/AppLayout.vue';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
 interface Game {
     id: number;
@@ -800,6 +801,7 @@ const decisionLabel = (
                     </div>
                 </section>
             </template>
+            <ScrollToTopProgress />
         </div>
     </AppLayout>
 </template>

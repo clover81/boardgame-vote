@@ -10,6 +10,7 @@ import {
 } from '@inertiajs/vue3';
 
 import AppLayout from '@/layouts/AppLayout.vue';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
 interface Game {
     id: number;
@@ -825,6 +826,7 @@ const sortedGames =
                     </article>
                 </section>
             </template>
+            <ScrollToTopProgress />
         </div>
     </AppLayout>
 </template>
