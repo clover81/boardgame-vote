@@ -1458,10 +1458,10 @@ const submit = () => {
                         <article
                             v-for="game in visibleIdealGames"
                             :key="game.id"
-                            class="flex self-start min-w-0 items-start overflow-hidden rounded-2xl border border-zinc-200 bg-white transition-colors dark:border-zinc-800 dark:bg-zinc-900"
+                            class="group relative flex min-w-0 self-start items-start overflow-hidden rounded-2xl border-2 shadow-sm transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/30 dark:hover:border-violet-400"
                             :class="form.candidate_ids.includes(game.id)
-                                ? 'border-violet-500 ring-2 ring-violet-500/50 dark:border-violet-400'
-                                : ''"
+                                ? 'border-[#5200FF] bg-violet-50/60 ring-2 ring-[#5200FF]/40 shadow-lg shadow-violet-500/15 dark:border-violet-400 dark:bg-violet-950/20 dark:ring-violet-400/30'
+                                : 'border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900'"
                         >
                             <!-- PORTADA -->
 
@@ -1477,7 +1477,7 @@ const submit = () => {
                                         game.name
                                     "
                                     loading="lazy"
-                                    class="h-full w-full object-contain"
+                                    class="h-full w-full object-contain transition-transform duration-300 motion-safe:group-hover:scale-105"
                                     @error="markCoverAsBroken(game.id)"
                                 />
                             </div>
@@ -1510,6 +1510,13 @@ const submit = () => {
                                         {{ game.name }}
                                     </span>
                                 </label>
+
+                                <span
+                                    v-if="form.candidate_ids.includes(game.id)"
+                                    class="mt-2 inline-flex items-center gap-1 rounded-full bg-[#5200FF] px-2.5 py-1 text-xs font-bold text-white shadow-sm shadow-violet-500/30 dark:bg-violet-400 dark:text-zinc-950"
+                                >
+                                    <span aria-hidden="true">✓</span> Seleccionado
+                                </span>
 
                                 <!-- DATOS -->
 
@@ -1794,10 +1801,10 @@ const submit = () => {
                             <article
                                 v-for="game in visibleOtherGames"
                                 :key="game.id"
-                                class="self-start rounded-2xl border border-zinc-200 bg-white p-4 transition-colors dark:border-zinc-800 dark:bg-zinc-900"
-                                    :class="form.candidate_ids.includes(game.id)
-                                        ? 'border-violet-500 ring-2 ring-violet-500/50 dark:border-violet-400'
-                                        : ''"
+                                class="group relative self-start rounded-2xl border-2 p-4 shadow-sm transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/30 dark:hover:border-violet-400"
+                                :class="form.candidate_ids.includes(game.id)
+                                    ? 'border-[#5200FF] bg-violet-50/60 ring-2 ring-[#5200FF]/40 shadow-lg shadow-violet-500/15 dark:border-violet-400 dark:bg-violet-950/20 dark:ring-violet-400/30'
+                                    : 'border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900'"
                             >
                                 <label
                                     class="flex cursor-pointer items-start gap-3"
@@ -1817,7 +1824,7 @@ const submit = () => {
                                                 :src="game.image_url"
                                                 :alt="`Portada de ${game.name}`"
                                                 loading="lazy"
-                                                class="h-full w-full object-contain"
+                                                class="h-full w-full object-contain transition-transform duration-300 motion-safe:group-hover:scale-105"
                                                 @error="markCoverAsBroken(game.id)"
                                             />
                                             <span v-else aria-hidden="true" class="text-lg">🎲</span>
@@ -1829,6 +1836,12 @@ const submit = () => {
                                         >
                                             {{ game.name }}
                                         </p>
+                                        <span
+                                            v-if="form.candidate_ids.includes(game.id)"
+                                            class="mt-2 inline-flex items-center gap-1 rounded-full bg-[#5200FF] px-2.5 py-1 text-xs font-bold text-white shadow-sm shadow-violet-500/30 dark:bg-violet-400 dark:text-zinc-950"
+                                        >
+                                            <span aria-hidden="true">✓</span> Seleccionado
+                                        </span>
 
                                         <div
                                             class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-zinc-500 dark:text-zinc-400"
