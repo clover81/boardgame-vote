@@ -12,6 +12,7 @@ import {
 } from '@inertiajs/vue3';
 
 import AppLayout from '@/layouts/AppLayout.vue';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
 /*
 |--------------------------------------------------------------------------
@@ -274,19 +275,19 @@ const formatDate = (
 
                 <Link
                     href="/polls/create"
-                    class="w-full rounded-xl bg-[#5200FF] px-5 py-3 text-center font-bold text-white sm:w-auto"
+                    class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 text-center font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#4000cc] hover:shadow-md hover:shadow-violet-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] sm:w-auto"
                 >
                     + Nueva votación
                 </Link>
             </div>
 
             <div
-                class="-mx-4 mt-5 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:mt-8 sm:flex-wrap sm:px-0 sm:pb-0"
+                class="-mx-4 mt-5 flex gap-2 overflow-x-auto px-4 pt-1 pb-2 sm:-mx-1 sm:mt-8 sm:flex-wrap sm:px-1 sm:pb-1"
             >
                 <button
                     type="button"
                     :aria-pressed="statusFilter === 'all'"
-                    class="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold"
+                    class="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold transition-colors duration-200 hover:ring-2 hover:ring-violet-300/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:hover:ring-violet-500/60"
                     :class="
                         statusFilter === 'all'
                             ? 'bg-[#5200FF] text-white'
@@ -303,7 +304,7 @@ const formatDate = (
                 <button
                     type="button"
                     :aria-pressed="statusFilter === 'draft'"
-                    class="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold"
+                    class="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold transition-colors duration-200 hover:ring-2 hover:ring-violet-300/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:hover:ring-violet-500/60"
                     :class="
                         statusFilter === 'draft'
                             ? 'bg-[#5200FF] text-white'
@@ -320,7 +321,7 @@ const formatDate = (
                 <button
                     type="button"
                     :aria-pressed="statusFilter === 'open'"
-                    class="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold"
+                    class="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold transition-colors duration-200 hover:ring-2 hover:ring-violet-300/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:hover:ring-violet-500/60"
                     :class="
                         statusFilter === 'open'
                             ? 'bg-[#CCFF00] text-black'
@@ -337,7 +338,7 @@ const formatDate = (
                 <button
                     type="button"
                     :aria-pressed="statusFilter === 'closed'"
-                    class="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold"
+                    class="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold transition-colors duration-200 hover:ring-2 hover:ring-violet-300/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:hover:ring-violet-500/60"
                     :class="
                         statusFilter === 'closed'
                             ? 'bg-[#5200FF] text-white'
@@ -374,7 +375,7 @@ const formatDate = (
                         <input
                             v-model="search"
                             type="search"
-                            class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 placeholder:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                            class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-[#5200FF] focus:ring-2 focus:ring-violet-500/15 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                             placeholder="Nombre de la votación..."
                         />
                     </div>
@@ -392,7 +393,7 @@ const formatDate = (
                             v-model="
                                 collectionId
                             "
-                            class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                            class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none transition-colors focus:border-[#5200FF] focus:ring-2 focus:ring-violet-500/15 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                         >
                             <option
                                 :value="null"
@@ -463,7 +464,7 @@ const formatDate = (
                 <article
                     v-for="poll in filteredPolls"
                     :key="poll.id"
-                    class="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950"
+                    class="group rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/30 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-violet-500"
                 >
                     <div
                         class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"
@@ -472,10 +473,13 @@ const formatDate = (
                             <div
                                 class="flex flex-wrap items-center gap-2"
                             >
-                                <h2
-                                    class="text-xl font-black"
-                                >
-                                    {{ poll.name }}
+                                <h2 class="min-w-0 text-xl font-black">
+                                    <Link
+                                        :href="`/polls/${poll.id}`"
+                                        class="inline-block max-w-full break-words rounded text-zinc-900 transition-colors duration-200 hover:text-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-zinc-100 dark:hover:text-violet-300"
+                                    >
+                                        {{ poll.name }}
+                                    </Link>
                                 </h2>
 
                                 <span
@@ -555,7 +559,7 @@ const formatDate = (
                                 :href="
                                     `/polls/${poll.id}`
                                 "
-                                class="rounded-xl bg-[#5200FF] px-4 py-2.5 text-sm font-bold text-white"
+                                class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#5200FF] px-4 py-2.5 text-center text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#4000cc] hover:shadow-md hover:shadow-violet-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                             >
                                 {{
                                     poll.status ===
@@ -568,7 +572,7 @@ const formatDate = (
                             <Link
                                 v-if="poll.status === 'open'"
                                 :href="`/polls/${poll.id}`"
-                                class="rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-bold dark:border-zinc-700"
+                                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-zinc-300 px-4 py-2.5 text-center text-sm font-bold transition-colors hover:border-violet-400 hover:bg-violet-50 hover:text-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-zinc-700 dark:hover:bg-violet-950/30 dark:hover:text-violet-300"
                             >
                                 Ver enlaces personales
                             </Link>
@@ -582,7 +586,7 @@ const formatDate = (
                                 :href="
                                     `/polls/${poll.id}/register-play`
                                 "
-                                class="rounded-xl bg-[#CCFF00] px-4 py-2.5 text-sm font-black text-black"
+                                class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#CCFF00] px-4 py-2.5 text-center text-sm font-black text-black transition-all duration-200 hover:bg-lime-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                             >
                                 🎲 Registrar partida
                             </Link>
@@ -610,6 +614,7 @@ const formatDate = (
                     nueva sesión.
                 </p>
             </div>
+            <ScrollToTopProgress />
         </div>
     </AppLayout>
 </template>
