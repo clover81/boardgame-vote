@@ -37,7 +37,7 @@ const togglePlayer = (player: Player) => {
                         JUGADORES
                     </p>
 
-                    <h1 class="text-3xl font-bold">
+                    <h1 class="text-2xl font-bold sm:text-3xl">
                         Jugadores habituales
                     </h1>
 
@@ -48,7 +48,7 @@ const togglePlayer = (player: Player) => {
 
                 <Link
                     href="/players/create"
-                    class="inline-flex items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 font-semibold text-white transition hover:opacity-90"
+                    class="inline-flex w-full items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 font-semibold text-white transition hover:opacity-90 sm:w-auto"
                 >
                     + Añadir jugador
                 </Link>
@@ -62,7 +62,7 @@ const togglePlayer = (player: Player) => {
                 <div
                     v-for="player in players"
                     :key="player.id"
-                    class="flex items-center justify-between gap-4 rounded-2xl border bg-white p-5 dark:bg-zinc-950"
+                    class="flex flex-col items-stretch gap-3 rounded-2xl border bg-white p-4 dark:bg-zinc-950 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
                 >
                     <div>
                         <h2 class="text-lg font-bold">
@@ -94,7 +94,7 @@ const togglePlayer = (player: Player) => {
 
                     <button
                         type="button"
-                        class="rounded-xl border px-4 py-2 text-sm font-semibold transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        class="w-full rounded-xl border px-4 py-2 text-sm font-semibold transition hover:bg-zinc-100 dark:hover:bg-zinc-800 sm:w-auto"
                         @click="togglePlayer(player)"
                     >
                         {{

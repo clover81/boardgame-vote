@@ -154,7 +154,7 @@ const decisionLabel = (
                 </p>
 
                 <h1
-                    class="mt-1 text-3xl font-black text-zinc-900 dark:text-zinc-100"
+                    class="mt-1 text-2xl font-black text-zinc-900 dark:text-zinc-100 sm:text-3xl"
                 >
                     ¿Votamos una cosa y
                     jugamos otra?
@@ -238,7 +238,7 @@ const decisionLabel = (
                         </p>
 
                         <p
-                            class="mt-3 text-4xl font-black text-zinc-900 dark:text-zinc-100"
+                            class="mt-3 text-3xl font-black sm:text-4xl text-zinc-900 dark:text-zinc-100"
                         >
                             {{
                                 stats.analysed_sessions
@@ -270,7 +270,7 @@ const decisionLabel = (
                         </p>
 
                         <p
-                            class="mt-3 text-4xl font-black text-zinc-900 dark:text-zinc-100"
+                            class="mt-3 text-3xl font-black sm:text-4xl text-zinc-900 dark:text-zinc-100"
                         >
                             {{
                                 stats.winner_played_percentage
@@ -304,7 +304,7 @@ const decisionLabel = (
                         </p>
 
                         <p
-                            class="mt-3 text-4xl font-black text-[#FF6B00]"
+                            class="mt-3 text-3xl font-black sm:text-4xl text-[#FF6B00]"
                         >
                             {{
                                 stats.other_candidate_percentage
@@ -333,7 +333,7 @@ const decisionLabel = (
                         </p>
 
                         <p
-                            class="mt-3 text-4xl font-black text-[#F900FF]"
+                            class="mt-3 text-3xl font-black sm:text-4xl text-[#F900FF]"
                         >
                             {{
                                 stats.outside_percentage

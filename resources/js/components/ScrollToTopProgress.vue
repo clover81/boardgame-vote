@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
-const props = withDefaults(defineProps<{ rememberPosition?: boolean }>(), {
+const props = withDefaults(defineProps<{ rememberPosition?: boolean; hideOnMobile?: boolean }>(), {
     rememberPosition: true,
+    hideOnMobile: false,
 });
 
 const scrollY = ref(0);
@@ -94,7 +95,8 @@ onBeforeUnmount(() => {
             type="button"
             aria-label="Volver al inicio"
             title="Volver arriba"
-            class="fixed bottom-6 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#181424] text-white shadow-xl transition hover:scale-110 hover:shadow-2xl sm:bottom-8 sm:right-8"
+            class="fixed bottom-6 right-5 z-50 h-14 w-14 items-center justify-center rounded-full bg-[#181424] text-white shadow-xl transition hover:scale-110 hover:shadow-2xl sm:bottom-8 sm:right-8"
+            :class="props.hideOnMobile ? 'hidden sm:flex' : 'flex'"
             @click="scrollToTop"
         >
             <svg

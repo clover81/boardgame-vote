@@ -206,7 +206,7 @@ const sortedGames =
                 </p>
 
                 <h1
-                    class="mt-1 text-3xl font-black text-zinc-900 dark:text-zinc-100"
+                    class="mt-1 text-2xl font-black text-zinc-900 dark:text-zinc-100 sm:text-3xl"
                 >
                     Rendimiento en votaciones
                 </h1>

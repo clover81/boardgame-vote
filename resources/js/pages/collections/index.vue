@@ -578,7 +578,7 @@ watch(
                     </p>
 
                     <h1
-                        class="mt-1 text-3xl font-bold text-zinc-900 dark:text-zinc-100"
+                        class="mt-1 text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl"
                     >
                         Mis colecciones
                     </h1>
@@ -594,7 +594,7 @@ watch(
 
                 <button
                     type="button"
-                    class="inline-flex items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90"
+                    class="inline-flex w-full items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90 sm:w-auto"
                     @click="
                         showCreateForm =
                             !showCreateForm
@@ -614,7 +614,7 @@ watch(
 
             <form
                 v-if="showCreateForm"
-                class="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950"
+                class="mt-6 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:mt-8 sm:p-6"
                 @submit.prevent="submit"
             >
                 <h2
@@ -717,7 +717,7 @@ watch(
 
             <!-- SINCRONIZACIÓN BGG -->
             <section
-                class="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+                class="mt-8 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-6"
             >
                 <h2 class="text-xl font-bold">
                     🎲 Sincronización con BoardGameGeek
@@ -1147,7 +1147,7 @@ watch(
                 <article
                     v-for="collection in collections"
                     :key="collection.id"
-                    class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+                    class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-6"
                 >
                     <div
                         class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"

@@ -432,7 +432,7 @@ const confirmDeletePlay = () => {
         </p>
 
         <h1
-            class="text-3xl font-bold text-zinc-900 dark:text-zinc-100"
+            class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl"
         >
             Partidas jugadas
         </h1>
@@ -447,7 +447,7 @@ const confirmDeletePlay = () => {
 
     <Link
         href="/plays/create"
-        class="inline-flex items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90"
+        class="inline-flex w-full items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90 sm:w-auto"
     >
         + Registrar partida
     </Link>

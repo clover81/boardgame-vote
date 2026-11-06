@@ -837,6 +837,7 @@ const submit = () => {
 
     <AppLayout>
         <div
+            id="poll-start"
             class="mx-auto box-border w-full min-w-0 max-w-7xl px-4 py-6 sm:px-6"
         >
             <Link
@@ -856,7 +857,7 @@ const submit = () => {
                 </p>
 
                 <h1
-                    class="text-3xl font-bold text-zinc-900 dark:text-zinc-100"
+                    class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl"
                 >
                     ¿A qué jugamos?
                 </h1>
@@ -873,23 +874,33 @@ const submit = () => {
             <!-- Resumen persistente de la preparación de la votación. -->
             <nav
                 aria-label="Progreso de creación de la votación"
-                class="sticky top-2 z-30 mt-6 rounded-2xl border border-zinc-200 bg-white/95 p-3 shadow-md backdrop-blur dark:border-zinc-700 dark:bg-zinc-950/95"
+                class="sticky top-2 z-30 mt-4 min-w-0 rounded-2xl border border-zinc-200 bg-white/95 p-2 shadow-md backdrop-blur dark:border-zinc-700 dark:bg-zinc-950/95 sm:mt-6 sm:p-3"
             >
-                <div class="flex flex-wrap items-center gap-2 text-xs font-bold sm:text-sm">
-                    <a href="#poll-collections" class="rounded-full px-3 py-2 transition hover:opacity-80"
+                <div class="flex min-w-0 items-center gap-2 text-xs font-bold sm:text-sm">
+                    <div class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap pb-1 sm:gap-2 sm:overflow-visible sm:pb-0">
+                    <a href="#poll-collections" class="shrink-0 rounded-full px-2 py-2 transition hover:opacity-80 sm:px-3"
                         :class="form.collection_ids.length ? 'bg-violet-100 text-[#5200FF] dark:bg-violet-950 dark:text-violet-200' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300'">
                         {{ form.collection_ids.length ? '✓' : '1' }} Colecciones · {{ form.collection_ids.length }}
                     </a>
-                    <a href="#poll-players" class="rounded-full px-3 py-2 transition hover:opacity-80"
+                    <a href="#poll-players" class="shrink-0 rounded-full px-2 py-2 transition hover:opacity-80 sm:px-3"
                         :class="playerCount >= 2 ? 'bg-violet-100 text-[#5200FF] dark:bg-violet-950 dark:text-violet-200' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300'">
                         {{ playerCount >= 2 ? '✓' : '2' }} Jugadores · {{ playerCount }}
                     </a>
-                    <a href="#poll-candidates" class="rounded-full px-3 py-2 transition hover:opacity-80"
+                    <a href="#poll-candidates" class="shrink-0 rounded-full px-2 py-2 transition hover:opacity-80 sm:px-3"
                         :class="form.candidate_ids.length ? 'bg-violet-100 text-[#5200FF] dark:bg-violet-950 dark:text-violet-200' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300'">
                         {{ form.candidate_ids.length ? '✓' : '3' }} Juegos · {{ form.candidate_ids.length }}
                     </a>
-                    <a href="#poll-review" class="ml-auto whitespace-nowrap px-2 py-2 text-[#5200FF] hover:underline dark:text-[#CCFF00]">
+                    </div>
+                    <a href="#poll-review" class="shrink-0 whitespace-nowrap rounded-lg bg-violet-100 px-2 py-2 text-[#5200FF] hover:bg-violet-200 dark:bg-zinc-800 dark:text-[#CCFF00] dark:hover:bg-zinc-700">
                         Revisar ↓
+                    </a>
+                    <a
+                        href="#poll-start"
+                        aria-label="Volver al inicio"
+                        title="Volver arriba"
+                        class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-zinc-300 text-base font-bold text-[#5200FF] hover:bg-violet-100 dark:border-zinc-700 dark:text-[#CCFF00] dark:hover:bg-zinc-800 sm:hidden"
+                    >
+                        ↑
                     </a>
                 </div>
             </nav>
@@ -1068,7 +1079,7 @@ const submit = () => {
                     </div>
 
                     <!-- Tarjetas de tamaño fijo: seleccionar solo cambia colores y marca -->
-                    <div class="mt-4 grid w-full grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                    <div class="mt-4 grid w-full grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
                         <button
                             v-for="player in players"
                             :key="player.id"
@@ -1449,7 +1460,7 @@ const submit = () => {
                                 v-if="
                                     game.image_url
                                 "
-                                class="flex h-32 w-24 shrink-0 items-center justify-center overflow-hidden bg-zinc-100 p-2 dark:bg-zinc-800 sm:h-40 sm:w-28"
+                                class="flex h-28 w-20 shrink-0 items-center justify-center overflow-hidden bg-zinc-100 p-2 dark:bg-zinc-800 sm:h-40 sm:w-28"
                             >
                                 <img
                                     :src="
@@ -1465,7 +1476,7 @@ const submit = () => {
 
                             <div
                                 v-else
-                                class="flex h-32 w-24 shrink-0 items-center justify-center bg-zinc-100 px-2 text-center text-xs text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500 sm:h-40 sm:w-28"
+                                class="flex h-28 w-20 shrink-0 items-center justify-center bg-zinc-100 px-2 text-center text-xs text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500 sm:h-40 sm:w-28"
                             >
                                 Sin portada
                             </div>
@@ -2230,7 +2241,7 @@ const submit = () => {
 
             <!-- Mismo indicador circular del catálogo, sin restaurar la posición
                  anterior al iniciar una votación nueva. -->
-            <ScrollToTopProgress :remember-position="false" />
+            <ScrollToTopProgress :remember-position="false" hide-on-mobile />
         </div>
     </AppLayout>
 </template>

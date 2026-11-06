@@ -70,6 +70,8 @@ const props = defineProps<{
 */
 
 const search = ref(props.filters.q);
+// En móvil, los filtros secundarios se pueden plegar para ver los juegos antes.
+const showMobileFilters = ref(Boolean(props.filters.players || props.filters.mode));
 const gameMode = ref(props.filters.mode ?? '');
 const playerCount = ref<number | ''>(props.filters.players ?? '');
 const selectedCollectionId = ref(props.selected_collection_id);
@@ -98,8 +100,13 @@ const clearFilters = () => {
     gameMode.value = '';
     playerCount.value = '';
     selectedCollectionId.value = null;
+    showMobileFilters.value = false;
     applyFilters();
 };
+
+const advancedFilterCount = computed(() =>
+    Number(playerCount.value !== '') + Number(gameMode.value !== '')
+);
 
 const hasActiveFilters = computed(() =>
     search.value.trim() !== '' ||
@@ -145,7 +152,7 @@ const formatDate = (date: string | null): string => {
             <!-- ================================================== -->
 
             <div
-                class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"
+                class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-5"
             >
                 <div>
                     <p
@@ -191,7 +198,7 @@ const formatDate = (date: string | null): string => {
 
             <div
                 v-if="collections.length"
-                class="mt-7 flex flex-col gap-2 sm:flex-row sm:items-center"
+                class="mt-5 flex flex-col gap-2 sm:mt-7 sm:flex-row sm:items-center"
             >
                 <label
                     for="collection-selector"
@@ -223,11 +230,12 @@ const formatDate = (date: string | null): string => {
             <!-- ================================================== -->
 
             <form
-                class="mt-6 mb-8 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+                class="mt-4 mb-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:mt-6 sm:mb-8 sm:p-5"
                 @submit.prevent="applyFilters"
             >
-                <div class="grid gap-4 sm:grid-cols-2 sm:items-end lg:grid-cols-[1fr_auto_auto_auto]">
-                    <div>
+                <div class="grid gap-3 sm:grid-cols-2 sm:items-end sm:gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.9fr)_minmax(0,1fr)_auto]">
+                    <!-- El buscador permanece siempre visible. -->
+                    <div class="min-w-0">
                         <label
                             for="game-search"
                             class="text-sm font-bold text-zinc-800 dark:text-zinc-200"
@@ -243,63 +251,76 @@ const formatDate = (date: string | null): string => {
                         />
                     </div>
 
-                    <div>
-                        <label
-                            for="game-player-count"
-                            class="text-sm font-bold text-zinc-800 dark:text-zinc-200"
-                        >
-                            N.º de jugadores
-                        </label>
-                        <input
-                            id="game-player-count"
-                            v-model.number="playerCount"
-                            type="number"
-                            min="1"
-                            step="1"
-                            placeholder="Todos"
-                            class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                        />
-                    </div>
+                    <!-- En escritorio los filtros siguen desplegados. -->
+                    <div
+                        id="game-advanced-filters"
+                        :class="showMobileFilters ? 'grid gap-3 sm:contents' : 'hidden sm:contents'"
+                    >
+                        <div class="min-w-0">
+                            <label
+                                for="game-player-count"
+                                class="text-sm font-bold text-zinc-800 dark:text-zinc-200"
+                            >
+                                N.º de jugadores
+                            </label>
+                            <input
+                                id="game-player-count"
+                                v-model.number="playerCount"
+                                type="number"
+                                min="1"
+                                step="1"
+                                placeholder="Todos"
+                                class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                            />
+                        </div>
 
-                    <!-- FILTRO POR MODALIDAD -->
-                    <div>
-                        <label
-                            for="game-mode-filter"
-                            class="mb-2 block text-sm font-semibold"
-                        >
-                            Modalidad
-                        </label>
-
-                        <select
-                            id="game-mode-filter"
-                            v-model="gameMode"
-                            @change="applyFilters"
-                            class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                        >
-                            <option value="">
-                                Todas las modalidades
-                            </option>
-
-                            <option value="competitive">
-                                Competitivo
-                            </option>
-
-                            <option value="cooperative">
-                                Cooperativo
-                            </option>
-
-                            <option value="semi_cooperative">
-                                Semicooperativo
-                            </option>
-                        </select>
+                        <div class="min-w-0">
+                            <label
+                                for="game-mode-filter"
+                                class="mb-2 block text-sm font-semibold"
+                            >
+                                Modalidad
+                            </label>
+                            <select
+                                id="game-mode-filter"
+                                v-model="gameMode"
+                                class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                                @change="applyFilters"
+                            >
+                                <option value="">Todas las modalidades</option>
+                                <option value="competitive">Competitivo</option>
+                                <option value="cooperative">Cooperativo</option>
+                                <option value="semi_cooperative">Semicooperativo</option>
+                            </select>
+                        </div>
                     </div>
 
                     <button
                         type="submit"
-                        class="rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90"
+                        class="hidden rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90 sm:block"
                     >
                         Aplicar filtros
                     </button>
+
+                    <!-- Acciones compactas, solo en móvil. -->
+                    <div class="grid grid-cols-2 gap-2 sm:hidden">
+                        <button
+                            type="button"
+                            class="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-zinc-300 px-3 py-2.5 text-sm font-bold text-zinc-800 transition hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-[#5200FF] dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+                            :aria-expanded="showMobileFilters"
+                            aria-controls="game-advanced-filters"
+                            @click="showMobileFilters = !showMobileFilters"
+                        >
+                            Filtros<span v-if="advancedFilterCount">({{ advancedFilterCount }})</span>
+                            <span aria-hidden="true">{{ showMobileFilters ? '−' : '+' }}</span>
+                        </button>
+                        <button
+                            type="submit"
+                            class="min-h-11 rounded-xl bg-[#5200FF] px-4 py-2.5 text-sm font-bold text-white"
+                        >
+                            Buscar juegos
+                        </button>
+                    </div>
                 </div>
 
                 <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">

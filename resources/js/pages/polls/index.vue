@@ -258,7 +258,7 @@ const formatDate = (
                     </p>
 
                     <h1
-                        class="text-3xl font-black text-zinc-900 dark:text-zinc-100"
+                        class="text-2xl font-black text-zinc-900 dark:text-zinc-100 sm:text-3xl"
                     >
                         Mis votaciones
                     </h1>
@@ -274,19 +274,19 @@ const formatDate = (
 
                 <Link
                     href="/polls/create"
-                    class="rounded-xl bg-[#5200FF] px-5 py-3 text-center font-bold text-white"
+                    class="w-full rounded-xl bg-[#5200FF] px-5 py-3 text-center font-bold text-white sm:w-auto"
                 >
                     + Nueva votación
                 </Link>
             </div>
 
             <div
-                class="mt-8 flex flex-wrap gap-2"
+                class="-mx-4 mt-5 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:mt-8 sm:flex-wrap sm:px-0 sm:pb-0"
             >
                 <button
                     type="button"
                     :aria-pressed="statusFilter === 'all'"
-                    class="rounded-full px-4 py-2 text-sm font-bold"
+                    class="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold"
                     :class="
                         statusFilter === 'all'
                             ? 'bg-[#5200FF] text-white'
@@ -303,7 +303,7 @@ const formatDate = (
                 <button
                     type="button"
                     :aria-pressed="statusFilter === 'draft'"
-                    class="rounded-full px-4 py-2 text-sm font-bold"
+                    class="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold"
                     :class="
                         statusFilter === 'draft'
                             ? 'bg-[#5200FF] text-white'
@@ -320,7 +320,7 @@ const formatDate = (
                 <button
                     type="button"
                     :aria-pressed="statusFilter === 'open'"
-                    class="rounded-full px-4 py-2 text-sm font-bold"
+                    class="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold"
                     :class="
                         statusFilter === 'open'
                             ? 'bg-[#CCFF00] text-black'
@@ -337,7 +337,7 @@ const formatDate = (
                 <button
                     type="button"
                     :aria-pressed="statusFilter === 'closed'"
-                    class="rounded-full px-4 py-2 text-sm font-bold"
+                    class="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold"
                     :class="
                         statusFilter === 'closed'
                             ? 'bg-[#5200FF] text-white'
@@ -357,7 +357,7 @@ const formatDate = (
             <!-- ================================================== -->
 
             <section
-                class="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950"
+                class="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:mt-6 sm:p-5"
             >
                 <div
                     class="grid gap-4 md:grid-cols-2"
