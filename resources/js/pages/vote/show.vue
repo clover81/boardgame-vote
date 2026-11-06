@@ -556,7 +556,7 @@ const formatDate = (
                         :key="
                             result.candidate_id
                         "
-                        class="flex min-w-0 items-center gap-3 rounded-2xl border bg-white p-3 shadow-sm sm:gap-4 sm:p-5"
+                        class="group flex min-w-0 items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm transition-[border-color,box-shadow,transform] duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-[0_12px_30px_rgba(82,0,255,0.10)] sm:gap-4 sm:p-5"
                     >
                         <!-- POSICIÓN -->
 
@@ -590,17 +590,21 @@ const formatDate = (
                         <!-- PORTADA -->
 
                         <img
-                            v-if="
-                                result.game.image_url
-                            "
-                            :src="
-                                result.game.image_url
-                            "
-                            :alt="
-                                result.game.name
-                            "
-                            class="h-16 w-12 shrink-0 rounded-lg bg-zinc-100 object-contain sm:h-20 sm:w-16"
+                            v-if="result.game.image_url && !brokenCoverIds.includes(result.candidate_id)"
+                            :src="result.game.image_url"
+                            :alt="`Portada de ${result.game.name}`"
+                            loading="lazy"
+                            class="h-16 w-12 shrink-0 rounded-lg bg-zinc-100 object-contain transition-transform duration-300 motion-safe:group-hover:scale-[1.04] sm:h-20 sm:w-16"
+                            @error="markCoverAsBroken(result.candidate_id)"
                         />
+                        <div
+                            v-else
+                            class="flex h-16 w-12 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-lg sm:h-20 sm:w-16"
+                            role="img"
+                            :aria-label="`Sin portada de ${result.game.name}`"
+                        >
+                            🎲
+                        </div>
 
                         <!-- INFO -->
 
@@ -738,7 +742,7 @@ const formatDate = (
                 >
                     <button
                         type="button"
-                        class="rounded-xl border border-zinc-300 px-4 py-3 font-bold"
+                        class="rounded-xl border border-zinc-300 px-4 py-3 font-bold transition-[border-color,color,box-shadow] duration-200 hover:border-violet-500 hover:text-[#5200FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5200FF] focus-visible:ring-offset-2"
                         @click="voteSaved = false"
                     >
                         Modificar mis votos
@@ -793,36 +797,33 @@ const formatDate = (
                     <article
                         v-for="candidate in poll.candidates"
                         :key="candidate.id"
-                        class="min-w-0 overflow-hidden rounded-2xl border-2 bg-white shadow-sm transition-colors"
+                        class="group flex min-w-0 flex-col overflow-hidden rounded-2xl border-2 bg-white shadow-sm transition-[border-color,box-shadow,transform] duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(82,0,255,0.12)]"
                         :class="{
                             'border-[#7aa600] ring-2 ring-[#CCFF00]/70':
                                 form.first_candidate_id === candidate.id,
                             'border-[#FF6B00] ring-2 ring-[#FF6B00]/30':
                                 form.second_candidate_id === candidate.id,
-                            'border-zinc-200':
+                            'border-zinc-200 hover:border-violet-400 hover:ring-2 hover:ring-violet-500/15':
                                 form.first_candidate_id !== candidate.id &&
                                 form.second_candidate_id !== candidate.id,
                         }"
                     >
                         <!-- Una portada pequeña y completa, también en móvil. -->
-                        <div class="flex min-w-0 gap-3 p-3 sm:gap-4 sm:p-4">
-                            <div class="flex h-32 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 p-2 sm:h-40 sm:w-28">
+                        <div class="flex min-w-0 gap-3 p-3 sm:gap-4 sm:p-4 lg:min-h-[14.25rem]">
+                            <div class="flex h-32 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 p-1.5 shadow-inner sm:h-44 sm:w-32">
                                 <img
                                     v-if="candidate.game.image_url && !brokenCoverIds.includes(candidate.id)"
                                     :src="candidate.game.image_url"
                                     :alt="`Portada de ${candidate.game.name}`"
                                     loading="lazy"
-                                    class="h-full w-full object-contain"
+                                    class="h-full w-full object-contain transition-transform duration-300 motion-safe:group-hover:scale-[1.04]"
                                     @error="markCoverAsBroken(candidate.id)"
                                 />
                                 <span v-else class="text-center text-xs text-zinc-500">🎲 Sin portada</span>
                             </div>
 
                             <div class="min-w-0 flex-1">
-                                <div
-                                    v-if="form.first_candidate_id === candidate.id || form.second_candidate_id === candidate.id"
-                                    class="mb-2"
-                                >
+                                <div class="mb-2 min-h-7">
                                     <span
                                         v-if="form.first_candidate_id === candidate.id"
                                         class="inline-block rounded-full bg-[#CCFF00] px-2.5 py-1 text-xs font-black text-black"
@@ -830,14 +831,14 @@ const formatDate = (
                                         🥇 Primera opción
                                     </span>
                                     <span
-                                        v-else
+                                        v-else-if="form.second_candidate_id === candidate.id"
                                         class="inline-block rounded-full bg-orange-100 px-2.5 py-1 text-xs font-black text-orange-900"
                                     >
                                         🥈 Segunda opción
                                     </span>
                                 </div>
 
-                                <h2 class="break-words text-lg font-black leading-snug sm:text-xl">
+                                <h2 class="break-words text-lg font-black leading-snug sm:text-xl lg:min-h-[3.5rem]">
                                     {{ candidate.game.name }}
                                 </h2>
 
@@ -881,7 +882,7 @@ const formatDate = (
                         </p>
 
                         <!-- Los jugadores del grupo son visibles sin desplegar nada. -->
-                        <div class="border-t border-zinc-100 px-3 py-3 sm:px-4">
+                        <div class="border-t border-zinc-100 px-3 py-3 sm:px-4 lg:min-h-[5.75rem]">
                             <p class="text-xs font-bold uppercase tracking-wide text-zinc-500">
                                 👥 Jugadores de hoy ({{ candidate.history.participants.length }})
                             </p>
@@ -904,7 +905,7 @@ const formatDate = (
                             <button
                                 type="button"
                                 :aria-pressed="form.first_candidate_id === candidate.id"
-                                class="min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-bold transition-colors sm:text-base"
+                                class="min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-bold transition-[background-color,border-color,box-shadow,transform] duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5200FF] focus-visible:ring-offset-2 motion-safe:active:scale-[0.98] sm:text-base"
                                 :class="form.first_candidate_id === candidate.id
                                     ? 'border-[#9bcb00] bg-[#CCFF00] text-black'
                                     : 'border-zinc-200 bg-white text-zinc-900 hover:border-[#9bcb00] hover:bg-lime-50'"
@@ -916,7 +917,7 @@ const formatDate = (
                                 v-if="needsSecondChoice"
                                 type="button"
                                 :aria-pressed="form.second_candidate_id === candidate.id"
-                                class="min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-bold transition-colors sm:text-base"
+                                class="min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-bold transition-[background-color,border-color,box-shadow,transform] duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5200FF] focus-visible:ring-offset-2 motion-safe:active:scale-[0.98] sm:text-base"
                                 :class="form.second_candidate_id === candidate.id
                                     ? 'border-[#FF6B00] bg-orange-100 text-orange-950'
                                     : 'border-zinc-200 bg-white text-zinc-900 hover:border-orange-400 hover:bg-orange-50'"
@@ -984,14 +985,14 @@ const formatDate = (
 
                 <!-- CONFIRMAR -->
 
-                <div class="sticky bottom-0 z-20 -mx-4 mt-5 border-t border-zinc-200 bg-zinc-50/95 px-4 py-3 shadow-[0_-5px_25px_rgba(0,0,0,0.06)] backdrop-blur">
-                    <div class="mb-2 grid min-w-0 gap-2 text-xs sm:text-sm" :class="needsSecondChoice ? 'grid-cols-2' : 'grid-cols-1'">
-                        <p class="min-w-0 truncate rounded-lg bg-lime-100 px-3 py-2" :title="selectedFirstGame?.name ?? ''">
+                <div class="relative z-10 mx-auto mt-6 max-w-3xl rounded-2xl border border-zinc-200 bg-white p-2.5 shadow-[0_14px_38px_rgba(82,0,255,0.13)] sm:sticky sm:bottom-2 sm:z-20 sm:bg-white/95 sm:p-4 sm:backdrop-blur">
+                    <div class="mb-3 hidden min-w-0 gap-2 text-xs sm:grid sm:text-sm" :class="needsSecondChoice ? 'grid-cols-2' : 'grid-cols-1'">
+                        <p class="min-w-0 truncate rounded-xl bg-lime-100 px-3 py-2.5 font-medium" :title="selectedFirstGame?.name ?? ''">
                             🥇 {{ selectedFirstGame?.name ?? 'Elige primera opción' }}
                         </p>
                         <p
                             v-if="needsSecondChoice"
-                            class="min-w-0 truncate rounded-lg bg-orange-100 px-3 py-2"
+                            class="min-w-0 truncate rounded-xl bg-orange-100 px-3 py-2.5 font-medium"
                             :title="selectedSecondGame?.name ?? ''"
                         >
                             🥈 {{ selectedSecondGame?.name ?? 'Elige segunda opción' }}
@@ -1005,10 +1006,18 @@ const formatDate = (
                     <button
                         type="button"
                         :disabled="!canSubmit || form.processing"
-                        class="w-full rounded-xl bg-[#5200FF] px-4 py-3 text-base font-black text-white transition hover:bg-[#4100cc] disabled:cursor-not-allowed disabled:opacity-40 sm:py-3.5"
+                        class="w-full rounded-xl bg-[#5200FF] px-4 py-3 text-base font-black text-white transition-[background-color,box-shadow,transform] duration-200 hover:bg-[#4100cc] hover:shadow-lg hover:shadow-violet-500/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#5200FF]/40 focus-visible:ring-offset-2 motion-safe:active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-700 disabled:shadow-none disabled:hover:bg-zinc-100 sm:py-3.5"
                         @click="submit"
                     >
-                        {{ form.processing ? 'Guardando...' : needsSecondChoice ? 'Confirmar mis votos' : 'Confirmar mi voto' }}
+                        <span class="sm:hidden">
+                            {{ form.processing ? 'Guardando...' : canSubmit ? (needsSecondChoice ? 'Confirmar votos' : 'Confirmar voto') : form.first_candidate_id === null ? 'Elige tu 1.ª opción' : 'Elige tu 2.ª opción' }}
+                            <span v-if="!form.processing" class="ml-1 opacity-75">
+                                ({{ Number(form.first_candidate_id !== null) + Number(needsSecondChoice && form.second_candidate_id !== null) }}/{{ requiredVoteCount }})
+                            </span>
+                        </span>
+                        <span class="hidden sm:inline">
+                            {{ form.processing ? 'Guardando...' : needsSecondChoice ? 'Confirmar mis votos' : 'Confirmar mi voto' }}
+                        </span>
                     </button>
                 </div>
             </template>
