@@ -4,6 +4,7 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import GameCollectionsField from '@/components/GameCollectionsField.vue';
 import BggExpansionsImporter from '@/components/BggExpansionsImporter.vue';
 import InputError from '@/components/InputError.vue';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 import {
     Dialog,
     DialogContent,
@@ -336,8 +337,8 @@ const confirmDeleteGame = () => {
     <Head :title="`Editar ${game.name}`" />
 
     <AppLayout>
-        <div class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
-            <div class="mb-8">
+        <div class="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 2xl:max-w-7xl">
+            <div class="mb-6">
                 <Link
                     href="/games"
                     class="text-sm font-medium text-[#5200FF]"
@@ -356,7 +357,7 @@ const confirmDeleteGame = () => {
 
             <section
                 aria-labelledby="bgg-link-title"
-                class="mt-8 mb-8 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950"
+                class="mt-6 mb-6 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950"
             >
                 <p class="text-xs font-black uppercase tracking-wider text-[#5200FF] dark:text-[#CCFF00]">
                     BOARDGAMEGEEK
@@ -392,7 +393,7 @@ const confirmDeleteGame = () => {
                                 type="text"
                                 maxlength="255"
                                 placeholder="Sky Team, URL o ID de BGG"
-                                class="min-w-0 flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900"
+                                class="min-w-0 flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-3 transition focus-visible:border-[#5200FF] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#5200FF]/20 dark:border-zinc-700 dark:bg-zinc-900"
                             />
                             <button
                                 type="submit"
@@ -416,7 +417,7 @@ const confirmDeleteGame = () => {
                     </p>
 
                     <div v-if="bggResults.length" class="mt-5 space-y-3">
-                        <article v-for="result in bggResults" :key="result.id" class="flex flex-col gap-4 rounded-xl border border-zinc-200 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-zinc-800">
+                        <article v-for="result in bggResults" :key="result.id" class="flex flex-col gap-4 rounded-xl border border-zinc-200 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#5200FF] hover:shadow-md focus-within:border-[#5200FF] focus-within:ring-4 focus-within:ring-[#5200FF]/20 motion-reduce:transform-none sm:flex-row sm:items-center sm:justify-between dark:border-zinc-800">
                             <div class="min-w-0">
                                 <h3 class="font-black">{{ result.name }}</h3>
                                 <p class="mt-1 text-sm text-zinc-500">
@@ -437,7 +438,7 @@ const confirmDeleteGame = () => {
             </section>
 
             <form
-                class="space-y-7 rounded-2xl border p-6"
+                class="space-y-6 rounded-2xl border p-6"
                 @submit.prevent="submit"
             >
                 <div>
@@ -1189,5 +1190,6 @@ const confirmDeleteGame = () => {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+        <ScrollToTopProgress :remember-position="false" />
     </AppLayout>
 </template>

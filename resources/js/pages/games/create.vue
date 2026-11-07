@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import GameCollectionsField from '@/components/GameCollectionsField.vue';
 import InputError from '@/components/InputError.vue';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 
 interface Collection {
@@ -429,9 +430,9 @@ const submit = () => {
     <Head title="Añadir juego" />
 
     <AppLayout>
-        <div class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
+        <div class="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 2xl:max-w-7xl">
 
-            <div class="mb-8">
+            <div class="mb-6">
                 <Link
                     href="/games"
                     class="text-sm font-medium text-[#5200FF]"
@@ -471,7 +472,7 @@ const submit = () => {
                         v-model="bggQuery"
                         type="search"
                         placeholder="Ej. The White Castle"
-                        class="min-w-0 flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                        class="min-w-0 flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 transition focus-visible:border-[#5200FF] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#5200FF]/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                         @keydown.enter.prevent="searchBgg"
                     />
 
@@ -503,7 +504,7 @@ const submit = () => {
                         :key="result.bgg_id"
                         type="button"
                         :disabled="bggLoading"
-                        class="flex w-full items-center justify-between gap-4 rounded-xl border border-zinc-200 p-4 text-left transition hover:border-[#5200FF] hover:bg-violet-50 disabled:cursor-wait disabled:opacity-50 dark:border-zinc-800 dark:hover:bg-violet-950/20"
+                        class="flex w-full items-center justify-between gap-4 rounded-xl border border-zinc-200 p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-[#5200FF] hover:bg-violet-50 hover:shadow-md focus-visible:border-[#5200FF] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#5200FF]/20 disabled:cursor-wait disabled:opacity-50 motion-reduce:transform-none dark:border-zinc-800 dark:hover:bg-violet-950/20"
                         :class="selectedBggId === result.bgg_id
                             ? 'border-[#5200FF] bg-violet-50 dark:bg-violet-950/20'
                             : ''"
@@ -1094,7 +1095,7 @@ const submit = () => {
             </section>
 
             <form
-                class="mt-7 space-y-7 rounded-2xl border p-6"
+                class="mt-6 space-y-6 rounded-2xl border p-6"
                 @submit.prevent="submit"
             >
 
@@ -1391,5 +1392,6 @@ const submit = () => {
 
             </form>
         </div>
+        <ScrollToTopProgress :remember-position="false" />
     </AppLayout>
 </template>
