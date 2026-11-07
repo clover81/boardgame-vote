@@ -2,6 +2,7 @@
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import InputError from '@/components/InputError.vue';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
 const form = useForm({
     name: '',
@@ -64,5 +65,6 @@ const submit = () => {
             </form>
 
         </div>
+        <ScrollToTopProgress :remember-position="false" />
     </AppLayout>
 </template>

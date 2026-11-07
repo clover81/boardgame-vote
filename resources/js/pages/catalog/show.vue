@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
 interface Collection {
     id: number;
@@ -504,6 +505,8 @@ const externalUrl = (url: string | null): string | undefined => {
         <footer class="mt-12 border-t border-zinc-200 py-8 text-center text-sm text-zinc-500">
             Boardgame Vote · Biblioteca compartida
         </footer>
+
+        <ScrollToTopProgress :remember-position="false" />
     </div>
 </template>
 
