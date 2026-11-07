@@ -149,6 +149,7 @@ const filteredGames = computed(() => {
 
 type SortBy =
     | 'name'
+    | 'name_desc'
     | 'duration_asc'
     | 'duration_desc'
     | 'difficulty_asc'
@@ -348,6 +349,10 @@ const sortedGames = computed(() => {
         let result = 0;
 
         switch (sortBy.value) {
+            case 'name_desc':
+                result = b.name.localeCompare(a.name, 'es');
+                break;
+
             case 'duration_asc':
                 result = compareNumbers(
                     getDuration(a), getDuration(b)
@@ -707,6 +712,7 @@ const externalUrl = (url: string | null): string | undefined => {
                         class="rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold outline-none focus:border-[#5200FF]"
                     >
                         <option value="name">Nombre (A–Z)</option>
+                        <option value="name_desc">Nombre (Z–A)</option>
                         <option value="duration_asc">Duración: más cortos</option>
                         <option value="duration_desc">Duración: más largos</option>
                         <option value="difficulty_asc">Dificultad: más fáciles</option>
@@ -863,7 +869,7 @@ const externalUrl = (url: string | null): string | undefined => {
                                 :href="externalUrl(game.bgg_url)"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                class="flex-1 rounded-xl bg-[#5200FF] px-3 py-2.5 text-center text-sm font-bold text-white transition hover:bg-[#4000cc]"
+                                class="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-xl bg-[#5200FF] px-3 py-2.5 text-center text-sm font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#4000cc] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none"
                             >
                                 BGG ↗
                             </a>
@@ -873,9 +879,9 @@ const externalUrl = (url: string | null): string | undefined => {
                                 :href="externalUrl(game.youtube_url)"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                class="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-center text-sm font-bold text-zinc-800 transition hover:bg-zinc-100"
+                                class="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-xl border-2 border-[#5200FF] bg-white px-2 py-2 text-center text-sm font-extrabold text-[#5200FF] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f1ebff] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none"
                             >
-                                ▶ Tutorial
+                                ▶ Tutorial ↗
                             </a>
                         </div>
                     </div>

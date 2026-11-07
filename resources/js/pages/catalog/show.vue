@@ -331,9 +331,9 @@ const externalUrl = (url: string | null): string | undefined => {
                             :href="externalUrl(game.youtube_url)"
                             target="_blank"
                             rel="noopener noreferrer"
-                            class="block w-full rounded-xl border border-zinc-300 bg-white px-5 py-3 text-center text-sm font-bold transition hover:bg-zinc-100 sm:w-auto"
+                            class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border-2 border-[#5200FF] bg-white px-5 py-3 text-center text-sm font-bold text-[#5200FF] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f1ebff] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:w-auto"
                         >
-                            ▶ Ver vídeo
+                            ▶ Ver tutorial ↗
                         </a>
                     </div>
                 </div>
@@ -477,9 +477,9 @@ const externalUrl = (url: string | null): string | undefined => {
                                     :href="externalUrl(expansion.youtube_url)"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    class="rounded-xl border border-zinc-200 px-4 py-2.5 text-sm font-bold text-zinc-700 transition hover:bg-zinc-100"
+                                    class="inline-flex min-h-11 items-center justify-center rounded-xl border-2 border-[#5200FF] bg-white px-4 py-2.5 text-sm font-bold text-[#5200FF] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f1ebff] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none"
                                 >
-                                    ▶ Ver vídeo
+                                    ▶ Ver tutorial ↗
                                 </a>
                             </div>
                         </div>
