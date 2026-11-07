@@ -8,6 +8,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
+import { toUrl } from '@/lib/utils';
 import type { NavItem } from '@/types';
 
 defineProps<{
@@ -15,6 +16,14 @@ defineProps<{
 }>();
 
 const { isCurrentUrl } = useCurrentUrl();
+
+// Mantener marcada la sección también al abrir sus páginas interiores.
+const isSectionActive = (item: NavItem): boolean => {
+    const href = toUrl(item.href);
+    const base = href === '/statistics/decisions' ? '/statistics' : href;
+
+    return isCurrentUrl(base) || isCurrentUrl(`${base}/`, undefined, true);
+};
 </script>
 
 <template>
@@ -28,7 +37,7 @@ const { isCurrentUrl } = useCurrentUrl();
             <SidebarMenuItem v-for="item in items" :key="item.title">
                 <SidebarMenuButton
                     as-child
-                    :is-active="isCurrentUrl(item.href)"
+                    :is-active="isSectionActive(item)"
                     :tooltip="item.title"
                     class="h-10 rounded-xl px-3 font-medium transition-colors hover:bg-[#5200FF]/10 hover:text-[#5200FF] data-[active=true]:bg-[#5200FF] data-[active=true]:font-bold data-[active=true]:text-white dark:hover:bg-[#CCFF00]/10 dark:hover:text-[#CCFF00] dark:data-[active=true]:bg-[#CCFF00] dark:data-[active=true]:text-black"
                 >
