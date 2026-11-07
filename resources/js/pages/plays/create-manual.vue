@@ -13,6 +13,7 @@ import {
 
 import AppLayout from '@/layouts/AppLayout.vue';
 import InputError from '@/components/InputError.vue';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
 /*
 |--------------------------------------------------------------------------
@@ -140,6 +141,29 @@ const searchableGames = computed(() =>
     )
 );
 
+// Mostrar primero unas pocas fichas: la colección puede tener cientos de juegos.
+// Si ya hay un juego elegido, mantenerlo visible aunque no esté entre los primeros.
+const visibleGameLimit = ref(24);
+watch(gameSearch, () => {
+    visibleGameLimit.value = 24;
+});
+
+const visibleGames = computed(() => {
+    const firstGames = searchableGames.value.slice(0, visibleGameLimit.value);
+    const selected = props.games.find(game => game.id === Number(form.game_id));
+
+    return selected && !firstGames.some(game => game.id === selected.id)
+        ? [selected, ...firstGames]
+        : firstGames;
+});
+
+const brokenCoverIds = ref<number[]>([]);
+const markCoverAsBroken = (id: number) => {
+    if (!brokenCoverIds.value.includes(id)) {
+        brokenCoverIds.value.push(id);
+    }
+};
+
 const selectedGame = computed(
     () =>
         props.games.find(
@@ -210,7 +234,7 @@ const submit = () => {
 
     <AppLayout>
         <div
-            class="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6"
+            class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6"
         >
             <!-- VOLVER -->
 
@@ -264,63 +288,89 @@ const submit = () => {
                     <p
                         class="mt-1 text-sm text-zinc-500 dark:text-zinc-400"
                     >
-                        Selecciona el juego base.
+                        Busca y selecciona el juego base.
                     </p>
 
-                    <div
-                        class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-                    >
+                    <div class="mt-5">
                         <label
-                            v-for="game in searchableGames"
+                            for="manual-game-search"
+                            class="block text-sm font-semibold text-zinc-700 dark:text-zinc-200"
+                        >
+                            Buscar juego
+                        </label>
+                        <input
+                            id="manual-game-search"
+                            v-model="gameSearch"
+                            type="search"
+                            autocomplete="off"
+                            placeholder="Ej.: castillo blanco, agrícola..."
+                            class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none transition focus:border-[#5200FF] focus:ring-4 focus:ring-violet-400/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                        />
+                        <p class="mt-2 text-xs text-zinc-500 dark:text-zinc-400" aria-live="polite">
+                            {{ gameSearch.trim() ? matchingGamesCount + ' juegos encontrados' : props.games.length + ' juegos disponibles' }}
+                        </p>
+                    </div>
+
+                    <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <label
+                            v-for="game in visibleGames"
                             :key="game.id"
-                            class="cursor-pointer"
+                            class="group min-w-0 cursor-pointer"
                         >
                             <input
-                                v-model="
-                                    form.game_id
-                                "
+                                v-model="form.game_id"
                                 type="radio"
                                 :value="game.id"
                                 class="peer sr-only"
                             />
 
                             <div
-                                class="overflow-hidden rounded-2xl border border-zinc-200 bg-white transition peer-checked:border-[#5200FF] peer-checked:ring-2 peer-checked:ring-[#5200FF] dark:border-zinc-800 dark:bg-zinc-900"
+                                class="flex h-full min-w-0 items-center gap-3 rounded-2xl border-2 border-zinc-200 bg-white p-3 shadow-sm transition-[transform,border-color,box-shadow,background-color] duration-200 group-hover:-translate-y-0.5 group-hover:border-violet-500 group-hover:shadow-[0_12px_26px_rgba(82,0,255,0.14)] peer-focus-visible:ring-4 peer-focus-visible:ring-violet-400/40 peer-checked:border-[#5200FF] peer-checked:bg-violet-50 peer-checked:ring-2 peer-checked:ring-[#5200FF]/30 motion-reduce:transform-none motion-reduce:transition-none dark:border-zinc-800 dark:bg-zinc-900 dark:peer-checked:bg-violet-950/30"
                             >
-                                <!-- PORTADA -->
-
-                                <div
-                                    v-if="
-                                        game.image_url
-                                    "
-                                    class="aspect-video bg-zinc-100 dark:bg-zinc-800"
-                                >
+                                <span class="flex h-28 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 p-1.5 dark:bg-zinc-800">
                                     <img
-                                        :src="
-                                            game.image_url
-                                        "
-                                        :alt="
-                                            game.name
-                                        "
-                                        class="h-full w-full object-cover"
+                                        v-if="game.image_url && !brokenCoverIds.includes(game.id)"
+                                        :src="game.image_url"
+                                        :alt="`Portada de ${game.name}`"
+                                        loading="lazy"
+                                        class="h-full w-full object-contain transition-transform duration-200 group-hover:scale-105 motion-reduce:transition-none"
+                                        @error="markCoverAsBroken(game.id)"
                                     />
-                                </div>
+                                    <span v-else class="text-center text-xs text-zinc-500 dark:text-zinc-400">
+                                        🎲 Sin portada
+                                    </span>
+                                </span>
 
-                                <div
-                                    v-else
-                                    class="flex aspect-video items-center justify-center bg-zinc-100 text-sm text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500"
-                                >
-                                    Sin portada
-                                </div>
-
-                                <div
-                                    class="p-4 font-bold text-zinc-900 dark:text-zinc-100"
-                                >
-                                    {{ game.name }}
-                                </div>
+                                <span class="min-w-0 flex-1">
+                                    <span class="block break-words font-bold leading-snug text-zinc-900 dark:text-zinc-100">
+                                        {{ game.name }}
+                                    </span>
+                                    <span
+                                        v-if="Number(form.game_id) === game.id"
+                                        class="mt-2 inline-flex rounded-full bg-[#5200FF] px-2.5 py-1 text-xs font-bold text-white"
+                                    >
+                                        ✓ Seleccionado
+                                    </span>
+                                </span>
                             </div>
                         </label>
                     </div>
+
+                    <p
+                        v-if="gameSearch.trim() && matchingGamesCount === 0"
+                        class="mt-4 text-sm text-zinc-500 dark:text-zinc-400"
+                    >
+                        No se encontraron juegos con esa búsqueda.
+                    </p>
+
+                    <button
+                        v-if="searchableGames.length > visibleGameLimit"
+                        type="button"
+                        class="mt-4 w-full rounded-xl border border-violet-300 px-4 py-3 text-sm font-bold text-[#5200FF] transition hover:border-[#5200FF] hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-400/30 dark:border-violet-600 dark:text-violet-300 dark:hover:bg-violet-950/30"
+                        @click="visibleGameLimit += 24"
+                    >
+                        Mostrar más juegos ({{ Math.min(visibleGameLimit, searchableGames.length) }} de {{ searchableGames.length }})
+                    </button>
 
                     <InputError :message="form.errors.game_id" />
                 </section>
@@ -343,32 +393,6 @@ const submit = () => {
                                 (opcional)
                             </span>
                         </label>
-
-                        <div class="mb-4">
-                            <label
-                                for="manual-game-search"
-                                class="block text-sm font-semibold text-zinc-700 dark:text-zinc-200"
-                            >
-                                Buscar juego
-                            </label>
-
-                            <input
-                                id="manual-game-search"
-                                v-model="gameSearch"
-                                type="search"
-                                autocomplete="off"
-                                placeholder="Ej.: castillo blanco, agrícola..."
-                                class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                            />
-
-                            <p
-                                v-if="gameSearch.trim()"
-                                class="mt-2 text-xs text-zinc-500 dark:text-zinc-400"
-                                aria-live="polite"
-                            >
-                                {{ matchingGamesCount }} juegos encontrados
-                            </p>
-                        </div>
 
                         <select
                             id="played-expansion"
@@ -463,9 +487,15 @@ const submit = () => {
                             />
 
                             <div
-                                class="rounded-xl border border-zinc-200 bg-white p-4 font-semibold text-zinc-900 transition peer-checked:border-[#5200FF] peer-checked:bg-[#5200FF] peer-checked:text-white dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
+                                class="flex min-h-14 items-center justify-between gap-3 rounded-xl border-2 border-zinc-200 bg-white p-4 font-semibold text-zinc-900 shadow-sm transition-[transform,border-color,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-[0_8px_20px_rgba(82,0,255,0.10)] peer-focus-visible:ring-4 peer-focus-visible:ring-violet-400/40 peer-checked:border-[#5200FF] peer-checked:bg-violet-50 peer-checked:ring-2 peer-checked:ring-[#5200FF]/20 motion-reduce:transform-none motion-reduce:transition-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:peer-checked:bg-violet-950/30"
                             >
-                                {{ player.name }}
+                                <span class="min-w-0 break-words">{{ player.name }}</span>
+                                <span
+                                    v-if="form.player_ids.includes(player.id)"
+                                    class="shrink-0 rounded-full bg-[#5200FF] px-2 py-0.5 text-xs font-bold text-white"
+                                >
+                                    ✓
+                                </span>
                             </div>
                         </label>
                     </div>
@@ -505,7 +535,7 @@ const submit = () => {
                     :disabled="
                         form.processing
                     "
-                    class="w-full rounded-xl bg-[#5200FF] px-6 py-4 text-lg font-bold text-white transition hover:opacity-90 disabled:opacity-50"
+                    class="w-full rounded-2xl bg-[#5200FF] px-6 py-4 text-lg font-black text-white shadow-[0_12px_28px_rgba(82,0,255,0.18)] transition-[background-color,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-[#4100cc] hover:shadow-[0_14px_32px_rgba(82,0,255,0.28)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-400/40 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none"
                 >
                     {{
                         form.processing
@@ -515,5 +545,6 @@ const submit = () => {
                 </button>
             </form>
         </div>
+        <ScrollToTopProgress :remember-position="false" />
     </AppLayout>
 </template>

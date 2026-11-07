@@ -13,6 +13,7 @@ import {
 
 import AppLayout from '@/layouts/AppLayout.vue';
 import InputError from '@/components/InputError.vue';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
 interface Player {
     id: number;
@@ -217,7 +218,7 @@ const submit = () => {
 
     <AppLayout>
         <div
-            class="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6"
+            class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6"
         >
             <!-- VOLVER -->
 
@@ -575,5 +576,6 @@ const submit = () => {
                 </button>
             </form>
         </div>
+        <ScrollToTopProgress :remember-position="false" />
     </AppLayout>
 </template>

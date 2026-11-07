@@ -11,6 +11,7 @@ import {
 
 import AppLayout from '@/layouts/AppLayout.vue';
 import InputError from '@/components/InputError.vue';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 import {
     Dialog,
     DialogContent,
@@ -1489,5 +1490,6 @@ watch(
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+        <ScrollToTopProgress :remember-position="false" />
     </AppLayout>
 </template>

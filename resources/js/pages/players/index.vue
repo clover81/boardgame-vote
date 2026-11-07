@@ -2,6 +2,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
 interface Player {
     id: number;
@@ -127,5 +128,6 @@ const togglePlayer = (player: Player) => {
             </div>
 
         </div>
+        <ScrollToTopProgress :remember-position="false" />
     </AppLayout>
 </template>

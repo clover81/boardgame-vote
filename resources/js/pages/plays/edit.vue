@@ -12,6 +12,7 @@ import {
 
 import AppLayout from '@/layouts/AppLayout.vue';
 import InputError from '@/components/InputError.vue';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
 interface Expansion {
     id: number;
@@ -429,5 +430,6 @@ const submit = () => {
                 </button>
             </form>
         </div>
+        <ScrollToTopProgress :remember-position="false" />
     </AppLayout>
 </template>
