@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
+import { CalendarHeart } from '@lucide/vue';
+import { UsersRound } from '@lucide/vue';
 import {
     computed,
     ref,
@@ -13,6 +16,7 @@ import {
 
 import AppLayout from '@/layouts/AppLayout.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
+import RollingDicesIcon from '@/components/icons/RollingDicesIcon.vue';
 
 /*
 |--------------------------------------------------------------------------
@@ -275,9 +279,12 @@ const formatDate = (
 
                 <Link
                     href="/polls/create"
-                    class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 text-center font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#4000cc] hover:shadow-md hover:shadow-violet-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] sm:w-auto"
+                    class="inline-flex min-h-11 w-full items-center justify-center gap-2.5 rounded-xl bg-[#5200FF] px-4 py-2.5 text-center font-bold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#4000cc] hover:shadow-[0_8px_22px_rgba(82,0,255,0.22)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:w-auto"
                 >
-                    + Nueva votación
+                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#3C00BB]" aria-hidden="true">
+                        <RollingDicesIcon class="size-6 text-[#CCFF00]" />
+                    </span>
+                    <span>Nueva votación</span>
                 </Link>
             </div>
 
@@ -519,15 +526,15 @@ const formatDate = (
                                 class="mt-3 flex flex-wrap gap-4 text-sm text-zinc-500"
                             >
                                 <span>
-                                    👥
+                                    <UsersRound class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#C4B5FD]" :stroke-width="2.2" role="img" aria-label="Jugadores" />
                                     {{
                                         poll.participants_count
                                     }}
                                     jugadores
                                 </span>
 
-                                <span>
-                                    🎲
+                                <span class="inline-flex items-center gap-1.5">
+                                    <PlayingCardsFanIcon class="size-4 shrink-0 text-violet-600 dark:text-[#BBA6FF]" aria-hidden="true" />
                                     {{
                                         poll.candidates_count
                                     }}
@@ -539,8 +546,8 @@ const formatDate = (
                                     }}
                                 </span>
 
-                                <span>
-                                    📅
+                                <span class="inline-flex items-center gap-1.5">
+                                    <CalendarHeart class="size-4 shrink-0 text-lime-700 dark:text-[#CCFF00]" :stroke-width="2.2" aria-hidden="true" />
                                     {{
                                         formatDate(
                                             poll.created_at
@@ -588,7 +595,7 @@ const formatDate = (
                                 "
                                 class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#CCFF00] px-4 py-2.5 text-center text-sm font-black text-black transition-all duration-200 hover:bg-lime-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                             >
-                                🎲 Registrar partida
+                                <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Registrar partida
                             </Link>
                         </div>
                     </div>

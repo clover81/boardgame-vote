@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { BuildingComplexPlus } from '@lucide/vue';
+import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
+import { CalendarHeart } from '@lucide/vue';
 import {
     Head,
     Link,
@@ -163,7 +166,7 @@ const formatDate = (
                     href="/plays/create"
                     class="inline-flex items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90"
                 >
-                    🎲 Registrar partida
+                    <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Registrar partida
                 </Link>
             </div>
 
@@ -289,7 +292,7 @@ const formatDate = (
                                     v-else
                                     class="flex h-full items-center justify-center"
                                 >
-                                    🎲
+                                    <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />
                                 </div>
                             </div>
 
@@ -485,7 +488,7 @@ const formatDate = (
                                     v-else
                                     class="flex h-full items-center justify-center"
                                 >
-                                    🎲
+                                    <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />
                                 </div>
                             </div>
 
@@ -509,7 +512,7 @@ const formatDate = (
                                     "
                                     class="mt-1 text-sm font-semibold text-[#5200FF] dark:text-violet-300"
                                 >
-                                    🧩
+                                    <BuildingComplexPlus class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" />
                                     {{
                                         play.expansion
                                             .name
@@ -519,7 +522,7 @@ const formatDate = (
                                 <p
                                     class="mt-1 text-sm text-zinc-500 dark:text-zinc-400"
                                 >
-                                    📅
+                                    <CalendarHeart class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-lime-700 dark:text-[#CCFF00]" :stroke-width="2.2" aria-hidden="true" />
                                     {{
                                         formatDate(
                                             play.played_at

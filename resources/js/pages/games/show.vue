@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
+import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, CalendarHeart, UsersRound, HourglassCog, Swords, BrainCog } from '@lucide/vue';
+
+import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
+
+
 import { computed, ref } from 'vue';
 
 import {
@@ -411,14 +417,14 @@ const formatGameMode = (
                         :href="`/plays/create?game_id=${game.id}`"
                         class="rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90"
                     >
-                        🎲 Registrar partida
+                        <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Registrar partida
                     </Link>
 
                     <Link
                         :href="`/games/${game.id}/edit`"
                         class="rounded-xl border border-zinc-300 px-5 py-3 font-bold text-zinc-700 transition hover:border-[#5200FF] hover:text-[#5200FF] dark:border-zinc-700 dark:text-zinc-200"
                     >
-                        ✏️ Editar
+                        <span class="inline-flex items-center justify-center gap-1.5"><PencilSparklesIcon class="h-4 w-4 shrink-0 text-violet-500 dark:text-[#CCFF00]" />Editar</span>
                     </Link>
                 </div>
             </div>
@@ -447,7 +453,7 @@ const formatGameMode = (
                         v-else
                         class="flex aspect-[3/4] items-center justify-center bg-zinc-100 text-5xl dark:bg-zinc-900"
                     >
-                        🎲
+                        <PlayingCardsFanIcon class="mr-1 inline-block size-12 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />
                     </div>
                 </div>
 
@@ -469,7 +475,7 @@ const formatGameMode = (
                             </p>
 
                             <p class="mt-1 text-lg font-black text-zinc-900 dark:text-zinc-100">
-                                👥 {{ game.min_players }}–{{ game.max_players }}
+                                <UsersRound class="mr-1 inline-block size-5 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#C4B5FD]" :stroke-width="2.2" role="img" aria-label="Jugadores" /> {{ game.min_players }}–{{ game.max_players }}
                             </p>
                         </div>
 
@@ -479,7 +485,7 @@ const formatGameMode = (
                             </p>
 
                             <p class="mt-1 text-lg font-black text-zinc-900 dark:text-zinc-100">
-                                ⏱
+                                <HourglassCog class="mr-1 inline-block size-5 shrink-0 align-[-0.15em] text-[#1D4ED8] dark:text-[#CCFF00]" :stroke-width="2.2" role="img" aria-label="Duración" />
                                 <template v-if="game.min_playtime !== null || game.max_playtime !== null">
                                     {{ game.min_playtime ?? game.max_playtime }}<template
                                         v-if="game.min_playtime !== null && game.max_playtime !== null && game.max_playtime !== game.min_playtime"
@@ -495,8 +501,8 @@ const formatGameMode = (
                                 Complejidad
                             </p>
 
-                            <p class="mt-1 text-lg font-black text-zinc-900 dark:text-zinc-100">
-                                🧠 {{ game.complexity ?? '—' }}
+                            <p class="mt-1 text-lg font-black text-zinc-900 dark:text-zinc-100 inline-flex items-center gap-2">
+                                <BrainCog class="size-5 shrink-0 text-pink-400 dark:text-pink-300" :stroke-width="2.2" aria-hidden="true" /> {{ game.complexity ?? '—' }}
                             </p>
                         </div>
 
@@ -506,7 +512,7 @@ const formatGameMode = (
                             </p>
 
                             <p class="mt-1 text-lg font-black text-zinc-900 dark:text-zinc-100">
-                                🎲 {{ formatGameMode(game.game_modes, game.max_players) }}
+                                <Swords v-if="game.game_modes.includes('competitive')" class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-orange-500 dark:text-orange-300" :stroke-width="2.2" aria-hidden="true" /> {{ formatGameMode(game.game_modes, game.max_players) }}
                             </p>
                         </div>
                     </div>
@@ -557,7 +563,7 @@ const formatGameMode = (
                             rel="noopener noreferrer"
                             class="text-sm font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                         >
-                            BoardGameGeek ↗
+                            BoardGameGeek <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                         </a>
 
                         <a
@@ -567,7 +573,7 @@ const formatGameMode = (
                             rel="noopener noreferrer"
                             class="text-sm font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                         >
-                            Tutorial YouTube ↗
+                            Tutorial YouTube <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                         </a>
                     </div>
                 </div>
@@ -580,7 +586,7 @@ const formatGameMode = (
                 class="mt-10 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-8"
             >
                 <div class="mb-5 flex items-center gap-3">
-                    <span class="text-2xl">📖</span>
+                    <span class="text-2xl"><LibraryBig class="inline-block size-6 shrink-0 align-[-0.15em] text-violet-600 dark:text-violet-300" :stroke-width="2" aria-hidden="true" /></span>
 
                     <h2
                         class="text-xl font-black text-zinc-900 dark:text-zinc-100"
@@ -638,7 +644,7 @@ const formatGameMode = (
                     <h2
                         class="mt-1 text-2xl font-bold"
                     >
-                        🧩 Expansiones del juego
+                        <BuildingComplexPlus class="mr-1 inline-block size-6 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" /> Expansiones del juego
                     </h2>
 
                     <p
@@ -695,7 +701,7 @@ const formatGameMode = (
                                 v-else
                                 class="flex aspect-[4/3] flex-col items-center justify-center gap-2 bg-zinc-100 text-zinc-400 dark:bg-zinc-900"
                             >
-                                <span class="text-4xl">🧩</span>
+                                <span class="text-4xl"><BuildingComplexPlus class="inline-block size-10 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" /></span>
                                 <span class="text-sm font-medium">
                                     Sin portada disponible
                                 </span>
@@ -705,7 +711,7 @@ const formatGameMode = (
                                 <h3
                                     class="text-lg font-bold"
                                 >
-                                    🧩
+                                    <BuildingComplexPlus class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" />
                                     {{
                                         expansion.name
                                     }}
@@ -742,7 +748,7 @@ const formatGameMode = (
                                         rel="noopener noreferrer"
                                         class="text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                                     >
-                                        BGG ↗
+                                        BGG <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                                     </a>
 
                                     <a
@@ -756,7 +762,7 @@ const formatGameMode = (
                                         rel="noopener noreferrer"
                                         class="text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                                     >
-                                        Tutorial ↗
+                                        Tutorial <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                                     </a>
                                 </div>
 
@@ -774,7 +780,7 @@ const formatGameMode = (
                                             )
                                         "
                                     >
-                                        ✏️ Editar
+                                        <span class="inline-flex items-center justify-center gap-1.5"><PencilSparklesIcon class="h-4 w-4 shrink-0 text-violet-500 dark:text-[#CCFF00]" />Editar</span>
                                     </button>
 
                                     <button
@@ -1056,7 +1062,7 @@ const formatGameMode = (
                     <h2
                         class="mt-1 text-2xl font-bold"
                     >
-                        🎲 Partidas jugadas
+                        <PlayingCardsFanIcon class="mr-1 inline-block size-6 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Partidas jugadas
                     </h2>
 
                     <p
@@ -1151,7 +1157,7 @@ const formatGameMode = (
                                 >
                                     <div>
                                         <h4 class="text-lg font-bold">
-                                            📅
+                                            <CalendarHeart class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-lime-700 dark:text-[#CCFF00]" :stroke-width="2.2" aria-hidden="true" />
                                             {{ formatDate(play.played_at) }}
                                         </h4>
 
@@ -1160,7 +1166,7 @@ const formatGameMode = (
                                                 v-if="play.expansion"
                                                 class="rounded-full bg-[#5200FF]/10 px-3 py-1 text-sm font-bold text-[#5200FF] dark:bg-[#CCFF00]/10 dark:text-[#CCFF00]"
                                             >
-                                                🧩
+                                                <BuildingComplexPlus class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" />
                                                 {{ play.expansion.name }}
                                             </span>
 
@@ -1189,7 +1195,7 @@ const formatGameMode = (
                                             :href="`/plays/${play.id}/edit`"
                                             class="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-bold transition hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
                                         >
-                                            Editar
+                                            <span class="inline-flex items-center justify-center gap-1.5"><PencilSparklesIcon class="h-4 w-4 shrink-0 text-violet-500 dark:text-[#CCFF00]" />Editar</span>
                                         </Link>
                                     </div>
                                 </div>
@@ -1255,7 +1261,7 @@ const formatGameMode = (
                         class="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100 text-2xl dark:bg-red-950"
                         aria-hidden="true"
                     >
-                        🧩
+                        <BuildingComplexPlus class="inline-block size-6 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" />
                     </div>
 
                     <DialogTitle class="text-xl font-black">

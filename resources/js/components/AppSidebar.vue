@@ -58,10 +58,10 @@ const mainNavItems: NavItem[] = [
 
                             <div class="grid min-w-0 flex-1 text-left">
                                 <span class="truncate text-sm font-extrabold">
-                                    Boardgame Vote
+                                    Juegos de mesa
                                 </span>
                                 <span class="truncate text-xs text-muted-foreground">
-                                    Tu mesa, tus juegos
+                                    Clover
                                 </span>
                             </div>
                         </Link>

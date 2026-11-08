@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link as ChainIcon } from '@lucide/vue';
 import { ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 
@@ -157,7 +158,7 @@ const markImageBroken = (id: number) => {
                         rel="noopener noreferrer"
                         class="mt-2 inline-block text-xs font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                     >
-                        Ver en BGG ↗
+                        Ver en BGG <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                     </a>
                     <div class="mt-4">
                         <span

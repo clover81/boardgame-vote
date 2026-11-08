@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { BuildingComplexPlus, LibraryBig } from '@lucide/vue';
+import { Link as ChainIcon } from '@lucide/vue';
+import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
+import { UsersRound } from '@lucide/vue';
 import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 
@@ -87,7 +91,7 @@ const formatDate = (
                 <p
                     class="font-semibold text-[#5200FF] dark:text-[#CCFF00]"
                 >
-                    BOARDGAME VOTE
+                    Juegos de mesa
                 </p>
 
                 <h1
@@ -142,7 +146,7 @@ const formatDate = (
                     <p
                         class="text-3xl"
                     >
-                        🎲
+                        <PlayingCardsFanIcon class="mr-1 inline-block size-8 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />
                     </p>
 
                     <p
@@ -166,7 +170,7 @@ const formatDate = (
                     <p
                         class="text-3xl"
                     >
-                        📚
+                        <LibraryBig class="inline-block size-8 shrink-0 align-[-0.15em] text-violet-600 dark:text-violet-300" :stroke-width="2" aria-hidden="true" />
                     </p>
 
                     <p
@@ -334,7 +338,7 @@ const formatDate = (
                             "
                             class="rounded-xl bg-[#CCFF00] px-4 py-2.5 text-center text-sm font-black text-black"
                         >
-                            🎲 Registrar partida
+                            <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Registrar partida
                         </Link>
                     </article>
                 </div>
@@ -394,12 +398,12 @@ const formatDate = (
                                     <p
                                         class="mt-2 text-sm text-zinc-500"
                                     >
-                                        👥
+                                        <UsersRound class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#C4B5FD]" :stroke-width="2.2" role="img" aria-label="Jugadores" />
                                         {{
                                             poll.participants_count
                                         }}
 
-                                        · 🎲
+                                        · <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />
                                         {{
                                             poll.candidates_count
                                         }}
@@ -433,7 +437,7 @@ const formatDate = (
                                     rel="noopener noreferrer"
                                     class="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-bold dark:border-zinc-700"
                                 >
-                                    Abrir votación ↗
+                                    Abrir votación <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                                 </a>
                             </div>
                         </article>
@@ -505,7 +509,7 @@ const formatDate = (
                                     v-else
                                     class="flex h-full items-center justify-center"
                                 >
-                                    🎲
+                                    <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />
                                 </div>
                             </div>
 
@@ -530,7 +534,7 @@ const formatDate = (
                                     "
                                     class="mt-1 text-sm font-semibold text-[#5200FF] dark:text-[#CCFF00]"
                                 >
-                                    🧩
+                                    <BuildingComplexPlus class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" />
                                     {{
                                         play
                                             .expansion

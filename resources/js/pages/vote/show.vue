@@ -1,4 +1,11 @@
 <script setup lang="ts">
+import { playerNameColor } from '@/lib/player-colors';
+import MeepleIcon from '@/components/icons/MeepleIcon.vue';
+import YoutubeLogoIcon from '@/components/icons/YoutubeLogoIcon.vue';
+import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, UsersRound, HourglassCog, Swords, BrainCog } from '@lucide/vue';
+
+import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
+
 import {
     computed,
     ref,
@@ -603,7 +610,7 @@ const formatDate = (
                             role="img"
                             :aria-label="`Sin portada de ${result.game.name}`"
                         >
-                            🎲
+                            <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-700" aria-hidden="true" />
                         </div>
 
                         <!-- INFO -->
@@ -625,7 +632,7 @@ const formatDate = (
                                 "
                                 class="mt-1 text-sm font-bold text-[#5200FF]"
                             >
-                                🧩
+                                <BuildingComplexPlus class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" />
                                 {{
                                     resultExpansion(result.candidate_id)?.name
                                 }}
@@ -819,7 +826,7 @@ const formatDate = (
                                     class="h-full w-full object-contain transition-transform duration-300 motion-safe:group-hover:scale-[1.04]"
                                     @error="markCoverAsBroken(candidate.id)"
                                 />
-                                <span v-else class="text-center text-xs text-zinc-500">🎲 Sin portada</span>
+                                <span v-else class="text-center text-xs text-zinc-500"><PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-700" aria-hidden="true" /> Sin portada</span>
                             </div>
 
                             <div class="min-w-0 flex-1">
@@ -843,12 +850,12 @@ const formatDate = (
                                 </h2>
 
                                 <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-600 sm:text-sm">
-                                    <span>👥 {{ candidate.game.min_players }}–{{ candidate.game.max_players }}</span>
+                                    <span><UsersRound class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9]" :stroke-width="2.2" role="img" aria-label="Jugadores" /> {{ candidate.game.min_players }}–{{ candidate.game.max_players }}</span>
                                     <span v-if="candidate.game.min_playtime">
-                                        ⏱ {{ candidate.game.min_playtime }}<template v-if="candidate.game.max_playtime && candidate.game.max_playtime !== candidate.game.min_playtime">–{{ candidate.game.max_playtime }}</template> min
+                                        <HourglassCog class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#1D4ED8]" :stroke-width="2.2" role="img" aria-label="Duración" /> {{ candidate.game.min_playtime }}<template v-if="candidate.game.max_playtime && candidate.game.max_playtime !== candidate.game.min_playtime">–{{ candidate.game.max_playtime }}</template> min
                                     </span>
-                                    <span v-if="candidate.game.complexity !== null">🧠 {{ candidate.game.complexity }}/5</span>
-                                    <span v-if="candidate.game.game_mode">🎲 {{ modeLabel(candidate.game.game_mode) }}</span>
+                                    <span v-if="candidate.game.complexity !== null"><BrainCog class="inline h-3.5 w-3.5 shrink-0 text-pink-400" /> {{ candidate.game.complexity }}/5</span>
+                                    <span v-if="candidate.game.game_mode"><Swords v-if="candidate.game.game_mode === 'competitive'" class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-orange-700" :stroke-width="2.2" aria-hidden="true" /> {{ modeLabel(candidate.game.game_mode) }}</span>
                                 </div>
 
                                 <div
@@ -871,7 +878,7 @@ const formatDate = (
                             v-if="candidate.expansion"
                             class="mx-3 mb-3 rounded-lg bg-violet-50 px-3 py-2 text-sm text-violet-900 sm:mx-4"
                         >
-                            🧩 Con expansión: <strong>{{ candidate.expansion.name }}</strong>
+                            <BuildingComplexPlus class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" /> Con expansión: <strong>{{ candidate.expansion.name }}</strong>
                         </p>
 
                         <p
@@ -884,7 +891,7 @@ const formatDate = (
                         <!-- Los jugadores del grupo son visibles sin desplegar nada. -->
                         <div class="border-t border-zinc-100 px-3 py-3 sm:px-4 lg:min-h-[5.75rem]">
                             <p class="text-xs font-bold uppercase tracking-wide text-zinc-500">
-                                👥 Jugadores de hoy ({{ candidate.history.participants.length }})
+                                <UsersRound class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9]" :stroke-width="2.2" role="img" aria-label="Jugadores" /> Jugadores de hoy ({{ candidate.history.participants.length }})
                             </p>
                             <div class="mt-2 flex flex-wrap gap-1.5">
                                 <span
@@ -892,7 +899,7 @@ const formatDate = (
                                     :key="participant.participant_id"
                                     class="max-w-full break-words rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700"
                                 >
-                                    {{ participant.display_name }}<template v-if="participant.participant_id === currentParticipantId"> (tú)</template>
+                                    <span :class="['inline-flex items-center gap-1.5', playerNameColor(participant.display_name)]"><MeepleIcon class="h-3.5 w-3.5 shrink-0" />{{ participant.display_name }}</span><template v-if="participant.participant_id === currentParticipantId"> (tú)</template>
                                 </span>
                             </div>
                         </div>
@@ -940,7 +947,7 @@ const formatDate = (
                                 <p v-else class="text-zinc-500">Este juego no tiene descripción breve.</p>
 
                                 <div class="rounded-xl bg-white p-3">
-                                    <p class="font-bold">📚 Historial registrado</p>
+                                    <p class="font-bold"><LibraryBig class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-violet-600 dark:text-violet-300" :stroke-width="2" aria-hidden="true" /> Historial registrado</p>
                                     <p class="mt-1 text-zinc-600">
                                         {{ candidate.history.total_plays }}
                                         {{ candidate.history.total_plays === 1 ? 'partida registrada' : 'partidas registradas' }}
@@ -954,7 +961,7 @@ const formatDate = (
                                             :key="participant.participant_id"
                                             class="flex items-start justify-between gap-2"
                                         >
-                                            <span class="min-w-0 break-words text-zinc-700">{{ participant.display_name }}</span>
+                                            <span class="min-w-0 break-words text-zinc-700"><span :class="['inline-flex items-center gap-1.5', playerNameColor(participant.display_name)]"><MeepleIcon class="h-3.5 w-3.5 shrink-0" />{{ participant.display_name }}</span></span>
                                             <span class="shrink-0 text-zinc-500">
                                                 {{ !participant.tracked ? 'Sin historial' : participant.play_count === 0 ? 'Nunca' : `${participant.play_count} ${participant.play_count === 1 ? 'partida' : 'partidas'}` }}
                                             </span>
@@ -969,14 +976,14 @@ const formatDate = (
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         class="font-bold text-[#5200FF] underline-offset-2 hover:underline"
-                                    >BGG ↗</a>
+                                    >BGG <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" /></a>
                                     <a
                                         v-if="candidate.game.youtube_url"
                                         :href="candidate.game.youtube_url"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        class="font-bold text-[#5200FF] underline-offset-2 hover:underline"
-                                    >▶ Tutorial</a>
+                                        class="font-bold text-[#5200FF] underline-offset-2 hover:underline inline-flex items-center justify-center gap-1.5"
+                                    ><YoutubeLogoIcon class="size-4 shrink-0" aria-hidden="true" /> Tutorial</a>
                                 </div>
                             </div>
                         </details>

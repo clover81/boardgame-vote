@@ -1,5 +1,6 @@
 
 <script setup lang="ts">
+import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
@@ -70,7 +71,7 @@ const togglePlayer = (player: Player) => {
                             class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-violet-200 bg-violet-100 text-lg font-black text-[#5200FF] shadow-sm transition-colors duration-200 group-hover:border-violet-300 group-hover:bg-violet-200 dark:border-violet-900/70 dark:bg-violet-950 dark:text-violet-200 dark:group-hover:bg-violet-900"
                             aria-hidden="true"
                         >
-                            {{ player.name.trim().charAt(0).toLocaleUpperCase() || '🎲' }}
+                            {{ player.name.trim().charAt(0).toLocaleUpperCase() || '<PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />' }}
                         </span>
 
                         <div class="min-w-0">

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import {
     computed,
     ref,
@@ -479,7 +480,7 @@ const sortedGames =
                     </span>
 
                     <span>
-                        🎲
+                        <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />
                         {{
                             summary.polls_with_play
                         }}
@@ -628,7 +629,7 @@ const sortedGames =
                                         v-else
                                         class="flex h-full items-center justify-center"
                                     >
-                                        🎲
+                                        <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />
                                     </div>
                                 </div>
 
@@ -805,7 +806,7 @@ const sortedGames =
                             <span
                                 class="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700 dark:bg-green-950/30 dark:text-green-300"
                             >
-                                🎲 Jugado tras votar:
+                                <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Jugado tras votar:
                                 {{
                                     item.played_after_poll
                                 }}

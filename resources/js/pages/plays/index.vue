@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
+import { playerNameColor } from '@/lib/player-colors';
+import MeepleIcon from '@/components/icons/MeepleIcon.vue';
+import { BuildingComplexPlus } from '@lucide/vue';
+import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
+import { CalendarHeart } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import {
     Head,
@@ -632,7 +638,7 @@ const confirmDeletePlay = () => {
                                 :key="player.id"
                                 :value="player.id"
                             >
-                                {{ player.name }}
+                                <span :class="['inline-flex items-center gap-1.5', playerNameColor(player.name)]"><MeepleIcon class="h-3.5 w-3.5 shrink-0" />{{ player.name }}</span>
                             </option>
                         </select>
                     </div>
@@ -735,7 +741,7 @@ const confirmDeletePlay = () => {
                                 @error="markCoverAsBroken(play.game.id)"
                             />
                             <div v-else class="flex min-h-28 items-center justify-center text-center text-xs text-zinc-500 dark:text-zinc-400">
-                                🎲 Sin portada
+                                <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Sin portada
                             </div>
                         </div>
 
@@ -747,14 +753,14 @@ const confirmDeletePlay = () => {
                                 {{ play.game.name }}
                             </Link>
                             <p class="mt-1 text-sm font-semibold text-[#5200FF] dark:text-[#CCFF00]">
-                                📅 {{ formatDate(play.played_at) }}
+                                <CalendarHeart class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-lime-700 dark:text-[#CCFF00]" :stroke-width="2.2" aria-hidden="true" /> {{ formatDate(play.played_at) }}
                             </p>
 
                             <p
                                 v-if="play.expansion"
                                 class="mt-2 break-words text-sm font-semibold text-violet-700 dark:text-violet-300"
                             >
-                                🧩 {{ play.expansion.name }}
+                                <BuildingComplexPlus class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" /> {{ play.expansion.name }}
                             </p>
 
                             <div class="mt-3">
@@ -767,7 +773,7 @@ const confirmDeletePlay = () => {
                                         :key="player.id"
                                         class="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 sm:text-sm dark:bg-zinc-800 dark:text-zinc-200"
                                     >
-                                        👤 {{ player.name }}
+                                        <span :class="['inline-flex items-center gap-1.5', playerNameColor(player.name)]"><MeepleIcon class="h-3.5 w-3.5 shrink-0" />{{ player.name }}</span>
                                     </span>
                                     <span
                                         v-if="play.players.length === 0"
@@ -804,7 +810,7 @@ const confirmDeletePlay = () => {
                             :href="`/plays/${play.id}/edit`"
                             class="font-semibold text-zinc-600 hover:underline dark:text-zinc-300"
                         >
-                            ✏️ Editar
+                            <span class="inline-flex items-center justify-center gap-1.5"><PencilSparklesIcon class="h-4 w-4 shrink-0 text-violet-500 dark:text-[#CCFF00]" />Editar</span>
                         </Link>
                         <button
                             type="button"
@@ -891,7 +897,7 @@ const confirmDeletePlay = () => {
                         class="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100 text-2xl dark:bg-red-950"
                         aria-hidden="true"
                     >
-                        🎲
+                        <PlayingCardsFanIcon class="mr-1 inline-block size-6 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />
                     </div>
 
                     <DialogTitle class="text-xl font-black">

@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import YoutubeLogoIcon from '@/components/icons/YoutubeLogoIcon.vue';
+import { Link as ChainIcon, UsersRound, HourglassCog, Swords, BrainCog } from '@lucide/vue';
+import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
+
 import { computed, onMounted, ref, watch } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
@@ -436,54 +440,47 @@ const externalUrl = (url: string | null): string | undefined => {
     <Head title="Catálogo de juegos de mesa" />
 
     <div class="min-h-screen bg-[#f7f7f5] text-zinc-950">
-        <!-- CABECERA -->
-        <header class="bg-[#181424] text-white">
-            <div class="mx-auto max-w-7xl px-5 py-7 sm:px-8">
-                <div class="flex items-center gap-3">
-                    <div
-                        class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#CCFF00] text-2xl"
-                    >
-                        🎲
-                    </div>
 
-                    <div>
-                        <p class="text-lg font-black tracking-tight">
-                            BOARDGAME<span class="text-[#CCFF00]">VOTE</span>
-                        </p>
-                        <p class="text-xs text-zinc-400">
-                            Biblioteca de juegos de mesa
-                        </p>
+        <!-- CABECERA PUBLICA COMPACTA - Clover -->
+        <div class="mx-auto max-w-7xl px-4 pt-5 sm:px-8 sm:pt-8">
+            <header class="relative overflow-hidden rounded-[28px] bg-[#181424] px-5 py-5 text-white shadow-lg shadow-[#181424]/10 sm:px-9 sm:py-7">
+                <!-- Iluminación discreta, sin alterar el contraste ni añadir imágenes. -->
+                <div aria-hidden="true" class="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-[#5200FF]/20 blur-3xl"></div>
+
+                <div class="relative flex items-center gap-3">
+                    <span class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#CCFF00] text-[#5200FF] shadow-sm" aria-hidden="true">
+                        <PlayingCardsFanIcon class="!m-0 !size-6 shrink-0" />
+                    </span>
+                    <div class="min-w-0">
+                        <p class="text-base font-black leading-tight tracking-tight sm:text-lg">Juegos de mesa</p>
+                        <p class="mt-1 text-xs font-medium text-zinc-300">Clover</p>
                     </div>
                 </div>
 
-                <div class="max-w-3xl py-12 sm:py-16">
-                    <span
-                        class="inline-block rounded-full border border-white/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[#CCFF00]"
-                    >
-                        Catálogo compartido
-                    </span>
+                <div class="relative mt-7 grid gap-5 sm:mt-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-8">
+                    <div class="min-w-0">
+                        <span class="inline-flex rounded-full border border-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#CCFF00]">
+                            Catálogo compartido
+                        </span>
+                        <h1 class="mt-3 text-3xl font-black leading-tight tracking-tight sm:text-5xl">
+                            ¿A qué jugamos <span class="text-[#CCFF00]">hoy?</span>
+                        </h1>
+                        <p class="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-300 sm:text-base">
+                            Explora la colección, descubre nuevos juegos y encuentra el perfecto para tu próxima partida.
+                        </p>
+                    </div>
 
-                    <h1 class="mt-5 text-4xl font-black leading-tight tracking-tight sm:text-6xl">
-                        ¿A qué jugamos
-                        <span class="text-[#CCFF00]">hoy?</span>
-                    </h1>
-
-                    <p class="mt-5 max-w-xl text-base leading-relaxed text-zinc-300 sm:text-lg">
-                        Explora la colección, descubre nuevos juegos
-                        y encuentra el perfecto para tu próxima partida.
-                    </p>
-
-                    <div class="mt-7 flex flex-wrap gap-3 text-sm font-semibold">
-                        <span class="rounded-full bg-white/10 px-4 py-2">
+                    <div class="flex flex-wrap gap-2 text-xs font-semibold sm:text-sm lg:justify-end">
+                        <span class="rounded-full border border-white/10 bg-white/10 px-3.5 py-2">
                             {{ games.length }} juegos
                         </span>
-                        <span class="rounded-full bg-white/10 px-4 py-2">
+                        <span class="rounded-full border border-white/10 bg-white/10 px-3.5 py-2">
                             {{ collections.length }} colecciones
                         </span>
                     </div>
                 </div>
-            </div>
-        </header>
+            </header>
+        </div>
 
         <main class="mx-auto max-w-7xl px-4 py-6 sm:px-8 sm:py-10">
             <!-- FILTROS -->
@@ -755,7 +752,7 @@ const externalUrl = (url: string | null): string | undefined => {
                             v-else
                             class="flex flex-col items-center gap-2 text-zinc-400"
                         >
-                            <span class="text-5xl">🎲</span>
+                            <span class="text-5xl"><PlayingCardsFanIcon class="mr-1 inline-block size-12 shrink-0 align-[-0.14em] text-violet-700" aria-hidden="true" /></span>
                             <span class="text-sm font-medium">
                                 Sin portada disponible
                             </span>
@@ -767,7 +764,7 @@ const externalUrl = (url: string | null): string | undefined => {
                             class="absolute bottom-2 left-2 rounded-xl border border-white/80 bg-white/95 px-2.5 py-1.5 shadow-md sm:bottom-3 sm:left-3 sm:px-3 sm:py-2"
                         >
                             <span class="text-xs font-black text-[#5200FF]">
-                                ⭐ Ideal:
+                                Ideal:
                                 {{ game.ideal_player_counts.join(', ') }}
                                 jugadores
                             </span>
@@ -795,6 +792,7 @@ const externalUrl = (url: string | null): string | undefined => {
                                         mode === 'semi_cooperative',
                                 }"
                             >
+                                <Swords v-if="mode === 'competitive'" class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-orange-700" :stroke-width="2.2" aria-hidden="true" />
                                 {{ gameModeLabels[mode] ?? mode }}
                             </span>
 
@@ -830,14 +828,14 @@ const externalUrl = (url: string | null): string | undefined => {
                             <div class="rounded-xl bg-zinc-50 p-2.5 sm:p-3">
                                 <p class="text-xs text-zinc-500">Jugadores</p>
                                 <p class="mt-1 font-black">
-                                    👥 {{ game.min_players }}–{{ game.max_players }}
+                                    <UsersRound class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9]" :stroke-width="2.2" role="img" aria-label="Jugadores" /> {{ game.min_players }}–{{ game.max_players }}
                                 </p>
                             </div>
 
                             <div class="rounded-xl bg-zinc-50 p-2.5 sm:p-3">
                                 <p class="text-xs text-zinc-500">Duración</p>
                                 <p class="mt-1 font-black">
-                                    ⏱ {{ formatDuration(game) }}
+                                    <HourglassCog class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#1D4ED8]" :stroke-width="2.2" role="img" aria-label="Duración" /> {{ formatDuration(game) }}
                                 </p>
                             </div>
 
@@ -846,8 +844,8 @@ const externalUrl = (url: string | null): string | undefined => {
                                 class="col-span-2 flex items-center justify-between rounded-xl bg-zinc-50 px-3 py-2.5 text-sm"
                             >
                                 <span class="text-zinc-500">Dificultad</span>
-                                <span class="font-black">
-                                    🧠 {{ Number(game.complexity).toFixed(1) }} / 5
+                                <span class="font-black inline-flex items-center gap-1.5 whitespace-nowrap">
+                                    <BrainCog class="size-4 shrink-0 text-pink-600" :stroke-width="2" aria-hidden="true" /> {{ Number(game.complexity).toFixed(1) }} / 5
                                 </span>
                             </div>
                         </div>
@@ -871,7 +869,7 @@ const externalUrl = (url: string | null): string | undefined => {
                                 rel="noopener noreferrer"
                                 class="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-xl bg-[#5200FF] px-3 py-2.5 text-center text-sm font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#4000cc] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none"
                             >
-                                BGG ↗
+                                BGG <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                             </a>
 
                             <a
@@ -879,9 +877,9 @@ const externalUrl = (url: string | null): string | undefined => {
                                 :href="externalUrl(game.youtube_url)"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                class="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-xl border-2 border-[#5200FF] bg-white px-2 py-2 text-center text-sm font-extrabold text-[#5200FF] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f1ebff] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none"
+                                class="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-xl border-2 border-[#5200FF] bg-white px-2 py-2 text-center text-sm font-extrabold text-[#5200FF] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f1ebff] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none gap-1.5"
                             >
-                                ▶ Tutorial ↗
+                                <YoutubeLogoIcon class="size-4 shrink-0" aria-hidden="true" /> Tutorial <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                             </a>
                         </div>
                     </div>
@@ -892,7 +890,7 @@ const externalUrl = (url: string | null): string | undefined => {
                 v-else
                 class="rounded-3xl border border-dashed border-zinc-300 bg-white px-6 py-16 text-center"
             >
-                <p class="text-4xl">🎲</p>
+                <p class="text-4xl"><PlayingCardsFanIcon class="mr-1 inline-block size-10 shrink-0 align-[-0.14em] text-violet-700" aria-hidden="true" /></p>
                 <h3 class="mt-4 text-xl font-black">
                     No hay juegos que coincidan
                 </h3>
@@ -910,7 +908,7 @@ const externalUrl = (url: string | null): string | undefined => {
         </main>
 
         <footer class="mt-12 border-t border-zinc-200 py-8 text-center text-sm text-zinc-500">
-            Boardgame Vote · Catálogo de juegos compartidos
+            Juegos de mesa · Catálogo de juegos compartidos
         </footer>
 
         <ScrollToTopProgress />

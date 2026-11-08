@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { BuildingComplexPlus } from '@lucide/vue';
+import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import {
     Head,
     Link,
@@ -486,7 +488,7 @@ const decisionLabel = (
                                         v-else
                                         class="flex h-full items-center justify-center"
                                     >
-                                        🎲
+                                        <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />
                                     </div>
                                 </div>
 
@@ -582,7 +584,7 @@ const decisionLabel = (
                                         v-else
                                         class="flex h-full items-center justify-center"
                                     >
-                                        🎲
+                                        <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />
                                     </div>
                                 </div>
 
@@ -790,7 +792,7 @@ const decisionLabel = (
                                         "
                                         class="mt-1 text-xs text-zinc-500"
                                     >
-                                        🧩
+                                        <BuildingComplexPlus class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" />
                                         {{
                                             decision.expansion.name
                                         }}

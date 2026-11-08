@@ -75,7 +75,7 @@ const currentSection = computed(() => {
         <span
             class="ml-auto hidden text-xs font-medium text-muted-foreground/60 md:inline"
         >
-            Boardgame Vote
+            Juegos de mesa
         </span>
     </header>
 </template>

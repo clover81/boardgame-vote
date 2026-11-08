@@ -1,4 +1,12 @@
 <script setup lang="ts">
+import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
+import { playerNameColor } from '@/lib/player-colors';
+import MeepleIcon from '@/components/icons/MeepleIcon.vue';
+import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, CalendarHeart, UsersRound, HourglassCog, Swords, BrainCog } from '@lucide/vue';
+
+import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
+
+
 import { computed, ref } from 'vue';
 import {
     Head,
@@ -378,7 +386,7 @@ const modeLabel = (
                         <span
                             class="rounded-full bg-[#CCFF00] px-3 py-1 text-sm font-semibold text-black"
                         >
-                            👥
+                            <UsersRound class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-black" :stroke-width="2.2" role="img" aria-label="Jugadores" />
                             {{
                                 poll.participants
                                     .length
@@ -389,7 +397,7 @@ const modeLabel = (
                         <span
                             class="rounded-full bg-zinc-100 px-3 py-1 text-sm font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
                         >
-                            🎲
+                            <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />
                             {{
                                 poll.candidates.length
                             }}
@@ -403,7 +411,7 @@ const modeLabel = (
                         <span
                             class="text-sm font-semibold text-zinc-500 dark:text-zinc-400"
                         >
-                            📚 Colecciones:
+                            <LibraryBig class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-violet-600 dark:text-violet-300" :stroke-width="2" aria-hidden="true" /> Colecciones:
                         </span>
 
                         <template
@@ -432,7 +440,7 @@ const modeLabel = (
                         "
                         class="mt-4 text-sm font-semibold text-zinc-600 dark:text-zinc-300"
                     >
-                        ✅
+
                         {{
                             poll.voted_participants_count
                         }}
@@ -505,16 +513,12 @@ const modeLabel = (
                             class="flex items-center justify-between gap-3"
                         >
                             <div>
-                                <p
-                                    class="text-xs font-black uppercase tracking-wide text-green-600"
-                                >
-                                    ● EN DIRECTO
-                                </p>
+
 
                                 <h2
                                     class="mt-1 text-lg font-black text-zinc-900 dark:text-zinc-100"
                                 >
-                                    Recibiendo votos
+                                    Votos recibidos
                                 </h2>
                             </div>
 
@@ -571,7 +575,7 @@ const modeLabel = (
                                     class="rounded-xl bg-zinc-50 p-3 dark:bg-zinc-900"
                                 >
                                     <p class="font-semibold">
-                                        {{ participant.display_name }}
+                                        <span :class="['inline-flex items-center gap-1.5', playerNameColor(participant.display_name)]"><MeepleIcon class="h-3.5 w-3.5 shrink-0" />{{ participant.display_name }}</span>
                                     </p>
 
                                     <a
@@ -581,7 +585,7 @@ const modeLabel = (
                                         rel="noopener noreferrer"
                                         class="mt-1 block break-all text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                                     >
-                                        /vote/{{ poll.token }}/{{ participant.vote_token }} ↗
+                                        /vote/{{ poll.token }}/{{ participant.vote_token }} <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                                     </a>
                                 </div>
                             </div>
@@ -743,7 +747,7 @@ const modeLabel = (
                             v-else
                             class="flex aspect-[4/3] flex-col items-center justify-center gap-2 bg-zinc-100 text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400"
                         >
-                            <span class="text-3xl" aria-hidden="true">🎲</span>
+                            <span class="text-3xl" aria-hidden="true"><PlayingCardsFanIcon class="mr-1 inline-block size-8 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /></span>
                             <span class="text-sm font-medium">Sin portada</span>
                         </div>
 
@@ -778,7 +782,7 @@ const modeLabel = (
                                 class="mt-4 space-y-2 text-sm text-zinc-500 dark:text-zinc-400"
                             >
                                 <p>
-                                    👥
+                                    <UsersRound class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#C4B5FD]" :stroke-width="2.2" role="img" aria-label="Jugadores" />
                                     {{
                                         candidate.game
                                             .min_players
@@ -796,7 +800,7 @@ const modeLabel = (
                                         null
                                     "
                                 >
-                                    ⏱
+                                    <HourglassCog class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#1D4ED8] dark:text-[#CCFF00]" :stroke-width="2.2" role="img" aria-label="Duración" />
                                     {{
                                         candidate.game
                                             .min_playtime
@@ -830,7 +834,7 @@ const modeLabel = (
                                         null
                                     "
                                 >
-                                    🧠
+                                    <BrainCog class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#BE185D] dark:text-[#F9A8D4]" :stroke-width="2.2" role="img" aria-label="Complejidad" />
                                     {{
                                         candidate.game
                                             .complexity
@@ -839,7 +843,7 @@ const modeLabel = (
                                 </p>
 
                                 <p>
-                                    🎲
+                                    <Swords v-if="candidate.game.game_mode === 'competitive'" class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-orange-500 dark:text-orange-300" :stroke-width="2.2" aria-hidden="true" />
                                     {{
                                         modeLabel(
                                             candidate
@@ -863,7 +867,7 @@ const modeLabel = (
                                 <p
                                     class="text-sm font-bold text-[#5200FF] dark:text-violet-300"
                                 >
-                                    🧩 Expansión prevista
+                                    <BuildingComplexPlus class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" /> Expansión prevista
                                 </p>
 
                                 <p
@@ -1035,7 +1039,7 @@ const modeLabel = (
                                 v-else
                                 class="flex h-full flex-col items-center justify-center gap-1 text-xs text-zinc-500 dark:text-zinc-400"
                             >
-                                <span aria-hidden="true">🎲</span>
+                                <span aria-hidden="true"><PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /></span>
                                 <span>Sin portada</span>
                             </div>
                         </div>
@@ -1058,7 +1062,7 @@ const modeLabel = (
                                 "
                                 class="mt-1 text-sm font-semibold text-[#5200FF] dark:text-violet-300"
                             >
-                                🧩
+                                <BuildingComplexPlus class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" />
                                 {{
                                     resultExpansion(result.candidate_id)?.name
                                 }}
@@ -1110,7 +1114,7 @@ const modeLabel = (
                     class="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950"
                 >
                     <p class="text-sm font-bold uppercase tracking-wide text-[#5200FF]">
-                        🎲
+                        <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />
                         {{
                             poll.plays.length === 1
                                 ? 'Partida registrada'
@@ -1135,18 +1139,18 @@ const modeLabel = (
                                 v-if="play.expansion"
                                 class="mt-1 text-sm text-zinc-500 dark:text-zinc-400"
                             >
-                                🧩 {{ play.expansion.name }}
+                                <BuildingComplexPlus class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" /> {{ play.expansion.name }}
                             </p>
 
                             <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                                📅 {{ play.played_at }}
+                                <CalendarHeart class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-lime-700 dark:text-[#CCFF00]" :stroke-width="2.2" aria-hidden="true" /> {{ play.played_at }}
                             </p>
 
                             <p
                                 v-if="play.players.length"
                                 class="mt-1 text-sm text-zinc-500 dark:text-zinc-400"
                             >
-                                👥
+                                <UsersRound class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#C4B5FD]" :stroke-width="2.2" role="img" aria-label="Jugadores" />
                                 {{
                                     play.players
                                         .map(player => player.name)
@@ -1158,7 +1162,7 @@ const modeLabel = (
                                 :href="`/plays/${play.id}/edit`"
                                 class="mt-3 inline-block text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                             >
-                                Editar registro
+                                <span class="inline-flex items-center justify-center gap-1.5"><PencilSparklesIcon class="h-4 w-4 shrink-0 text-violet-500 dark:text-[#CCFF00]" />Editar registro</span>
                             </Link>
                         </div>
                     </div>
@@ -1174,7 +1178,7 @@ const modeLabel = (
                         :href="`/polls/${poll.id}/register-play`"
                         class="inline-flex rounded-xl bg-[#5200FF] px-6 py-3 font-bold text-white"
                     >
-                        🎲 Registrar partida realmente jugada
+                        <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Registrar partida realmente jugada
                     </Link>
                 </div>
             </section>

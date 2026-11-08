@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { BuildingComplexPlus, Swords } from '@lucide/vue';
+import { Link as ChainIcon } from '@lucide/vue';
+import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import { computed, ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import GameCollectionsField from '@/components/GameCollectionsField.vue';
@@ -550,7 +553,7 @@ const submit = () => {
                             />
 
                             <span v-else class="text-4xl">
-                                🎲
+                                <PlayingCardsFanIcon class="mr-1 inline-block size-10 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />
                             </span>
                         </div>
 
@@ -726,7 +729,7 @@ const submit = () => {
                     <p
                         class="font-bold text-zinc-900 dark:text-zinc-100"
                     >
-                        🔗 O pegar URL / ID
+                        <ChainIcon class="inline-block h-4 w-4 mr-1 shrink-0 align-[-0.15em]" aria-hidden="true" /> O pegar URL / ID
                     </p>
 
                     <div
@@ -799,7 +802,7 @@ const submit = () => {
                                 v-else
                                 class="flex h-full items-center justify-center text-3xl"
                             >
-                                🎲
+                                <PlayingCardsFanIcon class="mr-1 inline-block size-8 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />
                             </div>
                         </div>
 
@@ -1000,7 +1003,7 @@ const submit = () => {
                         <p
                             class="font-bold text-zinc-900 dark:text-zinc-100"
                         >
-                            🧩 Expansiones encontradas
+                            <BuildingComplexPlus class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" /> Expansiones encontradas
                         </p>
 
                         <p
@@ -1030,7 +1033,7 @@ const submit = () => {
                                 >
                                     <div class="flex gap-3">
                                         <div class="text-xl">
-                                            🧩
+                                            <BuildingComplexPlus class="inline-block size-5 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" />
                                         </div>
 
                                         <div>
@@ -1272,7 +1275,7 @@ const submit = () => {
                                     value="competitive"
                                     class="h-5 w-5 accent-[#5200FF]"
                                 />
-                                <span>Competitivo</span>
+                                <span><Swords class="mr-1 inline h-3.5 w-3.5 shrink-0 text-orange-400" /> Competitivo</span>
                             </label>
 
                             <label class="flex cursor-pointer items-center gap-3">

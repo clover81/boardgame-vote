@@ -45,7 +45,7 @@ const props = defineProps<ToasterProps>()
 
 
 <style>
-/* Boardgame Vote: contraste de notificaciones */
+/* Juegos de mesa: contraste de notificaciones */
 
 [data-sonner-toaster] [data-sonner-toast] {
     background: #111114 !important;

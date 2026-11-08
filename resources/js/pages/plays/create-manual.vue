@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { playerNameColor } from '@/lib/player-colors';
+import MeepleIcon from '@/components/icons/MeepleIcon.vue';
+import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import {
     computed,
     ref,
@@ -337,7 +340,7 @@ const submit = () => {
                                         @error="markCoverAsBroken(game.id)"
                                     />
                                     <span v-else class="text-center text-xs text-zinc-500 dark:text-zinc-400">
-                                        🎲 Sin portada
+                                        <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Sin portada
                                     </span>
                                 </span>
 
@@ -489,7 +492,7 @@ const submit = () => {
                             <div
                                 class="flex min-h-14 items-center justify-between gap-3 rounded-xl border-2 border-zinc-200 bg-white p-4 font-semibold text-zinc-900 shadow-sm transition-[transform,border-color,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-[0_8px_20px_rgba(82,0,255,0.10)] peer-focus-visible:ring-4 peer-focus-visible:ring-violet-400/40 peer-checked:border-[#5200FF] peer-checked:bg-violet-50 peer-checked:ring-2 peer-checked:ring-[#5200FF]/20 motion-reduce:transform-none motion-reduce:transition-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:peer-checked:bg-violet-950/30"
                             >
-                                <span class="min-w-0 break-words">{{ player.name }}</span>
+                                <span class="min-w-0 break-words"><span :class="['inline-flex items-center gap-1.5', playerNameColor(player.name)]"><MeepleIcon class="h-3.5 w-3.5 shrink-0" />{{ player.name }}</span></span>
                                 <span
                                     v-if="form.player_ids.includes(player.id)"
                                     class="shrink-0 rounded-full bg-[#5200FF] px-2 py-0.5 text-xs font-bold text-white"

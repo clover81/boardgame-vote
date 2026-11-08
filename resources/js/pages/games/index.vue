@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
+import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
+import { HourglassCog, Swords, UsersRound, BrainCog } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import {
     Head,
@@ -8,6 +11,7 @@ import {
 
 import AppLayout from '@/layouts/AppLayout.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
+import RollingDicesIcon from '@/components/icons/RollingDicesIcon.vue';
 
 interface Collection {
     id: number;
@@ -173,7 +177,7 @@ const formatDate = (date: string | null): string => {
                     <p
                         class="mt-2 text-zinc-500 dark:text-zinc-400"
                     >
-                        Consulta tus juegos, expansiones
+                        Consulta juegos, expansiones
                         e historial de partidas.
                     </p>
                 </div>
@@ -181,9 +185,12 @@ const formatDate = (date: string | null): string => {
                 <div class="flex flex-wrap gap-2">
                     <Link
                         href="/polls/create"
-                        class="rounded-xl border border-zinc-300 px-4 py-3 font-bold text-zinc-700 transition hover:border-[#5200FF] dark:border-zinc-700 dark:text-zinc-200"
+                        class="inline-flex min-h-12 items-center gap-2.5 rounded-xl border border-[#5200FF]/35 bg-[#5200FF]/5 px-4 py-2 font-bold text-[#5200FF] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#5200FF] hover:bg-[#5200FF]/10 hover:shadow-[0_8px_22px_rgba(82,0,255,0.16)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none dark:border-[#CCFF00]/45 dark:bg-[#5200FF]/15 dark:text-[#CCFF00] dark:hover:bg-[#5200FF]/25"
                     >
-                        🎲 Nueva votación
+                        <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#5200FF] shadow-sm" aria-hidden="true">
+                            <RollingDicesIcon class="size-6 text-[#CCFF00]" />
+                        </span>
+                        <span>Nueva votación</span>
                     </Link>
 
                     <Link
@@ -445,6 +452,7 @@ const formatDate = (date: string | null): string => {
                                         mode === 'semi_cooperative',
                                 }"
                             >
+                                <Swords v-if="mode === 'competitive'" class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-orange-500 dark:text-orange-300" :stroke-width="2.2" aria-hidden="true" />
                                 {{ gameModeLabels[mode] ?? mode }}
                             </span>
 
@@ -484,7 +492,7 @@ const formatDate = (date: string | null): string => {
                             class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-zinc-600 dark:text-zinc-300"
                         >
                             <span>
-                                👥
+                                <UsersRound class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#C4B5FD]" :stroke-width="2.2" role="img" aria-label="Jugadores" />
                                 {{ game.min_players }}–{{
                                     game.max_players
                                 }}
@@ -495,7 +503,7 @@ const formatDate = (date: string | null): string => {
                                     game.min_playtime !== null
                                 "
                             >
-                                ⏱
+                                <HourglassCog class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#1D4ED8] dark:text-[#CCFF00]" :stroke-width="2.2" role="img" aria-label="Duración" />
                                 {{ game.min_playtime }}
 
                                 <template
@@ -515,8 +523,8 @@ const formatDate = (date: string | null): string => {
                                 v-if="
                                     game.complexity !== null
                                 "
-                            >
-                                🧠 {{ game.complexity }}/5
+                             class="inline-flex items-center gap-1.5">
+                                <BrainCog class="size-[18px] shrink-0 text-pink-400 dark:text-pink-300" :stroke-width="2.2" aria-hidden="true" /> {{ game.complexity }}/5
                             </span>
                         </div>
 
@@ -551,7 +559,7 @@ const formatDate = (date: string | null): string => {
                                 "
                                 class="text-sm font-semibold text-zinc-500"
                             >
-                                🎲 Sin partidas registradas
+                                <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Sin partidas registradas
                             </p>
 
                             <div
@@ -561,7 +569,7 @@ const formatDate = (date: string | null): string => {
                                 <p
                                     class="font-bold text-[#5200FF] dark:text-[#CCFF00]"
                                 >
-                                    🎲
+                                    <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />
                                     {{ game.total_plays }}
                                     {{
                                         game.total_plays === 1
@@ -601,7 +609,7 @@ const formatDate = (date: string | null): string => {
                                 "
                                 class="flex min-h-11 items-center justify-center rounded-xl border border-zinc-300 px-3 py-2.5 text-center text-sm font-bold transition hover:border-[#5200FF] hover:text-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-[#CCFF00] dark:hover:text-[#CCFF00]"
                             >
-                                Editar
+                                <span class="inline-flex items-center justify-center gap-1.5"><PencilSparklesIcon class="h-4 w-4 shrink-0 text-violet-500 dark:text-[#CCFF00]" />Editar</span>
                             </Link>
                         </div>
                     </div>

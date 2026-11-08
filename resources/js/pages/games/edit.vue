@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
+import { BuildingComplexPlus, Swords } from '@lucide/vue';
+import { Link as ChainIcon } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import GameCollectionsField from '@/components/GameCollectionsField.vue';
@@ -374,7 +377,7 @@ const confirmDeleteGame = () => {
                         rel="noopener noreferrer"
                         class="mt-3 inline-block text-sm font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                     >
-                        Ver en BoardGameGeek ↗
+                        Ver en BoardGameGeek <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                     </a>
                 </div>
 
@@ -570,7 +573,7 @@ const confirmDeleteGame = () => {
                                 value="competitive"
                                 class="h-5 w-5 accent-[#5200FF]"
                             />
-                            <span>Competitivo</span>
+                            <span><Swords class="mr-1 inline h-3.5 w-3.5 shrink-0 text-orange-400" /> Competitivo</span>
                         </label>
 
                         <label class="flex cursor-pointer items-center gap-3">
@@ -745,7 +748,7 @@ const confirmDeleteGame = () => {
                                     v-else
                                     class="flex h-full items-center justify-center text-2xl"
                                 >
-                                    🧩
+                                    <BuildingComplexPlus class="inline-block size-6 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" />
                                 </div>
                             </div>
 
@@ -807,7 +810,7 @@ const confirmDeleteGame = () => {
                                         rel="noopener noreferrer"
                                         class="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-bold dark:border-zinc-700"
                                     >
-                                        Ver en BGG ↗
+                                        Ver en BGG <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                                     </a>
 
                                     <a
@@ -821,7 +824,7 @@ const confirmDeleteGame = () => {
                                         rel="noopener noreferrer"
                                         class="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-bold dark:border-zinc-700"
                                     >
-                                        Tutorial ↗
+                                        Tutorial <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                                     </a>
 
                                     <button
@@ -834,7 +837,7 @@ const confirmDeleteGame = () => {
                                             )
                                         "
                                     >
-                                        Editar
+                                        <span class="inline-flex items-center justify-center gap-1.5"><PencilSparklesIcon class="h-4 w-4 shrink-0 text-violet-500 dark:text-[#CCFF00]" />Editar</span>
                                     </button>
 
                                     <button
@@ -1140,7 +1143,7 @@ const confirmDeleteGame = () => {
                         class="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100 text-2xl dark:bg-red-950"
                         aria-hidden="true"
                     >
-                        🧩
+                        <BuildingComplexPlus class="inline-block size-6 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" />
                     </div>
 
                     <DialogTitle class="text-xl font-black">

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { BuildingComplexPlus } from '@lucide/vue';
+import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import {
     computed,
     ref,
@@ -268,7 +270,7 @@ const submit = () => {
                     <p
                         class="font-black text-[#5200FF] dark:text-violet-300"
                     >
-                        🎲 ¿Qué acabasteis jugando?
+                        <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> ¿Qué acabasteis jugando?
                     </p>
 
                     <p
@@ -325,7 +327,7 @@ const submit = () => {
                                         @error="markCoverAsBroken(candidate.game.id)"
                                     />
                                     <span v-else class="text-center text-xs text-zinc-500 dark:text-zinc-400">
-                                        🎲 Sin portada
+                                        <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Sin portada
                                     </span>
                                 </span>
 
@@ -352,7 +354,7 @@ const submit = () => {
                                         v-if="candidate.planned_expansion_id"
                                         class="mt-2 block text-sm font-semibold text-[#5200FF] dark:text-violet-300"
                                     >
-                                        🧩 Expansión prevista
+                                        <BuildingComplexPlus class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" /> Expansión prevista
                                     </span>
                                 </span>
                             </button>

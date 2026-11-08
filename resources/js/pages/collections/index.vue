@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { BuildingComplexPlus } from '@lucide/vue';
+import { Link as ChainIcon } from '@lucide/vue';
+import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import {
@@ -685,7 +688,7 @@ watch(
                 class="mt-8 rounded-2xl border border-violet-200 bg-violet-50 p-6 dark:border-violet-900 dark:bg-violet-950/30"
             >
                 <h2 class="text-xl font-bold text-zinc-900 dark:text-white">
-                    🌐 Tu catálogo compartido
+                    Tu catálogo compartido
                 </h2>
 
                 <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
@@ -700,7 +703,7 @@ watch(
                         rel="noopener noreferrer"
                         class="rounded-xl bg-[#5200FF] px-5 py-3 text-sm font-bold text-white transition hover:opacity-90"
                     >
-                        Ver mi catálogo ↗
+                        Ver mi catálogo <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                     </a>
 
                     <button
@@ -721,7 +724,7 @@ watch(
                 class="mt-8 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-6"
             >
                 <h2 class="text-xl font-bold">
-                    🎲 Sincronización con BoardGameGeek
+                    <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Sincronización con BoardGameGeek
                 </h2>
 
                 <p class="mt-2 text-sm text-zinc-500">
@@ -772,7 +775,7 @@ watch(
                         {{
                             bggSyncing
                                 ? 'Enviando sincronización...'
-                                : '🔄 Sincronizar con BGG'
+                                : 'Sincronizar con BGG'
                         }}
                     </button>
                 </div>
@@ -1175,7 +1178,7 @@ watch(
                                     </span>
                                 </div>
                                 <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-                                    🎲 {{ collection.games_count }}
+                                    <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> {{ collection.games_count }}
                                     {{ collection.games_count === 1 ? 'juego' : 'juegos' }}
                                 </p>
                             </div>
@@ -1333,7 +1336,7 @@ watch(
                         class="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-100 text-2xl dark:bg-purple-950"
                         aria-hidden="true"
                     >
-                        🎲
+                        <PlayingCardsFanIcon class="mr-1 inline-block size-6 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />
                     </div>
 
                     <DialogTitle class="text-xl font-black">
@@ -1388,7 +1391,7 @@ watch(
                         class="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-100 text-2xl dark:bg-purple-950"
                         aria-hidden="true"
                     >
-                        🧩
+                        <BuildingComplexPlus class="inline-block size-6 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" />
                     </div>
 
                     <DialogTitle class="text-xl font-black">
@@ -1443,7 +1446,7 @@ watch(
                         class="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-100 text-2xl dark:bg-purple-950"
                         aria-hidden="true"
                     >
-                        🔗
+                        <ChainIcon class="inline-block h-7 w-7 shrink-0 align-[-0.15em]" aria-hidden="true" />
                     </div>
 
                     <DialogTitle class="text-xl font-black">

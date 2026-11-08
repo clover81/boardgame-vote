@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import YoutubeLogoIcon from '@/components/icons/YoutubeLogoIcon.vue';
+import { Link as ChainIcon, BrainCog, Swords } from '@lucide/vue';
+import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import { ref } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
@@ -159,7 +162,7 @@ const externalUrl = (url: string | null): string | undefined => {
                 </Link>
 
                 <div class="mt-6 flex items-center gap-3">
-                    <span class="text-2xl">🎲</span>
+                    <span class="text-2xl"><PlayingCardsFanIcon class="mr-1 inline-block size-6 shrink-0 align-[-0.14em] text-violet-700" aria-hidden="true" /></span>
                     <span class="text-lg font-black tracking-tight">
                         BOARDGAME<span class="text-[#CCFF00]">VOTE</span>
                     </span>
@@ -263,8 +266,8 @@ const externalUrl = (url: string | null): string | undefined => {
 
                         <div class="rounded-2xl bg-white p-4 shadow-sm">
                             <p class="text-xs text-zinc-500">Dificultad</p>
-                            <p class="mt-2 text-xl font-black">
-                                {{
+                            <p class="mt-2 text-xl font-black inline-flex items-center gap-2">
+                                <BrainCog class="size-5 shrink-0 text-pink-600" :stroke-width="2" aria-hidden="true" />{{
                                     game.complexity !== null
                                         ? Number(game.complexity).toFixed(1) + ' / 5'
                                         : 'Sin datos'
@@ -279,7 +282,7 @@ const externalUrl = (url: string | null): string | undefined => {
                         class="mt-4 rounded-2xl border border-lime-200 bg-lime-50 p-4 sm:mt-6 sm:p-5"
                     >
                         <p class="text-sm font-bold text-zinc-700">
-                            ⭐ Mejor número de jugadores
+                            Mejor número de jugadores
                         </p>
 
                         <div class="mt-3 flex flex-wrap gap-2">
@@ -294,7 +297,7 @@ const externalUrl = (url: string | null): string | undefined => {
                     </div>
 
                     <p class="mt-5 text-sm font-medium text-zinc-500">
-                        Modalidad: {{ gameMode() }}
+                        Modalidad: <Swords v-if="game.game_modes.includes('competitive')" class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-orange-700" :stroke-width="2.2" aria-hidden="true" /> {{ gameMode() }}
                     </p>
 
                     <!-- ENLACES EXTERNOS -->
@@ -304,7 +307,7 @@ const externalUrl = (url: string | null): string | undefined => {
                             class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#181424] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#5200FF] sm:w-auto"
                             @click="shareGame"
                         >
-                            <span aria-hidden="true">🔗</span>
+                            <span aria-hidden="true"><ChainIcon class="inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" /></span>
                             Compartir juego
                         </button>
 
@@ -323,7 +326,7 @@ const externalUrl = (url: string | null): string | undefined => {
                             rel="noopener noreferrer"
                             class="block w-full rounded-xl bg-[#5200FF] px-5 py-3 text-center text-sm font-bold text-white transition hover:bg-[#4000cc] sm:w-auto"
                         >
-                            Ver en BoardGameGeek ↗
+                            Ver en BoardGameGeek <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                         </a>
 
                         <a
@@ -331,9 +334,9 @@ const externalUrl = (url: string | null): string | undefined => {
                             :href="externalUrl(game.youtube_url)"
                             target="_blank"
                             rel="noopener noreferrer"
-                            class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border-2 border-[#5200FF] bg-white px-5 py-3 text-center text-sm font-bold text-[#5200FF] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f1ebff] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:w-auto"
+                            class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border-2 border-[#5200FF] bg-white px-5 py-3 text-center text-sm font-bold text-[#5200FF] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f1ebff] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:w-auto gap-1.5"
                         >
-                            ▶ Ver tutorial ↗
+                            <YoutubeLogoIcon class="size-4 shrink-0" aria-hidden="true" /> Ver tutorial <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                         </a>
                     </div>
                 </div>
@@ -416,11 +419,11 @@ const externalUrl = (url: string | null): string | undefined => {
                     <article
                         v-for="expansion in game.expansions"
                         :key="expansion.id"
-                        class="group flex h-full flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+                        class="group flex h-full flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#5200FF] hover:shadow-xl focus-within:border-[#5200FF] motion-reduce:transform-none motion-reduce:transition-none"
                     >
                         <!-- PORTADA -->
                         <div
-                            class="relative flex aspect-square items-center justify-center overflow-hidden bg-gradient-to-br from-[#f0ebff] via-white to-[#eef2fa] p-6"
+                            class="relative flex h-56 items-center justify-center overflow-hidden bg-gradient-to-br from-[#f0ebff] via-white to-[#eef2fa] p-5 sm:aspect-square sm:h-auto sm:p-6"
                         >
                             <img
                                 v-if="expansion.image_url && !brokenExpansionIds.includes(expansion.id)"
@@ -428,14 +431,14 @@ const externalUrl = (url: string | null): string | undefined => {
                                 @error="markExpansionAsBroken(expansion.id)"
                                 :alt="`Portada de ${expansion.name}`"
                                 loading="lazy"
-                                class="h-full w-full object-contain drop-shadow-xl transition-transform duration-500 group-hover:scale-105"
+                                class="h-full w-full object-contain drop-shadow-xl transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none"
                             />
 
                             <div
                                 v-else
                                 class="flex flex-col items-center gap-2 text-zinc-400"
                             >
-                                <span class="text-5xl">🎲</span>
+                                <span class="text-5xl"><PlayingCardsFanIcon class="mr-1 inline-block size-12 shrink-0 align-[-0.14em] text-violet-700" aria-hidden="true" /></span>
                                 <span class="text-sm">Sin portada disponible</span>
                             </div>
 
@@ -467,9 +470,9 @@ const externalUrl = (url: string | null): string | undefined => {
                                     :href="externalUrl(expansion.bgg_url)"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    class="rounded-xl bg-[#5200FF] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#4000cc]"
+                                    class="inline-flex min-h-11 min-w-[125px] flex-1 items-center justify-center rounded-xl bg-[#5200FF] px-3 py-2.5 text-center text-sm font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#4000cc] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none"
                                 >
-                                    Ver en BGG ↗
+                                    Ver en BGG <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                                 </a>
 
                                 <a
@@ -477,9 +480,9 @@ const externalUrl = (url: string | null): string | undefined => {
                                     :href="externalUrl(expansion.youtube_url)"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    class="inline-flex min-h-11 items-center justify-center rounded-xl border-2 border-[#5200FF] bg-white px-4 py-2.5 text-sm font-bold text-[#5200FF] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f1ebff] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none"
+                                    class="inline-flex min-h-11 min-w-[125px] flex-1 items-center justify-center rounded-xl border-2 border-[#5200FF] bg-white px-3 py-2 text-center text-sm font-bold text-[#5200FF] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f1ebff] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none gap-1.5"
                                 >
-                                    ▶ Ver tutorial ↗
+                                    <YoutubeLogoIcon class="size-4 shrink-0" aria-hidden="true" /> Ver tutorial <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                                 </a>
                             </div>
                         </div>
@@ -503,7 +506,7 @@ const externalUrl = (url: string | null): string | undefined => {
         </main>
 
         <footer class="mt-12 border-t border-zinc-200 py-8 text-center text-sm text-zinc-500">
-            Boardgame Vote · Biblioteca compartida
+            Juegos de mesa · Biblioteca compartida
         </footer>
 
         <ScrollToTopProgress :remember-position="false" />
