@@ -236,6 +236,15 @@ class PlayController extends Controller
             $selectedGameId = null;
         }
 
+        // Solo preseleccionar jugadores activos de la cuenta actual.
+        $selectedPlayerId = $request->integer('player_id') ?: null;
+        if (
+            $selectedPlayerId !== null &&
+            ! $players->contains('id', $selectedPlayerId)
+        ) {
+            $selectedPlayerId = null;
+        }
+
         return Inertia::render(
             'plays/create-manual',
             [
@@ -247,6 +256,7 @@ class PlayController extends Controller
 
                 'selected_game_id' =>
                 $selectedGameId,
+                'selected_player_id' => $selectedPlayerId,
             ]
         );
     }

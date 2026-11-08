@@ -160,7 +160,7 @@ const formatDate = (
                             Editar jugador
                         </Link>
                         <Link
-                            href="/plays/create"
+                            :href="`/plays/create?player_id=${player.id}`"
                             class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#5200FF] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#4100CC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                         >
                             <PlayingCardsFanIcon class="h-4 w-4 shrink-0 text-white" aria-hidden="true" />

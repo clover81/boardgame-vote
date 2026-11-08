@@ -48,6 +48,7 @@ const props = defineProps<{
 
     selected_game_id:
         number | null;
+    selected_player_id: number | null;
 }>();
 
 /*
@@ -98,7 +99,7 @@ const form = useForm({
         today(),
 
     player_ids:
-        [] as number[],
+        (props.selected_player_id !== null ? [props.selected_player_id] : []) as number[],
 
     notes:
         '',
