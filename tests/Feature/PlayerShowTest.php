@@ -51,6 +51,7 @@ test('a player with no recorded plays has empty statistics and lists', function 
         'id' => $this->player->id,
         'name' => 'Alejandro',
         'is_active' => true,
+        'color' => null,
     ]);
     expect($page['props']['stats'])->toBe([
         'total_plays' => 0,

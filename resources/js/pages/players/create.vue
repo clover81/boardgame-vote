@@ -2,10 +2,12 @@
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import InputError from '@/components/InputError.vue';
+import PlayerColorPicker from '@/components/PlayerColorPicker.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
 const form = useForm({
     name: '',
+    color: 'violet',
 });
 
 const submit = () => {
@@ -49,6 +51,11 @@ const submit = () => {
                     />
 
                     <InputError :message="form.errors.name" />
+                </div>
+
+                <div>
+                    <PlayerColorPicker v-model="form.color" />
+                    <InputError :message="form.errors.color" />
                 </div>
 
                 <button

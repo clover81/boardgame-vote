@@ -6,6 +6,7 @@ use App\Models\Play;
 use App\Models\Player;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -154,6 +155,7 @@ class PlayerController extends Controller
                 'id' => $player->id,
                 'name' => $player->name,
                 'is_active' => $player->is_active,
+                'color' => $player->color,
             ],
             'stats' => [
                 'total_plays' => $totalPlays,
@@ -175,17 +177,45 @@ class PlayerController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'color' => ['nullable', Rule::in(Player::COLORS)],
         ]);
 
         Player::create([
             'created_by' => $request->user()->id,
             'name' => $validated['name'],
+            'color' => $validated['color'] ?? 'violet',
             'is_active' => true,
         ]);
 
         return redirect()
             ->route('players.index')
             ->with('success', 'Jugador añadido correctamente.');
+    }
+
+    public function edit(Request $request, Player $player): Response
+    {
+        abort_unless($player->created_by === $request->user()->id, 403);
+        return Inertia::render('players/edit', [
+            'player' => $player->only(['id', 'name', 'color']),
+        ]);
+    }
+
+    public function update(Request $request, Player $player): RedirectResponse
+    {
+        abort_unless($player->created_by === $request->user()->id, 403);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'color' => ['sometimes', 'nullable', Rule::in(Player::COLORS)],
+        ]);
+
+        $player->update([
+            'name' => $validated['name'],
+            'color' => $validated['color'] ?? $player->color,
+        ]);
+
+        return redirect()->route('players.index')
+            ->with('success', 'Jugador actualizado correctamente.');
     }
 
     public function toggle(Request $request, Player $player): RedirectResponse

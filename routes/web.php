@@ -327,6 +327,16 @@ Route::middleware(Authenticate::class)->group(function () {
     )->name('players.store');
 
     Route::get(
+        '/players/{player}/edit',
+        [PlayerController::class, 'edit']
+    )->name('players.edit');
+
+    Route::patch(
+        '/players/{player}',
+        [PlayerController::class, 'update']
+    )->name('players.update');
+
+    Route::get(
         '/players/{player}',
         [
             PlayerController::class,

@@ -2,6 +2,7 @@
 <script setup lang="ts">
 import { playerNameColor } from '@/lib/player-colors';
 import MeepleIcon from '@/components/icons/MeepleIcon.vue';
+import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -11,6 +12,7 @@ interface Player {
     id: number;
     name: string;
     is_active: boolean;
+    color: string | null;
 }
 
 defineProps<{
@@ -71,7 +73,7 @@ const togglePlayer = (player: Player) => {
                     <div class="flex min-w-0 items-center gap-3.5">
                         <span
                             class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-200 bg-violet-50 shadow-sm transition-colors duration-200 group-hover:border-violet-300 dark:border-zinc-700 dark:bg-zinc-900"
-                            :class="playerNameColor(player.name)"
+                            :class="playerNameColor(player.name, player.color)"
                             aria-hidden="true"
                         >
                             <MeepleIcon class="h-8 w-8 shrink-0" />
@@ -80,7 +82,7 @@ const togglePlayer = (player: Player) => {
                         <div class="min-w-0 flex-1">
                             <h2
                                 class="break-words text-lg font-bold"
-                                :class="playerNameColor(player.name)"
+                                :class="playerNameColor(player.name, player.color)"
                             >
                                 {{ player.name }}
                             </h2>
@@ -107,6 +109,13 @@ const togglePlayer = (player: Player) => {
                             class="inline-flex min-h-11 items-center gap-1 rounded-lg font-semibold text-[#5200FF] transition-colors hover:text-[#4000cc] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-violet-300 dark:hover:text-violet-200"
                         >
                             Ver estadísticas <span aria-hidden="true">→</span>
+                        </Link>
+
+                        <Link
+                            :href="`/players/${player.id}/edit`"
+                            class="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 font-semibold text-[#5200FF] hover:underline dark:text-violet-300"
+                        >
+                            <PencilSparklesIcon class="h-4 w-4" /> Editar
                         </Link>
 
                         <button

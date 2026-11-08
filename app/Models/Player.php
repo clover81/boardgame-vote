@@ -20,9 +20,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  */
 class Player extends Model
 {
+    public const COLORS = ['violet', 'pink', 'yellow', 'teal', 'blue', 'green', 'orange', 'red'];
+
     protected $fillable = [
         'created_by',
         'name',
+        'color',
         'is_active',
     ];
 

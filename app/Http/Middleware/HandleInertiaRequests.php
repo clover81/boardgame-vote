@@ -41,6 +41,15 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            // Colores guardados de los jugadores propios para toda la interfaz privada.
+            'player_colors' => fn () => $request->user()
+                ? \App\Models\Player::query()
+                    ->where('created_by', $request->user()->id)
+                    ->get(['name', 'color'])
+                    ->filter(fn ($player) => $player->color !== null)
+                    ->mapWithKeys(fn ($player) => [mb_strtolower(trim($player->name), 'UTF-8') => $player->color])
+                    ->all()
+                : [],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
