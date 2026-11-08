@@ -1,5 +1,7 @@
 
 <script setup lang="ts">
+import { playerNameColor } from '@/lib/player-colors';
+import MeepleIcon from '@/components/icons/MeepleIcon.vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -59,23 +61,27 @@ const togglePlayer = (player: Player) => {
             <!-- Listado de jugadores -->
             <div
                 v-if="players.length > 0"
-                class="space-y-3"
+                class="grid gap-4 lg:grid-cols-2"
             >
-                <div
+                <article
                     v-for="player in players"
                     :key="player.id"
-                    class="group flex flex-col items-stretch gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/30 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-violet-500 sm:flex-row sm:items-center sm:justify-between sm:p-5"
+                    class="group flex min-w-0 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/30 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-violet-500 sm:p-5"
                 >
-                    <div class="flex min-w-0 items-start gap-3 sm:items-center">
+                    <div class="flex min-w-0 items-center gap-3.5">
                         <span
-                            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-violet-200 bg-violet-100 text-lg font-black text-[#5200FF] shadow-sm transition-colors duration-200 group-hover:border-violet-300 group-hover:bg-violet-200 dark:border-violet-900/70 dark:bg-violet-950 dark:text-violet-200 dark:group-hover:bg-violet-900"
+                            class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-200 bg-violet-50 shadow-sm transition-colors duration-200 group-hover:border-violet-300 dark:border-zinc-700 dark:bg-zinc-900"
+                            :class="playerNameColor(player.name)"
                             aria-hidden="true"
                         >
-                            {{ player.name.trim().charAt(0).toLocaleUpperCase() || '<PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" />' }}
+                            <MeepleIcon class="h-8 w-8 shrink-0" />
                         </span>
 
-                        <div class="min-w-0">
-                            <h2 class="break-words text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                        <div class="min-w-0 flex-1">
+                            <h2
+                                class="break-words text-lg font-bold"
+                                :class="playerNameColor(player.name)"
+                            >
                                 {{ player.name }}
                             </h2>
 
@@ -92,32 +98,30 @@ const togglePlayer = (player: Player) => {
                                 ></span>
                                 {{ player.is_active ? 'Activo' : 'Inactivo' }}
                             </span>
-
-                            <Link
-                                :href="`/players/${player.id}`"
-                                class="mt-3 block w-fit rounded font-semibold text-[#5200FF] transition-colors hover:text-[#4000cc] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-violet-300 dark:hover:text-violet-200"
-                            >
-                                Ver estadísticas →
-                            </Link>
                         </div>
                     </div>
 
-                    <button
-                        type="button"
-                        class="min-h-11 w-full shrink-0 rounded-xl border px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] sm:w-auto"
-                        :class="player.is_active
-                            ? 'border-zinc-300 text-zinc-700 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-800 dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-amber-700 dark:hover:bg-amber-950/40 dark:hover:text-amber-200'
-                            : 'border-violet-200 bg-violet-50 text-[#5200FF] hover:border-violet-400 hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-950/30 dark:text-violet-200 dark:hover:bg-violet-900/40'"
-                        :aria-label="`${player.is_active ? 'Desactivar' : 'Activar'} a ${player.name}`"
-                        @click="togglePlayer(player)"
-                    >
-                        {{
-                            player.is_active
-                                ? 'Desactivar'
-                                : 'Activar'
-                        }}
-                    </button>
-                </div>
+                    <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+                        <Link
+                            :href="`/players/${player.id}`"
+                            class="inline-flex min-h-11 items-center gap-1 rounded-lg font-semibold text-[#5200FF] transition-colors hover:text-[#4000cc] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-violet-300 dark:hover:text-violet-200"
+                        >
+                            Ver estadísticas <span aria-hidden="true">→</span>
+                        </Link>
+
+                        <button
+                            type="button"
+                            class="min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                            :class="player.is_active
+                                ? 'border-zinc-300 text-zinc-700 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-800 dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-amber-700 dark:hover:bg-amber-950/40 dark:hover:text-amber-200'
+                                : 'border-violet-200 bg-violet-50 text-[#5200FF] hover:border-violet-400 hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-950/30 dark:text-violet-200 dark:hover:bg-violet-900/40'"
+                            :aria-label="`${player.is_active ? 'Desactivar' : 'Activar'} a ${player.name}`"
+                            @click="togglePlayer(player)"
+                        >
+                            {{ player.is_active ? 'Desactivar' : 'Activar' }}
+                        </button>
+                    </div>
+                </article>
             </div>
 
             <!-- Sin jugadores -->
