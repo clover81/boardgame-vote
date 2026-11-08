@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Game;
 use App\Models\Play;
 use App\Models\Poll;
 use Illuminate\Http\Request;
@@ -14,11 +13,6 @@ class DashboardController extends Controller
     public function index(Request $request): Response
     {
         $userId = $request->user()->id;
-
-        $gamesCount = Game::query()
-            ->whereHas('collections', fn ($query) => $query
-                ->where('game_collections.created_by', $userId))
-            ->count();
 
         $openPollsQuery = Poll::query()
             ->where('created_by', $userId)
@@ -34,7 +28,6 @@ class DashboardController extends Controller
             ->map(fn (Poll $poll) => [
                 'id' => $poll->id,
                 'name' => $poll->name,
-                'token' => $poll->token,
                 'participants_count' => $poll->participants_count,
                 'candidates_count' => $poll->candidates_count,
             ]);
@@ -87,9 +80,7 @@ class DashboardController extends Controller
 
         return Inertia::render('Dashboard', [
             'summary' => [
-                'games_count' => $gamesCount,
                 'open_polls_count' => $openPollsCount,
-                'total_plays' => Play::query()->where('created_by', $userId)->count(),
                 'pending_plays_count' => $pendingPlaysCount,
             ],
             'openPolls' => $openPolls,

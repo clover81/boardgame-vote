@@ -118,7 +118,14 @@ test('name search trims whitespace and does not search the description', functio
         );
 });
 
-test('player count uses the supported inclusive range rather than ideal player counts', function ($players, $expectedNames) {
+test('player count shows only games ideal for that exact group size', function ($players, $expectedNames) {
+    $this->castle->idealPlayerCounts()->createMany([['player_count' => 3], ['player_count' => 4]]);
+    $this->sky->idealPlayerCounts()->create(['player_count' => 2]);
+    $this->heat->idealPlayerCounts()->createMany([['player_count' => 3], ['player_count' => 5]]);
+    // No incluir juegos de otros usuarios ni archivados, aunque sean ideales para 3.
+    $this->foreignGame->idealPlayerCounts()->create(['player_count' => 3]);
+    $this->inactiveGame->idealPlayerCounts()->create(['player_count' => 3]);
+
     $this->actingAs($this->user)->get(route('games.index', ['players' => $players]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
@@ -126,14 +133,18 @@ test('player count uses the supported inclusive range rather than ideal player c
             ->where('filters.players', $players)
         );
 })->with([
-    'minimum' => [1, ['Heat', 'The White Castle']],
-    'two players' => [2, ['Heat', 'Sky Team', 'The White Castle']],
-    'maximum' => [4, ['Heat', 'The White Castle']],
-    'larger group' => [6, ['Heat']],
-    'no compatible games' => [7, []],
+    'no game ideal for one' => [1, []],
+    'two players' => [2, ['Sky Team']],
+    'three players' => [3, ['Heat', 'The White Castle']],
+    'four players: Heat allows four but it is not ideal' => [4, ['The White Castle']],
+    'five players' => [5, ['Heat']],
+    'six is allowed by Heat but not ideal' => [6, []],
+    'no ideal games' => [7, []],
 ]);
 
 test('collection name and player filters combine', function () {
+    $this->castle->idealPlayerCounts()->create(['player_count' => 4]);
+
     $this->actingAs($this->user)->get(route('games.index', [
         'collection_id' => $this->secondCollection->id,
         'q' => 'Castle',
@@ -168,6 +179,11 @@ test('games can be sorted by name descending', function () {
 });
 
 test('recently played sorting uses the signed in users history and puts unplayed games last', function () {
+
+    // La ordenación se prueba con juegos ideales para dos jugadores.
+    foreach ([$this->castle, $this->sky, $this->heat] as $game) {
+        $game->idealPlayerCounts()->firstOrCreate(['player_count' => 2]);
+    }
     foreach ([
         [$this->user, $this->castle, '2026-10-02'],
         [$this->user, $this->heat, '2026-10-20'],

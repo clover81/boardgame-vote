@@ -271,7 +271,7 @@ const formatDate = (date: string | null): string => {
                                 for="game-player-count"
                                 class="text-sm font-bold text-zinc-800 dark:text-zinc-200"
                             >
-                                N.º de jugadores
+                                Jugadores ideales
                             </label>
                             <input
                                 id="game-player-count"

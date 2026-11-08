@@ -31,7 +31,7 @@ test('guests only receive active games and public collections belonging to the c
         'youtube_url' => 'https://www.youtube.com/watch?v=tutorial',
     ]);
     $games[0]->collections()->attach($collections->pluck('id')->all());
-    $games[0]->idealPlayerCounts()->create(['player_count' => 2]);
+    $games[0]->idealPlayerCounts()->createMany([['player_count' => 2], ['player_count' => 3]]);
     $games[1]->collections()->attach($collections[0]);
     $games[2]->collections()->attach($collections[2]);
     $games[3]->collections()->attach($collections[3]);
@@ -49,7 +49,7 @@ test('guests only receive active games and public collections belonging to the c
             ->where('games.0.id', $games[0]->id)
             ->where('games.0.bgg_url', $games[0]->bgg_url)
             ->where('games.0.youtube_url', $games[0]->youtube_url)
-            ->where('games.0.ideal_player_counts', [2])
+            ->where('games.0.ideal_player_counts', [2, 3])
             ->has('games.0.collections', 2)
             ->where('games.0.collections.0.id', $collections[0]->id)
             ->where('games.0.collections.1.id', $collections[1]->id)

@@ -1,22 +1,18 @@
 <script setup lang="ts">
-import { BuildingComplexPlus, LibraryBig } from '@lucide/vue';
-import { Link as ChainIcon } from '@lucide/vue';
+import { BuildingComplexPlus } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import { UsersRound } from '@lucide/vue';
 import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 
 interface Summary {
-    games_count: number;
     open_polls_count: number;
-    total_plays: number;
     pending_plays_count: number;
 }
 
 interface OpenPoll {
     id: number;
     name: string;
-    token: string;
 
     participants_count: number;
     candidates_count: number;
@@ -79,7 +75,7 @@ const formatDate = (
 </script>
 
 <template>
-    <Head title="Dashboard" />
+    <Head title="Inicio" />
 
     <AppLayout>
         <div
@@ -164,107 +160,53 @@ const formatDate = (
                 </Link>
 
                 <Link
-                    href="/plays"
+                    href="/plays/create"
                     class="rounded-2xl border border-zinc-200 bg-white p-6 transition hover:border-[#5200FF] dark:border-zinc-800 dark:bg-zinc-950"
                 >
                     <p
                         class="text-3xl"
                     >
-                        <LibraryBig class="inline-block size-8 shrink-0 align-[-0.15em] text-violet-600 dark:text-violet-300" :stroke-width="2" aria-hidden="true" />
+                        <PlayingCardsFanIcon class="inline-block size-8 shrink-0 align-[-0.15em] text-violet-600 dark:text-violet-300" aria-hidden="true" />
                     </p>
 
                     <p
                         class="mt-3 text-lg font-black"
                     >
-                        Historial
+                        Registrar partida
                     </p>
 
                     <p
                         class="mt-1 text-sm text-zinc-500"
                     >
-                        Revisa las partidas
-                        registradas.
+                        Anota lo que habéis
+                        jugado.
                     </p>
                 </Link>
             </div>
 
             <!-- RESUMEN -->
 
-            <div
-                class="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4"
-            >
-                <Link
-                    href="/games"
-                    class="rounded-2xl bg-zinc-100 p-5 dark:bg-zinc-900"
-                >
-                    <p
-                        class="text-3xl font-black"
-                    >
-                        {{
-                            summary.games_count
-                        }}
-                    </p>
-
-                    <p
-                        class="mt-1 text-sm text-zinc-500"
-                    >
-                        Juegos en colección
-                    </p>
-                </Link>
-
+            <div class="mt-8 grid grid-cols-2 gap-3">
                 <Link
                     href="/polls"
-                    class="rounded-2xl bg-zinc-100 p-5 dark:bg-zinc-900"
+                    class="rounded-2xl bg-zinc-100 p-5 transition hover:ring-2 hover:ring-[#5200FF]/20 dark:bg-zinc-900"
                 >
-                    <p
-                        class="text-3xl font-black text-[#5200FF] dark:text-[#CCFF00]"
-                    >
-                        {{
-                            summary.open_polls_count
-                        }}
+                    <p class="text-3xl font-black text-[#5200FF] dark:text-[#CCFF00]">
+                        {{ summary.open_polls_count }}
                     </p>
-
-                    <p
-                        class="mt-1 text-sm text-zinc-500"
-                    >
+                    <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
                         Votaciones abiertas
                     </p>
                 </Link>
 
                 <Link
-                    href="/plays"
-                    class="rounded-2xl bg-zinc-100 p-5 dark:bg-zinc-900"
-                >
-                    <p
-                        class="text-3xl font-black"
-                    >
-                        {{
-                            summary.total_plays
-                        }}
-                    </p>
-
-                    <p
-                        class="mt-1 text-sm text-zinc-500"
-                    >
-                        Partidas registradas
-                    </p>
-                </Link>
-
-                <Link
                     href="/polls"
-                    class="rounded-2xl bg-zinc-100 p-5 dark:bg-zinc-900"
+                    class="rounded-2xl bg-zinc-100 p-5 transition hover:ring-2 hover:ring-[#5200FF]/20 dark:bg-zinc-900"
                 >
-                    <p
-                        class="text-3xl font-black text-[#FF6B00]"
-                    >
-                        {{
-                            summary.pending_plays_count
-                        }}
+                    <p class="text-3xl font-black text-[#FF6B00]">
+                        {{ summary.pending_plays_count }}
                     </p>
-
-                    <p
-                        class="mt-1 text-sm text-zinc-500"
-                    >
+                    <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
                         Pendientes de registrar
                     </p>
                 </Link>
@@ -428,17 +370,6 @@ const formatDate = (
                                 >
                                     Gestionar
                                 </Link>
-
-                                <a
-                                    :href="
-                                        `/vote/${poll.token}`
-                                    "
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-bold dark:border-zinc-700"
-                                >
-                                    Abrir votación <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
-                                </a>
                             </div>
                         </article>
                     </div>

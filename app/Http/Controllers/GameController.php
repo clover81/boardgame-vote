@@ -574,11 +574,9 @@ class GameController extends Controller
                     ->where('game_collections.created_by', $userId)))
             ->when($search, fn ($query, $search) => $query
                 ->where('name', 'like', '%' . $search . '%'))
-            ->when($playerCount, function ($query, $players) {
-                $query
-                    ->where('min_players', '<=', $players)
-                    ->where('max_players', '>=', $players);
-            })
+            ->when($playerCount, fn ($query, $players) => $query
+                ->whereHas('idealPlayerCounts', fn ($ideal) => $ideal
+                    ->where('player_count', $players)))
             ->when(
                 $gameMode !== '',
                 fn ($query) => $query->whereJsonContains(

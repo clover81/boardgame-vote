@@ -41,7 +41,6 @@ const playerCount = ref<number | ''>('');
 const collectionId = ref<number | ''>('');
 const durationLimit = ref<number | ''>('');
 const difficulty = ref<'' | 'light' | 'medium' | 'heavy'>('');
-const onlyIdealPlayers = ref(false);
 const selectedGameMode = ref('');
 const showAdvancedFilters = ref(false);
 
@@ -50,7 +49,6 @@ const advancedFiltersActive = computed(() =>
     collectionId.value !== '' ||
     durationLimit.value !== '' ||
     difficulty.value !== '' ||
-    onlyIdealPlayers.value ||
     selectedGameMode.value !== ''
 );
 
@@ -102,14 +100,7 @@ const filteredGames = computed(() => {
         );
 
         const matchesPlayers =
-            !players ||
-            (game.min_players <= players &&
-                game.max_players >= players);
-
-        const matchesIdealPlayers =
-            !onlyIdealPlayers.value ||
-            !players ||
-            game.ideal_player_counts.includes(players);
+            !players || game.ideal_player_counts.includes(players);
 
         const matchesCollection =
             !collection ||
@@ -143,7 +134,6 @@ const filteredGames = computed(() => {
 
         return matchesSearch &&
             matchesPlayers &&
-            matchesIdealPlayers &&
             matchesCollection &&
             matchesDuration &&
             matchesDifficulty &&
@@ -165,7 +155,6 @@ const sortBy = ref<SortBy>('name');
 type FilterKey =
     | 'search'
     | 'players'
-    | 'ideal'
     | 'collection'
     | 'duration'
     | 'difficulty'
@@ -189,18 +178,12 @@ const activeFilterChips = computed<FilterChip[]>(() => {
     if (playerCount.value !== '') {
         chips.push({
             key: 'players',
-            label: `${playerCount.value} ${
+            label: `Ideal: ${playerCount.value} ${
                 Number(playerCount.value) === 1 ? 'jugador' : 'jugadores'
             }`,
         });
     }
 
-    if (onlyIdealPlayers.value && playerCount.value !== '') {
-        chips.push({
-            key: 'ideal',
-            label: 'Solo ideales',
-        });
-    }
 
     if (collectionId.value !== '') {
         const collection = props.collections.find(
@@ -251,10 +234,6 @@ const removeFilter = (key: FilterKey) => {
             break;
         case 'players':
             playerCount.value = '';
-            onlyIdealPlayers.value = false;
-            break;
-        case 'ideal':
-            onlyIdealPlayers.value = false;
             break;
         case 'collection':
             collectionId.value = '';
@@ -287,7 +266,6 @@ onMounted(() => {
         collectionId.value = filters.collectionId ?? '';
         durationLimit.value = filters.durationLimit ?? '';
         difficulty.value = filters.difficulty ?? '';
-        onlyIdealPlayers.value = filters.onlyIdealPlayers ?? false;
         selectedGameMode.value = filters.selectedGameMode ?? '';
         sortBy.value = filters.sortBy ?? 'name';
     } catch {
@@ -303,7 +281,6 @@ watch(
         collectionId,
         durationLimit,
         difficulty,
-        onlyIdealPlayers,
         selectedGameMode,
         sortBy,
     ],
@@ -316,7 +293,6 @@ watch(
                 collectionId: collectionId.value,
                 durationLimit: durationLimit.value,
                 difficulty: difficulty.value,
-                onlyIdealPlayers: onlyIdealPlayers.value,
                 selectedGameMode: selectedGameMode.value,
                 sortBy: sortBy.value,
             }),
@@ -393,7 +369,6 @@ const clearFilters = () => {
     collectionId.value = '';
     durationLimit.value = '';
     difficulty.value = '';
-    onlyIdealPlayers.value = false;
     selectedGameMode.value = '';
 };
 
@@ -535,13 +510,12 @@ const externalUrl = (url: string | null): string | undefined => {
 
                     <div>
                         <label for="catalog-players" class="text-sm font-bold">
-                            ¿Cuántos vais a jugar?
+                            Jugadores ideales
                         </label>
 
                         <select
                             id="catalog-players"
                             v-model.number="playerCount"
-                            @change="onlyIdealPlayers = false"
                             class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
                         >
                             <option value="">Cualquier número</option>
@@ -553,23 +527,7 @@ const externalUrl = (url: string | null): string | undefined => {
                                 {{ number }} {{ number === 1 ? 'jugador' : 'jugadores' }}
                             </option>
                         </select>
-
-                        <label
-                            v-if="playerCount !== ''"
-                            class="mt-3 flex cursor-pointer items-center gap-2 text-sm text-zinc-700"
-                        >
-                            <input
-                                v-model="onlyIdealPlayers"
-                                type="checkbox"
-                                class="h-4 w-4 rounded border-zinc-300 accent-[#5200FF]"
-                            />
-
-                            <span>
-                                Solo juegos ideales para
-                                <strong>{{ playerCount }}</strong>
-                                jugadores
-                            </span>
-                        </label>
+                        <p class="mt-2 text-xs text-zinc-500">Solo juegos recomendados para ese número de jugadores.</p>
                     </div>
 
                     <div>

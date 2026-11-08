@@ -21,7 +21,7 @@ test('authenticated users can visit the dashboard', function () {
     $response->assertOk();
 });
 
-test('dashboard totals include every owned record while previews show only the latest five', function () {
+test('dashboard shows actionable counts and limits previews to the latest five', function () {
     $this->withoutVite();
     $owner = User::factory()->create();
     $otherUser = User::factory()->create();
@@ -88,14 +88,12 @@ test('dashboard totals include every owned record while previews show only the l
         ->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard')
             ->where('summary', [
-                'games_count' => 2,
                 'open_polls_count' => 7,
-                'total_plays' => 7,
                 'pending_plays_count' => 8,
             ])
             ->has('openPolls', 5)
             ->where('openPolls.0.id', $openPolls->last()->id)
-            ->where('openPolls.0.token', $openPolls->last()->token)
+            ->missing('openPolls.0.token')
             ->where('openPolls.0.participants_count', 2)
             ->where('openPolls.0.candidates_count', 1)
             ->has('pendingPlays', 5)
@@ -132,7 +130,7 @@ test('an account without records receives an empty dashboard despite another use
     $this->actingAs(User::factory()->create())->get(route('dashboard'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->where('summary', ['games_count' => 0, 'open_polls_count' => 0, 'total_plays' => 0, 'pending_plays_count' => 0])
+            ->where('summary', ['open_polls_count' => 0, 'pending_plays_count' => 0])
             ->where('openPolls', [])
             ->where('pendingPlays', [])
             ->where('recentPlays', [])
