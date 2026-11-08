@@ -507,6 +507,9 @@ const externalUrl = (url: string | null): string | undefined => {
 
         <footer class="mt-12 border-t border-zinc-200 py-8 text-center text-sm text-zinc-500">
             Juegos de mesa · Biblioteca compartida
+
+            <!-- CRÉDITOS DE ICONOS - CLOVER -->
+            <a href="/creditos-iconos.html" class="ml-2 inline-block font-semibold text-[#5200FF] underline-offset-4 hover:underline focus-visible:underline">Créditos de iconos</a>
         </footer>
 
         <ScrollToTopProgress :remember-position="false" />
