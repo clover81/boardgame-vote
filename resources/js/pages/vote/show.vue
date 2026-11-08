@@ -312,6 +312,13 @@ watch(
 const selectFirst = (
     candidateId: number
 ) => {
+    // Segundo clic: quitar la primera opción y reiniciar la segunda.
+    if (form.first_candidate_id === candidateId) {
+        form.first_candidate_id = null;
+        form.second_candidate_id = null;
+        return;
+    }
+
     if (
         form.second_candidate_id ===
         candidateId
@@ -333,6 +340,12 @@ const selectFirst = (
 const selectSecond = (
     candidateId: number
 ) => {
+    // Segundo clic: quitar únicamente la segunda opción.
+    if (form.second_candidate_id === candidateId) {
+        form.second_candidate_id = null;
+        return;
+    }
+
     if (
         form.first_candidate_id ===
         candidateId
