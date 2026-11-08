@@ -74,7 +74,8 @@ test('game summaries count only the signed in users plays and agree with the gam
             ])
             ->has('collections', 2)
             ->where('selected_collection_id', null)
-            ->where('filters', ['mode' => '', 'players' => null, 'q' => '', 'sort' => 'name'])
+            ->where('filters', ['mode' => '', 'players' => null, 'q' => '', 'sort' => 'name', 'duration' => null, 'difficulty' => ''
+            ])
         );
 
     $this->get(route('games.show', $this->castle))
@@ -106,14 +107,15 @@ test('a foreign collection filter returns no games even if some are shared', fun
         ->assertInertia(fn (Assert $page) => $page->has('games', 0));
 });
 
-test('name search trims whitespace and does not search the description', function () {
+test('search trims whitespace and includes a thematic description', function () {
     $this->sky->update(['short_description' => 'The White Castle']);
 
     $this->actingAs($this->user)->get(route('games.index', ['q' => '  White Castle  ']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->has('games', 1)
-            ->where('games.0.id', $this->castle->id)
+            ->has('games', 2)
+            ->where('games.0.id', $this->sky->id)
+            ->where('games.1.id', $this->castle->id)
             ->where('filters.q', 'White Castle')
         );
 });
@@ -154,7 +156,8 @@ test('collection name and player filters combine', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->has('games', 1)
             ->where('games.0.id', $this->castle->id)
-            ->where('filters', ['mode' => '', 'players' => 4, 'q' => 'Castle', 'sort' => 'name'])
+            ->where('filters', ['mode' => '', 'players' => 4, 'q' => 'Castle', 'sort' => 'name', 'duration' => null, 'difficulty' => ''
+            ])
         );
 });
 
@@ -245,4 +248,24 @@ test('invalid sorting options fall back to alphabetical ordering', function () {
             ])
             ->where('filters.sort', 'name')
         );
+});
+
+test('private catalog filters time and difficulty with the same ranges as public catalog', function () {
+    $this->castle->update(['min_playtime' => 30, 'max_playtime' => 45, 'complexity' => 1.8]);
+    $this->sky->update(['min_playtime' => 35, 'max_playtime' => 60, 'complexity' => 2.7]);
+    $this->heat->update(['min_playtime' => 90, 'max_playtime' => 120, 'complexity' => 3.6]);
+
+    foreach ([
+        ['60', 'light', 'The White Castle'],
+        ['60', 'medium', 'Sky Team'],
+        ['180', 'heavy', 'Heat'],
+    ] as [$duration, $difficulty, $expected]) {
+        $this->actingAs($this->user)->get(route('games.index', [
+            'duration' => $duration,
+            'difficulty' => $difficulty,
+        ]))->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('games', 1)
+            ->where('games.0.name', $expected)
+        );
+    }
 });

@@ -540,6 +540,16 @@ class GameController extends Controller
         $search = trim((string) $request->input('q'));
         $playerCount = $request->integer('players') ?: null;
 
+        $durationLimit = $request->integer('duration') ?: null;
+        if (!in_array($durationLimit, [30, 60, 90, 120, 180], true)) {
+            $durationLimit = null;
+        }
+
+        $difficulty = (string) $request->query('difficulty', '');
+        if (!in_array($difficulty, ['light', 'medium', 'heavy'], true)) {
+            $difficulty = '';
+        }
+
         $gameMode = (string) $request->query('mode', '');
         $requestedSort = $request->query('sort', 'name');
         $allowedSorts = ['name', 'name_desc', 'recent', 'most_played'];
@@ -572,11 +582,30 @@ class GameController extends Controller
                 ->whereHas('collections', fn ($collectionQuery) => $collectionQuery
                     ->where('game_collections.id', $collectionId)
                     ->where('game_collections.created_by', $userId)))
-            ->when($search, fn ($query, $search) => $query
-                ->where('name', 'like', '%' . $search . '%'))
+            ->when($search, function ($query, $search) {
+                // Buscar cada término tanto en el nombre como en la descripción breve.
+                foreach (preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) as $term) {
+                    $query->where(fn ($part) => $part
+                        ->where('name', 'like', '%' . $term . '%')
+                        ->orWhere('short_description', 'like', '%' . $term . '%'));
+                }
+            })
             ->when($playerCount, fn ($query, $players) => $query
                 ->whereHas('idealPlayerCounts', fn ($ideal) => $ideal
                     ->where('player_count', $players)))
+            ->when($durationLimit, fn ($query, $minutes) => $query
+                ->where(fn ($duration) => $duration
+                    ->where('max_playtime', '<=', $minutes)
+                    ->orWhere(fn ($fallback) => $fallback
+                        ->whereNull('max_playtime')
+                        ->where('min_playtime', '<=', $minutes))))
+            ->when($difficulty !== '', function ($query) use ($difficulty) {
+                match ($difficulty) {
+                    'light' => $query->where('complexity', '<=', 2),
+                    'medium' => $query->where('complexity', '>', 2)->where('complexity', '<=', 3),
+                    'heavy' => $query->where('complexity', '>', 3),
+                };
+            })
             ->when(
                 $gameMode !== '',
                 fn ($query) => $query->whereJsonContains(
@@ -648,6 +677,8 @@ class GameController extends Controller
                 'q' => $search,
                 'players' => $playerCount,
                 'mode' => $gameMode,
+                'duration' => $durationLimit,
+                'difficulty' => $difficulty,
                 'sort' => $sort,
             ],
         ]);

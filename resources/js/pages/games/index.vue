@@ -64,6 +64,8 @@ const props = defineProps<{
         q: string;
         players: number | null;
         mode: string;
+        duration: number | null;
+        difficulty: '' | 'light' | 'medium' | 'heavy';
         sort: string;
     };
 }>();
@@ -76,11 +78,17 @@ const props = defineProps<{
 
 const search = ref(props.filters.q);
 // En móvil, los filtros secundarios se pueden plegar para ver los juegos antes.
-const showMobileFilters = ref(Boolean(props.filters.players || props.filters.mode));
+const showMobileFilters = ref(Boolean(
+    props.filters.players || props.filters.mode || props.filters.duration ||
+    props.filters.difficulty || props.selected_collection_id
+));
 const gameMode = ref(props.filters.mode ?? '');
 const sortOrder = ref(props.filters.sort ?? 'name');
 const playerCount = ref<number | ''>(props.filters.players ?? '');
 const selectedCollectionId = ref(props.selected_collection_id);
+const durationLimit = ref<number | ''>(props.filters.duration ?? '');
+const difficulty = ref<'' | 'light' | 'medium' | 'heavy'>(props.filters.difficulty ?? '');
+const playerOptions = Array.from({ length: 12 }, (_, index) => index + 1);
 
 const brokenCoverIds = ref<number[]>([]);
 
@@ -96,6 +104,8 @@ const applyFilters = () => {
         q: search.value.trim() || undefined,
         players: Number(playerCount.value) || undefined,
         mode: gameMode.value || undefined,
+        duration: durationLimit.value === '' ? undefined : Number(durationLimit.value),
+        difficulty: difficulty.value || undefined,
         sort: sortOrder.value === 'name' ? undefined : sortOrder.value,
     }, {
         preserveScroll: true,
@@ -105,6 +115,8 @@ const applyFilters = () => {
 const clearFilters = () => {
     search.value = '';
     gameMode.value = '';
+    durationLimit.value = '';
+    difficulty.value = '';
     playerCount.value = '';
     selectedCollectionId.value = null;
     showMobileFilters.value = false;
@@ -112,21 +124,17 @@ const clearFilters = () => {
 };
 
 const advancedFilterCount = computed(() =>
-    Number(playerCount.value !== '') + Number(gameMode.value !== '')
+    Number(playerCount.value !== '') +
+    Number(gameMode.value !== '') +
+    Number(durationLimit.value !== '') +
+    Number(difficulty.value !== '') +
+    Number(selectedCollectionId.value !== null)
 );
 
 const hasActiveFilters = computed(() =>
     search.value.trim() !== '' ||
-    gameMode.value !== '' ||
-    playerCount.value !== '' ||
-    selectedCollectionId.value !== null
+    advancedFilterCount.value > 0
 );
-
-const changeCollection = (event: Event) => {
-    const value = (event.target as HTMLSelectElement).value;
-    selectedCollectionId.value = value ? Number(value) : null;
-    applyFilters();
-};
 
 const gameModeLabels: Record<string, string> = {
     competitive: 'Competitivo',
@@ -203,149 +211,75 @@ const formatDate = (date: string | null): string => {
             </div>
 
             <!-- ================================================== -->
-            <!-- COLECCIÓN                                          -->
-            <!-- ================================================== -->
-
-            <div
-                v-if="collections.length"
-                class="mt-5 flex flex-col gap-2 sm:mt-7 sm:flex-row sm:items-center"
-            >
-                <label
-                    for="collection-selector"
-                    class="text-sm font-bold text-zinc-600 dark:text-zinc-300"
-                >
-                    Colección
-                </label>
-
-                <select
-                    id="collection-selector"
-                    :value="selectedCollectionId ?? ''"
-                    class="rounded-xl border border-zinc-300 bg-white px-4 py-3 font-semibold text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                    @change="changeCollection"
-                >
-                    <option :value="''">Todas mis colecciones</option>
-                    <option
-                        v-for="collection in collections"
-                        :key="collection.id"
-                        :value="collection.id"
-                    >
-                        {{ collection.name }}
-                        ({{ collection.games_count }})
-                    </option>
-                </select>
-            </div>
-
-            <!-- ================================================== -->
             <!-- BUSCADOR Y FILTROS                                 -->
             <!-- ================================================== -->
 
             <form
-                class="mt-4 mb-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:mt-6 sm:mb-8 sm:p-5"
+                class="mt-5 mb-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:mt-7 sm:mb-8 sm:p-6"
                 @submit.prevent="applyFilters"
             >
-                <div class="grid gap-3 sm:grid-cols-2 sm:items-end sm:gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.9fr)_minmax(0,1fr)_auto]">
-                    <!-- El buscador permanece siempre visible. -->
+                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     <div class="min-w-0">
-                        <label
-                            for="game-search"
-                            class="text-sm font-bold text-zinc-800 dark:text-zinc-200"
-                        >
-                            Buscar por nombre
-                        </label>
-                        <input
-                            id="game-search"
-                            v-model="search"
-                            type="search"
-                            placeholder="Ej: White Castle..."
-                            class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
-                        />
+                        <label for="game-search" class="text-sm font-bold">Buscar juego</label>
+                        <input id="game-search" v-model="search" type="search"
+                            placeholder="Busca por nombre o temática..."
+                            class="mt-2 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
                     </div>
-
-                    <!-- En escritorio los filtros siguen desplegados. -->
-                    <div
-                        id="game-advanced-filters"
-                        :class="showMobileFilters ? 'grid gap-3 sm:contents' : 'hidden sm:contents'"
-                    >
+                    <button type="button" class="rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-bold md:hidden dark:border-zinc-700"
+                        :aria-expanded="showMobileFilters" aria-controls="game-advanced-filters"
+                        @click="showMobileFilters = !showMobileFilters">
+                        Filtros <span v-if="advancedFilterCount">({{ advancedFilterCount }})</span>
+                        <span aria-hidden="true">{{ showMobileFilters ? ' −' : ' +' }}</span>
+                    </button>
+                    <div id="game-advanced-filters" :class="showMobileFilters ? 'contents' : 'hidden md:contents'">
                         <div class="min-w-0">
-                            <label
-                                for="game-player-count"
-                                class="text-sm font-bold text-zinc-800 dark:text-zinc-200"
-                            >
-                                Jugadores ideales
-                            </label>
-                            <input
-                                id="game-player-count"
-                                v-model.number="playerCount"
-                                type="number"
-                                min="1"
-                                step="1"
-                                placeholder="Todos"
-                                class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                            />
+                            <label for="game-player-count" class="text-sm font-bold">Jugadores ideales</label>
+                            <select id="game-player-count" v-model.number="playerCount" class="mt-2 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                                <option value="">Cualquier número</option>
+                                <option v-for="number in playerOptions" :key="number" :value="number">
+                                    {{ number }} {{ number === 1 ? 'jugador' : 'jugadores' }}
+                                </option>
+                            </select>
+                            <p class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">Solo juegos recomendados para ese número de jugadores.</p>
                         </div>
-
                         <div class="min-w-0">
-                            <label
-                                for="game-mode-filter"
-                                class="mb-2 block text-sm font-semibold"
-                            >
-                                Modalidad
-                            </label>
-                            <select
-                                id="game-mode-filter"
-                                v-model="gameMode"
-                                class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                                @change="applyFilters"
-                            >
-                                <option value="">Todas las modalidades</option>
+                            <label for="games-collection" class="text-sm font-bold">Colección</label>
+                            <select id="games-collection" v-model="selectedCollectionId" class="mt-2 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                                <option :value="null">Todas las colecciones</option>
+                                <option v-for="collection in collections" :key="collection.id" :value="collection.id">{{ collection.name }}</option>
+                            </select>
+                        </div>
+                        <div class="min-w-0">
+                            <label for="games-duration" class="text-sm font-bold">Tiempo disponible</label>
+                            <select id="games-duration" v-model.number="durationLimit" class="mt-2 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                                <option value="">Cualquier duración</option>
+                                <option :value="30">Hasta 30 minutos</option>
+                                <option :value="60">Hasta 1 hora</option>
+                                <option :value="90">Hasta 1 h 30 min</option>
+                                <option :value="120">Hasta 2 horas</option>
+                                <option :value="180">Hasta 3 horas</option>
+                            </select>
+                        </div>
+                        <div class="min-w-0">
+                            <label for="games-difficulty" class="text-sm font-bold">Dificultad</label>
+                            <select id="games-difficulty" v-model="difficulty" class="mt-2 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                                <option value="">Cualquier dificultad</option>
+                                <option value="light">Ligero (hasta 2)</option>
+                                <option value="medium">Medio (más de 2 a 3)</option>
+                                <option value="heavy">Exigente (más de 3)</option>
+                            </select>
+                        </div>
+                        <div class="min-w-0">
+                            <label for="game-mode-filter" class="text-sm font-bold">Tipo de juego</label>
+                            <select id="game-mode-filter" v-model="gameMode" class="mt-2 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                                <option value="">Todos los tipos</option>
                                 <option value="competitive">Competitivo</option>
                                 <option value="cooperative">Cooperativo</option>
                                 <option value="semi_cooperative">Semicooperativo</option>
                             </select>
                         </div>
-                    </div>
-
-                    <button
-                        type="submit"
-                        class="hidden rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90 sm:block"
-                    >
-                        Aplicar filtros
-                    </button>
-
-                    <!-- Acciones compactas, solo en móvil. -->
-                    <div class="grid grid-cols-2 gap-2 sm:hidden">
-                        <button
-                            type="button"
-                            class="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-zinc-300 px-3 py-2.5 text-sm font-bold text-zinc-800 transition hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-[#5200FF] dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
-                            :aria-expanded="showMobileFilters"
-                            aria-controls="game-advanced-filters"
-                            @click="showMobileFilters = !showMobileFilters"
-                        >
-                            Filtros<span v-if="advancedFilterCount">({{ advancedFilterCount }})</span>
-                            <span aria-hidden="true">{{ showMobileFilters ? '−' : '+' }}</span>
-                        </button>
-                        <button
-                            type="submit"
-                            class="min-h-11 rounded-xl bg-[#5200FF] px-4 py-2.5 text-sm font-bold text-white"
-                        >
-                            Buscar juegos
-                        </button>
-                    </div>
-                </div>
-
-                <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-                    <p class="text-sm text-zinc-500 dark:text-zinc-400">
-                        Mostrando
-                        <strong class="text-zinc-900 dark:text-zinc-100">{{ games.length }}</strong>
-                        {{ games.length === 1 ? 'juego' : 'juegos' }}
-                    </p>
-                    <div class="flex w-full flex-wrap items-center gap-3 sm:w-auto sm:justify-end">
-                        <label
-                            for="game-sort"
-                            class="shrink-0 text-sm font-bold text-zinc-700 dark:text-zinc-300"
-                        >
-                            Ordenar por
-                        </label>
+                    <div class="min-w-0">
+                        <label for="games-sort-filter" class="mb-2 block text-sm font-bold text-zinc-800 dark:text-zinc-200">Ordenar juegos</label>
                         <select
                             id="game-sort"
                             v-model="sortOrder"
@@ -357,13 +291,21 @@ const formatDate = (date: string | null): string => {
                             <option value="recent">Últimos jugados</option>
                             <option value="most_played">Más jugados</option>
                         </select>
-                        <button
-                            v-if="hasActiveFilters"
-                            type="button"
+                    </div>
+                    </div>
+                </div>
+                <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+                    <p class="text-sm text-zinc-500 dark:text-zinc-400" aria-live="polite">
+                        Mostrando <strong class="text-zinc-900 dark:text-zinc-100">{{ games.length }}</strong>
+                        {{ games.length === 1 ? 'juego' : 'juegos' }}
+                    </p>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <button v-if="hasActiveFilters" type="button"
                             class="text-sm font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
-                            @click="clearFilters"
-                        >
-                            Limpiar filtros
+                            @click="clearFilters">Limpiar filtros</button>
+                        <button type="submit"
+                            class="rounded-xl bg-[#5200FF] px-5 py-3 text-sm font-black text-white transition hover:bg-[#3F00C7]">
+                            Aplicar filtros
                         </button>
                     </div>
                 </div>
