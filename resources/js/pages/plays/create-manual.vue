@@ -167,6 +167,12 @@ const markCoverAsBroken = (id: number) => {
     }
 };
 
+// Pulsar de nuevo el mismo juego elimina la selección.
+// Al cambiar game_id, el watch existente limpia la expansión anterior.
+const toggleGame = (gameId: number): void => {
+    form.game_id = Number(form.game_id) === gameId ? null : gameId;
+};
+
 const selectedGame = computed(
     () =>
         props.games.find(
@@ -321,9 +327,10 @@ const submit = () => {
                             class="group min-w-0 cursor-pointer"
                         >
                             <input
-                                v-model="form.game_id"
-                                type="radio"
+                                :checked="Number(form.game_id) === game.id"
+                                type="checkbox"
                                 :value="game.id"
+                                @change="toggleGame(game.id)"
                                 class="peer sr-only"
                             />
 
