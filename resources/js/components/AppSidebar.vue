@@ -33,7 +33,7 @@ const mainNavItems: NavItem[] = [
     { title: 'Jugadores', href: '/players', icon: Users },
     {
         title: 'Estadísticas',
-        href: '/statistics/decisions',
+        href: '/statistics',
         icon: BarChart3,
     },
 ];

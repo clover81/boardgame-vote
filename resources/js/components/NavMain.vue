@@ -20,7 +20,7 @@ const { isCurrentUrl } = useCurrentUrl();
 // Mantener marcada la sección también al abrir sus páginas interiores.
 const isSectionActive = (item: NavItem): boolean => {
     const href = toUrl(item.href);
-    const base = href === '/statistics/decisions' ? '/statistics' : href;
+    const base = href;
 
     return isCurrentUrl(base) || isCurrentUrl(`${base}/`, undefined, true);
 };

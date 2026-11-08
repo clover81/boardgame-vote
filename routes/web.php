@@ -12,8 +12,6 @@ use App\Http\Controllers\GameCollectionController;
 use App\Http\Controllers\GameCollectionMembershipController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\BggImportController;
-use App\Http\Controllers\DecisionStatisticsController;
-use App\Http\Controllers\GameVotingStatisticsController;
 use App\Http\Controllers\BggController;
 /*
 |--------------------------------------------------------------------------
@@ -29,16 +27,6 @@ Route::redirect('/', '/games')
 | Votación pública
 |--------------------------------------------------------------------------
 */
-
-Route::get(
-    '/statistics/decisions',
-    [
-        DecisionStatisticsController::class,
-        'index',
-    ]
-)
-->middleware('auth')
-->name('statistics.decisions');
 
 Route::get(
     '/vote/{token}/{voteToken}',
@@ -69,6 +57,14 @@ Route::get(
 */
 
 Route::middleware(Authenticate::class)->group(function () {
+
+    // Vista sencilla de estadisticas de la coleccion y partidas.
+    Route::get('/statistics', [\App\Http\Controllers\SimpleStatisticsController::class, 'index'])
+        ->name('statistics.index');
+
+    // Compatibilidad con enlaces guardados de las estadísticas anteriores.
+    Route::redirect('/statistics/decisions', '/statistics');
+    Route::redirect('/statistics/games', '/statistics');
 
     /*
     |--------------------------------------------------------------------------
@@ -406,21 +402,6 @@ Route::middleware(Authenticate::class)->group(function () {
         ]
     )->name('collections.destroy');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Estadísticas
-    |--------------------------------------------------------------------------
-    */
-
-    Route::get(
-        '/statistics/games',
-        [
-            GameVotingStatisticsController::class,
-            'index',
-        ]
-    )->name(
-        'statistics.games'
-    );
 });
 
 /*
