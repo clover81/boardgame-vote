@@ -350,12 +350,30 @@ class PlayController extends Controller
             ->values()
             ->all();
 
-        $players = $poll->participants
+        // Mantener los participantes de la votación (incluidos los inactivos)
+        // y ofrecer además los jugadores habituales activos de esta cuenta.
+        // Los participantes iniciales siguen siendo exclusivamente los de la votación.
+        $pollPlayers = $poll->participants
             ->filter(fn ($participant) => $participant->player_id !== null)
             ->map(fn ($participant) => [
-                'id' => $participant->player_id,
+                'id' => (int) $participant->player_id,
                 'name' => $participant->display_name,
             ])
+            ->values();
+
+        $otherActivePlayers = Player::query()
+            ->where('created_by', $userId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn ($player) => [
+                'id' => (int) $player->id,
+                'name' => $player->name,
+            ]);
+
+        $players = $pollPlayers
+            ->concat($otherActivePlayers)
+            ->unique('id')
             ->values();
 
         $candidates = $poll->candidates

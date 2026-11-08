@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import MeepleIcon from '@/components/icons/MeepleIcon.vue';
+import { playerNameColor } from '@/lib/player-colors';
 import { BuildingComplexPlus } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import {
@@ -493,9 +495,9 @@ const submit = () => {
                     <p
                         class="mt-1 text-sm text-zinc-500 dark:text-zinc-400"
                     >
-                        Dejamos seleccionados los
-                        participantes de la votación,
-                        pero puedes corregirlos.
+                        Los participantes de la votación vienen marcados.
+                        Puedes añadir otros jugadores habituales o desmarcar
+                        a quienes no jugaron.
                     </p>
 
                     <div
@@ -519,12 +521,12 @@ const submit = () => {
                                 class="peer sr-only"
                             />
 
-                            <div
-                                class="rounded-xl border-2 border-zinc-200 p-4 font-semibold transition-[transform,border-color,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-[0_8px_20px_rgba(82,0,255,0.10)] peer-focus-visible:ring-4 peer-focus-visible:ring-violet-400/40 peer-checked:border-[#5200FF] peer-checked:bg-[#5200FF] peer-checked:text-white motion-reduce:transform-none motion-reduce:transition-none dark:border-zinc-800"
-                            >
-                                {{
-                                    participant.name
-                                }}
+                            <div class="flex min-h-14 items-center justify-between gap-3 rounded-xl border-2 border-zinc-200 p-4 font-semibold transition-[transform,border-color,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-[0_8px_20px_rgba(82,0,255,0.10)] peer-focus-visible:ring-4 peer-focus-visible:ring-violet-400/40 peer-checked:border-[#5200FF] peer-checked:bg-violet-50 peer-checked:ring-2 peer-checked:ring-[#5200FF]/20 dark:peer-checked:bg-violet-950/30 motion-reduce:transform-none motion-reduce:transition-none dark:border-zinc-800">
+                                <span :class="playerNameColor(participant.name)" class="inline-flex min-w-0 items-center gap-2">
+                                    <MeepleIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
+                                    <span class="min-w-0 break-words">{{ participant.name }}</span>
+                                </span>
+                                <span v-if="form.player_ids.includes(participant.id)" aria-hidden="true" class="shrink-0 rounded-full bg-[#5200FF] px-2 py-0.5 text-xs font-bold text-white">✓</span>
                             </div>
                         </label>
                     </div>
