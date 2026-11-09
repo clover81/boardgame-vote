@@ -80,6 +80,27 @@ class BggExpansionImporter
       $existingExpansion = Expansion::where('bgg_id', $bggId)->first();
 
       if ($existingExpansion) {
+        // La expansión solo puede asociarse si su juego base
+        // pertenece a esta colección y está marcado como propio en BGG.
+        $ownedBaseGameIds = array_map(
+          'intval',
+          array_column($localBases, 'id')
+        );
+
+        if (!in_array(
+          (int) $existingExpansion->game_id,
+          $ownedBaseGameIds,
+          true
+        )) {
+          $result['pending'][] = [
+            'bgg_id' => $bggId,
+            'name' => $item['name'],
+            'reason' => 'El juego base no pertenece a esta colección.',
+          ];
+
+          continue;
+        }
+
         // Asociar la expansión a esta colección,
         // sin duplicarla ni modificar su ficha.
         // En modo simulación no se guarda nada.
