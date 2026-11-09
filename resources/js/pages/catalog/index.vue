@@ -730,13 +730,13 @@ const externalUrl = (url: string | null): string | undefined => {
                     </div>
 
                     <div class="flex flex-1 flex-col p-4 sm:p-5">
-                        <div class="min-h-14">
+                        <div class="sm:min-h-14">
                             <h3 class="line-clamp-2 text-lg font-black leading-snug tracking-tight sm:text-xl">
                                 {{ game.name }}
                             </h3>
                         </div>
 
-                        <div class="mt-3 flex flex-wrap gap-2">
+                        <div class="mt-3 flex flex-wrap items-center gap-2">
                             <span
                                 v-for="mode in game.game_modes"
                                 :key="mode"
@@ -760,52 +760,43 @@ const externalUrl = (url: string | null): string | undefined => {
                             >
                                 {{ game.max_players === 1 ? 'Solitario' : 'Sin clasificar' }}
                             </span>
-                        </div>
-
-                        <div v-if="game.collections.length" class="mt-3 flex flex-wrap gap-2">
-                            <span
-                                v-for="(collection, index) in game.collections"
-                                :key="collection.id"
-                                class="inline-block max-w-full truncate rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700"
-                                :class="index >= 2 ? 'hidden sm:inline-flex' : ''"
-                            >
-                                {{ collection.name }}
-                            </span>
-
-                            <!-- Resumen de colecciones adicionales en móvil -->
-                            <span
-                                v-if="game.collections.length > 2"
-                                class="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-bold text-zinc-600 sm:hidden"
-                            >
-                                +{{ game.collections.length - 2 }}
-                                más
-                            </span>
-                        </div>
-
-                        <div class="mt-auto grid grid-cols-2 gap-2 pt-4 text-sm sm:gap-3 sm:pt-5">
-                            <div class="rounded-xl bg-zinc-50 p-2.5 sm:p-3">
-                                <p class="text-xs text-zinc-500">Jugadores</p>
-                                <p class="mt-1 font-black">
-                                    <UsersRound class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9]" :stroke-width="2.2" role="img" aria-label="Jugadores" /> {{ game.min_players }}–{{ game.max_players }}
-                                </p>
-                            </div>
-
-                            <div class="rounded-xl bg-zinc-50 p-2.5 sm:p-3">
-                                <p class="text-xs text-zinc-500">Duración</p>
-                                <p class="mt-1 font-black">
-                                    <HourglassCog class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#1D4ED8]" :stroke-width="2.2" role="img" aria-label="Duración" /> {{ formatDuration(game) }}
-                                </p>
-                            </div>
-
-                            <div
-                                v-if="game.complexity !== null"
-                                class="col-span-2 flex items-center justify-between rounded-xl bg-zinc-50 px-3 py-2.5 text-sm"
-                            >
-                                <span class="text-zinc-500">Dificultad</span>
-                                <span class="font-black inline-flex items-center gap-1.5 whitespace-nowrap">
-                                    <BrainCog class="size-4 shrink-0 text-pink-600" :stroke-width="2" aria-hidden="true" /> {{ Number(game.complexity).toFixed(1) }} / 5
+                            <template v-if="game.collections.length">
+                                <span
+                                    v-for="(collection, index) in game.collections"
+                                    :key="collection.id"
+                                    class="inline-block max-w-full truncate rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700"
+                                    :class="index >= 2 ? 'hidden sm:inline-flex' : ''"
+                                >
+                                    {{ collection.name }}
                                 </span>
-                            </div>
+
+                                <!-- Resumen de colecciones adicionales en móvil -->
+                                <span
+                                    v-if="game.collections.length > 2"
+                                    class="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-bold text-zinc-600 sm:hidden"
+                                >
+                                    +{{ game.collections.length - 2 }}
+                                    más
+                                </span>
+                            </template>
+                        </div>
+
+                        <div class="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-zinc-100 pt-3 text-sm font-semibold text-zinc-800 sm:pt-4">
+                            <span class="inline-flex items-center gap-1.5 whitespace-nowrap">
+                                <UsersRound class="size-4 shrink-0 text-[#6D28D9]" :stroke-width="2.2" aria-hidden="true" />
+                                <span class="sr-only">Jugadores:</span>
+                                {{ game.min_players }}–{{ game.max_players }}
+                            </span>
+                            <span class="inline-flex items-center gap-1.5 whitespace-nowrap">
+                                <HourglassCog class="size-4 shrink-0 text-[#1D4ED8]" :stroke-width="2.2" aria-hidden="true" />
+                                <span class="sr-only">Duración:</span>
+                                {{ formatDuration(game) }}
+                            </span>
+                            <span v-if="game.complexity !== null" class="inline-flex items-center gap-1.5 whitespace-nowrap" title="Dificultad sobre 5">
+                                <BrainCog class="size-4 shrink-0 text-pink-600" :stroke-width="2" aria-hidden="true" />
+                                <span class="sr-only">Dificultad:</span>
+                                {{ Number(game.complexity).toFixed(1) }}/5
+                            </span>
                         </div>
 
                         <p

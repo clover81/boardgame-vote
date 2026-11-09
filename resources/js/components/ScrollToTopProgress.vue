@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
-const props = withDefaults(defineProps<{ rememberPosition?: boolean; hideOnMobile?: boolean }>(), {
+const props = withDefaults(defineProps<{ rememberPosition?: boolean; hideOnMobile?: boolean; compact?: boolean }>(), {
     rememberPosition: true,
     hideOnMobile: false,
+    compact: false,
 });
 
 const scrollY = ref(0);
@@ -95,8 +96,13 @@ onBeforeUnmount(() => {
             type="button"
             aria-label="Volver al inicio"
             title="Volver arriba"
-            class="fixed bottom-6 right-5 z-50 h-14 w-14 items-center justify-center rounded-full bg-[#181424] text-white shadow-xl transition hover:scale-110 hover:shadow-2xl sm:bottom-8 sm:right-8"
-            :class="props.hideOnMobile ? 'hidden sm:flex' : 'flex'"
+            class="fixed z-50 items-center justify-center rounded-full bg-[#181424] text-white shadow-xl transition hover:scale-110 hover:shadow-2xl"
+            :class="[
+                props.hideOnMobile ? 'hidden sm:flex' : 'flex',
+                props.compact
+                    ? 'bottom-3 right-2 h-11 w-11 sm:bottom-4 sm:right-2'
+                    : 'bottom-6 right-2 h-14 w-14 sm:bottom-8 sm:right-2',
+            ]"
             @click="scrollToTop"
         >
             <svg
@@ -133,7 +139,7 @@ onBeforeUnmount(() => {
             <!-- Flecha -->
             <svg
                 viewBox="0 0 24 24"
-                class="relative h-6 w-6"
+                :class="props.compact ? 'relative h-5 w-5' : 'relative h-6 w-6'"
                 fill="none"
                 stroke="currentColor"
                 stroke-width="2.5"
