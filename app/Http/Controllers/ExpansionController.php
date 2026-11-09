@@ -14,6 +14,7 @@ class ExpansionController extends Controller
     public function store(Request $request, Game $game): RedirectResponse
     {
         $this->authorizeGame($request, $game);
+        $this->authorizeUnsharedMutation($request, $game);
 
         $validated = $request->validate([
             'name' => [
@@ -50,6 +51,8 @@ class ExpansionController extends Controller
             $expansion->game_id === $game->id,
             404
         );
+
+        $this->authorizeUnsharedMutation($request, $game, $expansion);
 
         $validated = $request->validate([
             'name' => [
@@ -170,6 +173,35 @@ class ExpansionController extends Controller
         }
 
         return back()->with('success', 'Expansión eliminada.');
+    }
+
+    private function authorizeUnsharedMutation(
+        Request $request,
+        Game $game,
+        ?Expansion $expansion = null
+    ): void {
+        $userId = (int) $request->user()->id;
+
+        // Impedir cambios globales en juegos de otras cuentas.
+        $sharedGame = DB::table('game_collection_game as gcg')
+            ->join('game_collections as gc', 'gc.id', '=', 'gcg.game_collection_id')
+            ->where('gcg.game_id', $game->id)
+            ->where('gc.created_by', '<>', $userId)
+            ->exists();
+
+        // Proteger también expansiones asociadas a colecciones ajenas.
+        $sharedExpansion = $expansion !== null
+            && DB::table('game_collection_expansion as gce')
+                ->join('game_collections as gc', 'gc.id', '=', 'gce.game_collection_id')
+                ->where('gce.expansion_id', $expansion->id)
+                ->where('gc.created_by', '<>', $userId)
+                ->exists();
+
+        abort_if(
+            $sharedGame || $sharedExpansion,
+            403,
+            'No puedes modificar una expansión compartida con otra cuenta.'
+        );
     }
 
     private function authorizeGame(

@@ -364,3 +364,63 @@ test('a historical poll from another account prevents expansion deletion even if
     $this->assertDatabaseHas('expansions', ['id' => $this->expansion->id]);
     $this->assertDatabaseHas('poll_candidates', ['id' => $candidate->id, 'expansion_id' => $this->expansion->id]);
 });
+
+
+test('a shared game prevents manual expansion creation', function () {
+    $otherUser = User::factory()->create();
+
+    $otherCollection = GameCollection::create([
+        'created_by' => $otherUser->id,
+        'name' => 'Colección del tester',
+    ]);
+
+    $this->game->collections()->attach($otherCollection);
+
+    $before = Expansion::count();
+
+    $this->actingAs($this->user)
+        ->post(route('expansions.store', $this->game), [
+            'name' => 'Expansión de prueba',
+        ])
+        ->assertForbidden();
+
+    $this->assertDatabaseCount('expansions', $before);
+});
+
+test('a shared game prevents global expansion editing', function () {
+    $otherUser = User::factory()->create();
+
+    $otherCollection = GameCollection::create([
+        'created_by' => $otherUser->id,
+        'name' => 'Colección del tester',
+    ]);
+
+    $this->game->collections()->attach($otherCollection);
+
+    $before = $this->expansion->fresh()->toArray();
+
+    $this->actingAs($this->user)
+        ->patch($this->updateUrl, $this->payload)
+        ->assertForbidden();
+
+    expect($this->expansion->fresh()->toArray())->toBe($before);
+});
+
+test('an expansion linked to another users collection cannot be edited', function () {
+    $otherUser = User::factory()->create();
+
+    $otherCollection = GameCollection::create([
+        'created_by' => $otherUser->id,
+        'name' => 'Colección del tester',
+    ]);
+
+    $otherCollection->expansions()->attach($this->expansion);
+
+    $before = $this->expansion->fresh()->toArray();
+
+    $this->actingAs($this->user)
+        ->patch($this->updateUrl, $this->payload)
+        ->assertForbidden();
+
+    expect($this->expansion->fresh()->toArray())->toBe($before);
+});
