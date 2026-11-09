@@ -425,6 +425,16 @@ const addExistingToCollections = () => {
 const playerNumbers = [1, 2, 3, 4, 5, 6, 7, 8];
 
 const submit = () => {
+    // Los juegos existentes solo se asocian a nuestras colecciones.
+    // No requieren volver a validar ni modificar su ficha global.
+    if (existingBggGame.value) {
+        form.post(
+            `/games/${existingBggGame.value.id}/collections/attach`
+        );
+        return;
+    }
+
+    // Para un juego nuevo mantenemos todas las validaciones.
     form.post('/games');
 };
 </script>
@@ -1390,7 +1400,13 @@ const submit = () => {
                         disabled:opacity-50
                     "
                 >
-                    {{ form.processing ? 'Guardando...' : 'Guardar juego' }}
+                    {{
+                        form.processing
+                            ? 'Guardando...'
+                            : existingBggGame
+                              ? 'Añadir a mis colecciones'
+                              : 'Guardar juego'
+                    }}
                 </button>
 
             </form>
