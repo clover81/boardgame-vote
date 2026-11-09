@@ -387,6 +387,13 @@ class GameController extends Controller
 
         $userId = (int) $request->user()->id;
 
+        // Una ficha global compartida no puede modificarse desde otra cuenta.
+        $usedByAnotherUser = DB::table('game_collection_game as gcg')
+            ->join('game_collections as gc', 'gc.id', '=', 'gcg.game_collection_id')
+            ->where('gcg.game_id', $game->id)
+            ->where('gc.created_by', '<>', $userId)
+            ->exists();
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
 
@@ -490,9 +497,12 @@ class GameController extends Controller
             $validated,
             $idealPlayerCounts,
             $userId,
-            $ownedCollectionIds
+            $ownedCollectionIds,
+            $usedByAnotherUser
         ) {
-            $game->update($validated);
+            if (! $usedByAnotherUser) {
+                $game->update($validated);
+            }
 
             /*
              * Solo modificamos las colecciones del usuario actual.
@@ -518,14 +528,23 @@ class GameController extends Controller
                 DB::table('game_collection_game')->insertOrIgnore($rows);
             }
 
-            $game->idealPlayerCounts()->delete();
+            if (! $usedByAnotherUser) {
+                $game->idealPlayerCounts()->delete();
 
-            foreach ($idealPlayerCounts as $playerCount) {
-                $game->idealPlayerCounts()->create([
-                    'player_count' => $playerCount,
-                ]);
+                foreach ($idealPlayerCounts as $playerCount) {
+                    $game->idealPlayerCounts()->create([
+                        'player_count' => $playerCount,
+                    ]);
+                }
             }
         });
+
+        if ($usedByAnotherUser) {
+            return redirect()->route('games.index')->with(
+                'success',
+                'Se han actualizado tus colecciones. La ficha compartida no se ha modificado.'
+            );
+        }
 
         return redirect()
             ->route('games.index')

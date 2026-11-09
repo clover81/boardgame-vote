@@ -44,7 +44,7 @@ beforeEach(function () {
     ];
 });
 
-test('updating a game replaces only the current users collection memberships', function () {
+test('updating a shared game changes only the current users collection memberships', function () {
     $selectedIds = [
         $this->ownedCollections[0]->id,
         $this->ownedCollections[2]->id,
@@ -57,13 +57,13 @@ test('updating a game replaces only the current users collection memberships', f
 
     $this->game->refresh();
 
-    expect($this->game->name)->toBe($this->payload['name']);
+    expect($this->game->name)->toBe('The White Castle');
     expect($this->game->collections->modelKeys())->toEqualCanonicalizing([
         ...$selectedIds,
         $this->foreignCollection->id,
     ]);
     expect($this->game->idealPlayerCounts->pluck('player_count')->all())
-        ->toEqualCanonicalizing([3, 4]);
+        ->toEqualCanonicalizing([2]);
 });
 
 test('invalid collections leave the game and all its memberships unchanged', function ($selection) {
@@ -185,4 +185,20 @@ test('games outside owned collections cannot be edited or updated', function ($h
 test('editing and updating games requires authentication', function () {
     $this->get(route('games.edit', $this->game))->assertRedirect(route('login'));
     $this->put(route('games.update', $this->game), $this->payload)->assertRedirect(route('login'));
+});
+
+test('updating an unshared game can change its global fields', function () {
+    $this->game->collections()->detach($this->foreignCollection);
+
+    $this->actingAs($this->user)
+        ->put(route('games.update', $this->game), [
+            ...$this->payload,
+            'collection_ids' => [$this->ownedCollections[0]->id],
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('games.index'));
+
+    expect($this->game->fresh()->name)->toBe($this->payload['name']);
+    expect($this->game->fresh()->idealPlayerCounts->pluck('player_count')->all())
+        ->toEqualCanonicalizing([3, 4]);
 });
