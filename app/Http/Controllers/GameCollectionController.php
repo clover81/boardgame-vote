@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -64,8 +65,27 @@ class GameCollectionController extends Controller
             )
             ->values();
 
+        // Solo colecciones publicas de otras cuentas, en modo lectura.
+        // No compartimos credenciales BGG ni datos internos de sincronizacion.
+        $friendCollections = GameCollection::query()
+            ->where('created_by', '!=', $request->user()->id)
+            ->where('is_public', true)
+            ->with('creator:id,name')
+            ->withCount(['games as games_count' => fn ($query) => $query
+                ->where('is_active', true)])
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($collection) => [
+                'id' => $collection->id,
+                'name' => $collection->name,
+                'owner_name' => $collection->creator?->name ?? 'Usuario',
+                'games_count' => (int) $collection->games_count,
+            ])
+            ->values();
+
         return Inertia::render('collections/index', [
             'collections' => $collections,
+            'friendCollections' => $friendCollections,
 
             'publicCatalogPath' =>
                 $collections->contains('is_public', true)
@@ -284,7 +304,13 @@ class GameCollectionController extends Controller
         }
 
         try {
-            $preview = $bgg->preview($username);
+            // Una vista previa repetida durante unos minutos no debe
+            // multiplicar las peticiones a BGG (que aplica límites).
+            $preview = Cache::remember(
+                $collection->bggPreviewCacheKey(),
+                now()->addMinutes(5),
+                fn () => $bgg->preview($username)
+            );
         } catch (RuntimeException $exception) {
             report($exception);
 
@@ -435,19 +461,24 @@ class GameCollectionController extends Controller
         }
 
         try {
-            // Primera comprobación contra BGG.
-            $first = $bgg->preview($collection->bgg_username);
-
-            // Segunda comprobación independiente para reducir
-            // el riesgo de actuar sobre una respuesta incompleta.
-            sleep(5);
+            // La vista previa anterior procede de una consulta BGG real.
+            // Una consulta fresca confirma la baja sin hacer cuatro
+            // peticiones en cada operación. Si no hay caché, verificamos
+            // dos veces de forma independiente.
+            $first = Cache::get($collection->bggPreviewCacheKey());
+            if (!is_array($first)) {
+                $first = $bgg->preview($collection->bgg_username);
+                sleep(5);
+            }
 
             $second = $bgg->preview($collection->bgg_username);
         } catch (\Throwable $exception) {
             report($exception);
 
             return back()->withErrors([
-                'bgg' => 'No se ha podido verificar la baja con BGG. No se ha modificado nada.',
+                'bgg' => str_contains($exception->getMessage(), '429')
+                    ? 'BGG ha limitado temporalmente las consultas (HTTP 429). Espera unos minutos antes de confirmar la baja. No se ha modificado nada.'
+                    : 'No se ha podido verificar la baja con BGG. No se ha modificado nada.',
             ]);
         }
 
@@ -481,6 +512,8 @@ class GameCollectionController extends Controller
         // Solo retirar la relación con esta colección.
         // NO eliminar el juego de la base de datos.
         $collection->games()->detach($game->id);
+
+        Cache::put($collection->bggPreviewCacheKey(), $second, now()->addMinutes(5));
 
         return back()->with(
             'success',
@@ -536,18 +569,22 @@ class GameCollectionController extends Controller
         }
 
         try {
-            // Comprobar dos veces la colección en BGG.
-            // No aceptar bajas basadas en una sola respuesta.
-            $first = $bgg->preview($collection->bgg_username);
-
-            sleep(5);
+            // Reutilizamos la vista previa reciente como primera prueba;
+            // la segunda SIEMPRE se consulta directamente a BGG.
+            $first = Cache::get($collection->bggPreviewCacheKey());
+            if (!is_array($first)) {
+                $first = $bgg->preview($collection->bgg_username);
+                sleep(5);
+            }
 
             $second = $bgg->preview($collection->bgg_username);
         } catch (\Throwable $exception) {
             report($exception);
 
             return back()->withErrors([
-                'bgg' => 'No se pudo verificar la baja en BGG. No se ha modificado nada.',
+                'bgg' => str_contains($exception->getMessage(), '429')
+                    ? 'BGG ha limitado temporalmente las consultas (HTTP 429). Espera unos minutos antes de confirmar la baja. No se ha modificado nada.'
+                    : 'No se pudo verificar la baja en BGG. No se ha modificado nada.',
             ]);
         }
 
@@ -564,8 +601,19 @@ class GameCollectionController extends Controller
         sort($firstIds);
         sort($secondIds);
 
-        // Exigir dos respuestas válidas y coincidentes.
-        if (empty($firstIds) || $firstIds !== $secondIds) {
+        // Puede no quedar ninguna expansión en BGG. Eso es válido:
+        // exigimos listas de expansiones idénticas y, además, una lista
+        // no vacía y estable de juegos propios en ambas respuestas.
+        $firstGames = array_map('intval', array_column($first['games'], 'bgg_id'));
+        $secondGames = array_map('intval', array_column($second['games'], 'bgg_id'));
+        sort($firstGames);
+        sort($secondGames);
+
+        if (
+            $firstIds !== $secondIds ||
+            empty($firstGames) ||
+            $firstGames !== $secondGames
+        ) {
             return back()->withErrors([
                 'bgg' => 'BGG ha devuelto resultados inconsistentes. No se ha aplicado la baja.',
             ]);
@@ -606,6 +654,8 @@ class GameCollectionController extends Controller
                 'bgg' => 'Se ha iniciado otra sincronización. No se ha aplicado la baja.',
             ]);
         }
+
+        Cache::put($collection->bggPreviewCacheKey(), $second, now()->addMinutes(5));
 
         return back()->with(
             'success',

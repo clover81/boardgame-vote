@@ -139,6 +139,7 @@ test('collection HTTP errors stop the preview with an explanatory message', func
 })->with([
     'collection pending' => [202, 'BGG sigue preparando la colección tras varios intentos.'],
     'unauthorized' => [401, 'BGG ha respondido con HTTP 401'],
+    'rate limited' => [429, 'BGG está limitando temporalmente las consultas (HTTP 429)'],
     'server error' => [500, 'BGG ha respondido con HTTP 500'],
 ]);
 

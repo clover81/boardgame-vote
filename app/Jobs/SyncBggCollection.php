@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use RuntimeException;
 use Throwable;
 
@@ -47,6 +48,8 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
                 'La colección no tiene una cuenta BGG vinculada.'
             );
         }
+
+        Cache::forget($collection->bggPreviewCacheKey());
 
         $collection->forceFill([
             'bgg_sync_status' => 'running',
@@ -116,6 +119,8 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
             'bgg_sync_expansions_added' =>
                 count($expansions['imported']),
         ])->save();
+
+        Cache::forget($collection->bggPreviewCacheKey());
 
         Log::info('Sincronización BGG completada', [
             'collection_id' => $collection->id,

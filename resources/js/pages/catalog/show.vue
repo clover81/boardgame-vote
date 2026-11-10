@@ -42,6 +42,7 @@ interface Game {
 
 const props = defineProps<{
     catalogToken: string;
+    catalogBasePath?: string;
     game: Game;
 }>();
 
@@ -66,7 +67,7 @@ const closeImage = () => {
     imageDialog.value?.close();
 };
 
-const catalogUrl = `/catalog/${props.catalogToken}`;
+const catalogUrl = props.catalogBasePath ?? `/catalog/${props.catalogToken}`;
 
 const shareMessage = ref('');
 

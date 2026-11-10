@@ -212,6 +212,13 @@ class BggCollectionService
             );
         }
 
+        if ($response->status() === 429) {
+            throw new RuntimeException(
+                'BGG está limitando temporalmente las consultas (HTTP 429). '
+                . 'Espera unos minutos antes de volver a consultar o confirmar bajas.'
+            );
+        }
+
         if (!$response->successful()) {
             throw new RuntimeException(
                 'BGG ha respondido con HTTP '

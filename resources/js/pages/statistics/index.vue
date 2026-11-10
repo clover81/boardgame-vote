@@ -52,9 +52,7 @@ const counters = [
                 <p class="font-bold uppercase tracking-wider text-[#5200FF] dark:text-[#CCFF00]">Estadísticas</p>
                 <h1 class="mt-1 text-3xl font-black text-zinc-900 dark:text-zinc-100">Tu colección y tus partidas</h1>
                 <p class="mt-2 max-w-2xl text-sm leading-6 text-zinc-600 dark:text-zinc-300">
-                    Lo esencial de lo que tienes y de lo que realmente habéis jugado.
-                    Sin porcentajes complicados ni rankings de votaciones.
-                </p>
+                                    </p>
             </div>
 
             <section aria-label="Resumen" class="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">

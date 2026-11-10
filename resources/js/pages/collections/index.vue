@@ -13,9 +13,16 @@ import {
 } from '@inertiajs/vue3';
 
 import AppLayout from '@/layouts/AppLayout.vue';
-import { FolderUser, UserLock } from '@lucide/vue';
+import { ChevronDown, FolderUser, Globe2, LockKeyhole, MoreHorizontal, Star, Trash2 } from '@lucide/vue';
 import InputError from '@/components/InputError.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
     Dialog,
     DialogContent,
@@ -30,6 +37,13 @@ import {
 | Tipos
 |--------------------------------------------------------------------------
 */
+
+interface FriendCollection {
+    id: number;
+    name: string;
+    owner_name: string;
+    games_count: number;
+}
 
 interface Collection {
     id: number;
@@ -50,6 +64,7 @@ interface Collection {
 
 const props = defineProps<{
     collections: Collection[];
+    friendCollections: FriendCollection[];
     publicCatalogPath: string | null;
 }>();
 
@@ -224,15 +239,40 @@ interface BggPreview {
     }[];
 }
 
-const bggCollectionId = ref<number | ''>('');
+// Solo mostramos el selector cuando hay varias colecciones vinculadas a BGG.
+const bggCollections = computed(() =>
+    props.collections.filter(collection => Boolean(collection.bgg_username))
+);
+
+const bggCollectionId = ref<number | ''>(
+    bggCollections.value.length === 1 ? bggCollections.value[0]!.id : ''
+);
 const bggPreview = ref<BggPreview | null>(null);
 const bggLoading = ref(false);
 const bggError = ref('');
 const bggTab = ref<'games' | 'expansions'>('games');
+const bggPanelOpen = ref(false);
 
 const bggSyncing = ref(false);
 const bggSyncMessage = ref('');
 const bggSyncError = ref('');
+
+// Si cambian las colecciones tras una visita Inertia, mantenemos una selección válida.
+watch(bggCollections, (linkedCollections) => {
+    if (linkedCollections.length === 1) {
+        bggCollectionId.value = linkedCollections[0]!.id;
+    } else if (!linkedCollections.some(collection => collection.id === bggCollectionId.value)) {
+        bggCollectionId.value = '';
+    }
+});
+
+// La vista previa corresponde exclusivamente a la colección seleccionada.
+watch(bggCollectionId, () => {
+    bggPreview.value = null;
+    bggError.value = '';
+    bggSyncMessage.value = '';
+    bggSyncError.value = '';
+});
 
 const page = usePage();
 
@@ -245,6 +285,16 @@ const selectedBggCollection = computed(() => {
             Number(collection.id) === Number(bggCollectionId.value)
     );
 });
+
+watch(
+    () => selectedBggCollection.value?.bgg_sync_status,
+    status => {
+        if (status === 'pending' || status === 'running' || status === 'failed') {
+            bggPanelOpen.value = true;
+        }
+    },
+    { immediate: true }
+);
 
 const bggStatusLabels: Record<string, string> = {
     idle: 'Sin sincronizaciones registradas',
@@ -585,15 +635,13 @@ watch(
                     <h1
                         class="mt-1 text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl"
                     >
-                        Mis colecciones
+                        Colecciones
                     </h1>
 
                     <p
                         class="mt-2 text-zinc-500 dark:text-zinc-400"
                     >
-                        Organiza los juegos según
-                        quién los tenga o el grupo
-                        al que pertenezcan.
+                        Organiza tus juegos y descubre colecciones públicas de otros usuarios.
                     </p>
                 </div>
 
@@ -683,18 +731,189 @@ watch(
                 }}
             </div>
 
+            <!-- ================================================== -->
+            <!-- LISTADO                                            -->
+            <!-- ================================================== -->
+
+            <div class="mb-4 mt-8">
+                <p class="text-sm font-bold uppercase tracking-wide text-[#5200FF] dark:text-[#CCFF00]">
+                    TU ESPACIO
+                </p>
+                <h2 class="mt-1 text-2xl font-black text-zinc-900 dark:text-zinc-100">
+                    Mis colecciones
+                </h2>
+                <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                    Solo tú puedes administrar estas colecciones. Publica las que quieras compartir.
+                </p>
+            </div>
+
+            <div
+                v-if="collections.length"
+                class="space-y-4"
+            >
+                <article
+                    v-for="collection in collections"
+                    :key="collection.id"
+                    class="group rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/30 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-violet-500 sm:p-6"
+                >
+                    <div
+                        class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                        <!-- INFO -->
+
+                        <div class="flex min-w-0 items-start gap-3">
+                            <span
+                                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-xl shadow-sm transition-colors duration-200 group-hover:bg-violet-200 dark:bg-violet-950/60 dark:group-hover:bg-violet-900/70"
+                                aria-hidden="true"
+                            >
+                                <FolderUser class="size-6 text-violet-700 dark:text-violet-200" aria-hidden="true" />
+                            </span>
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <h2 class="min-w-0 break-words text-xl font-bold text-zinc-900 dark:text-zinc-100">
+                                        {{ collection.name }}
+                                    </h2>
+                                    <span
+                                        v-if="collection.is_default"
+                                        class="rounded-full bg-[#CCFF00] px-3 py-1 text-xs font-bold text-black"
+                                    >
+                                        Predeterminada
+                                    </span>
+                                </div>
+                                <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                                    <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> {{ collection.games_count }}
+                                    {{ collection.games_count === 1 ? 'juego' : 'juegos' }}
+                                </p>
+                                <p class="mt-2 inline-flex items-start gap-1.5 text-xs font-semibold"
+                                   :class="collection.is_public ? 'text-emerald-700 dark:text-emerald-300' : 'text-zinc-500 dark:text-zinc-400'">
+                                    <Globe2 v-if="collection.is_public" class="size-4 shrink-0" aria-hidden="true" />
+                                    <LockKeyhole v-else class="size-4 shrink-0" aria-hidden="true" />
+                                    <span>{{ collection.is_public ? 'Pública · visible en tu catálogo y para otros usuarios' : 'Privada · solo tú puedes verla' }}</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- ACCIÓN PRINCIPAL + OPCIONES DE ADMINISTRACIÓN -->
+                        <div class="flex w-full items-center gap-2 sm:w-auto sm:justify-end">
+                            <Link
+                                :href="`/games?collection_id=${collection.id}`"
+                                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-[#5200FF] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#4000cc] hover:shadow-md hover:shadow-violet-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] sm:flex-initial"
+                            >
+                                Ver juegos
+                            </Link>
+
+                            <DropdownMenu>
+                                <DropdownMenuTrigger as-child>
+                                    <button
+                                        type="button"
+                                        :aria-label="`Opciones de ${collection.name}`"
+                                        class="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-zinc-300 bg-white text-zinc-700 transition-colors hover:border-violet-500 hover:text-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+                                    >
+                                        <MoreHorizontal class="size-5" aria-hidden="true" />
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" class="w-64">
+                                    <DropdownMenuItem
+                                        v-if="!collection.is_default"
+                                        @select="makeDefault(collection)"
+                                    >
+                                        <Star class="size-4" aria-hidden="true" />
+                                        Marcar como predeterminada
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem @select="togglePublic(collection)">
+                                        <LockKeyhole v-if="collection.is_public" class="size-4" aria-hidden="true" />
+                                        <Globe2 v-else class="size-4" aria-hidden="true" />
+                                        {{ collection.is_public ? 'Hacer privada' : 'Publicar colección' }}
+                                    </DropdownMenuItem>
+                                    <template v-if="!collection.is_default">
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem variant="destructive" @select="deleteCollection(collection)">
+                                            <Trash2 class="size-4" aria-hidden="true" />
+                                            Eliminar colección
+                                        </DropdownMenuItem>
+                                    </template>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <!-- SIN COLECCIONES -->
+
+            <div
+                v-else
+                class="mt-8 rounded-2xl border border-dashed border-zinc-300 p-10 text-center dark:border-zinc-700"
+            >
+                <p
+                    class="text-lg font-bold text-zinc-900 dark:text-zinc-100"
+                >
+                    No tienes colecciones
+                </p>
+
+                <p
+                    class="mt-2 text-zinc-500 dark:text-zinc-400"
+                >
+                    Crea la primera para empezar a
+                    organizar tus juegos.
+                </p>
+            </div>
+            <!-- Colecciones de otros usuarios: SOLO LECTURA. -->
+            <section v-if="friendCollections.length" class="mt-10">
+                <div class="mb-5">
+                    <p class="font-bold uppercase tracking-wide text-[#5200FF] dark:text-[#CCFF00]">
+                        OTRAS COLECCIONES
+                    </p>
+                    <h2 class="mt-1 text-2xl font-black text-zinc-900 dark:text-zinc-100">
+                        Colecciones públicas de otros usuarios
+                    </h2>
+                    <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                        Consulta y filtra los juegos que otros usuarios han publicado. Las colecciones privadas solo las ve su propietario.
+                    </p>
+                </div>
+
+                <div class="space-y-4">
+                    <article
+                        v-for="friendCollection in friendCollections"
+                        :key="friendCollection.id"
+                        class="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:p-6"
+                    >
+                        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div class="min-w-0">
+                                <h3 class="break-words text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                                    {{ friendCollection.name }}
+                                </h3>
+                                <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                                    De {{ friendCollection.owner_name }} · {{ friendCollection.games_count }}
+                                    {{ friendCollection.games_count === 1 ? 'juego' : 'juegos' }}
+                                </p>
+                                <p class="mt-1 text-xs font-semibold text-violet-600 dark:text-violet-300">
+                                    Solo consulta
+                                </p>
+                            </div>
+                            <Link
+                                :href="`/friends/collections/${friendCollection.id}`"
+                                class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-[#5200FF] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#4000cc]"
+                            >
+                                Ver juegos
+                            </Link>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
             <!-- COMPARTIR CATÁLOGO -->
             <section
                 v-if="publicCatalogPath"
                 class="mt-8 rounded-2xl border border-violet-200 bg-violet-50 p-6 dark:border-violet-900 dark:bg-violet-950/30"
             >
                 <h2 class="text-xl font-bold text-zinc-900 dark:text-white">
-                    Tu catálogo compartido
+                    Compartir mi catálogo
                 </h2>
 
                 <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
-                    Comparte tus colecciones públicas con tus amigos.
-                    Podrán consultar los juegos sin iniciar sesión.
+                    Este enlace permite consultar tus colecciones públicas sin iniciar sesión.
+                    Las privadas no se muestran.
                 </p>
 
                 <div class="mt-5 flex flex-wrap gap-3">
@@ -724,32 +943,73 @@ watch(
             <section
                 class="mt-8 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-6"
             >
-                <h2 class="text-xl font-bold">
-                    <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Sincronización con BoardGameGeek
-                </h2>
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="min-w-0">
+                        <h2 class="text-xl font-bold text-zinc-900 dark:text-zinc-100">
+                            <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Importar desde BoardGameGeek
+                        </h2>
+                        <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                            Importa cambios de BGG a esta aplicación. Nunca modifica tu cuenta de BGG.
+                        </p>
+                        <p v-if="selectedBggCollection" class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                            Estado: {{ bggStatusLabels[selectedBggCollection.bgg_sync_status] ?? 'Sin información' }}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        :aria-expanded="bggPanelOpen"
+                        aria-controls="bgg-panel-content"
+                        class="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition-colors hover:border-[#5200FF] hover:text-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-zinc-700 dark:text-zinc-200"
+                        @click="bggPanelOpen = !bggPanelOpen"
+                    >
+                        {{ bggPanelOpen ? 'Ocultar opciones' : 'Gestionar BGG' }}
+                        <ChevronDown class="size-4 transition-transform" :class="bggPanelOpen ? 'rotate-180' : ''" aria-hidden="true" />
+                    </button>
+                </div>
 
-                <p class="mt-2 text-sm text-zinc-500">
-                    Consulta los juegos y expansiones de tu cuenta BGG.
-                    Esta vista previa no modifica tu colección.
-                </p>
+                <div id="bgg-panel-content" v-show="bggPanelOpen">
+                    <p class="mt-4 text-sm text-zinc-500 dark:text-zinc-400">
+                        Primero consulta los cambios. La vista previa no modifica tu colección.
+                    </p>
 
                 <div class="mt-5 flex flex-wrap gap-3">
+                    <div
+                        v-if="bggCollections.length === 1"
+                        class="flex min-w-48 flex-1 flex-col justify-center rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 dark:border-zinc-700 dark:bg-zinc-900"
+                    >
+                        <span class="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                            Colección vinculada
+                        </span>
+                        <span class="mt-0.5 break-words font-semibold text-zinc-900 dark:text-zinc-100">
+                            {{ bggCollections[0]?.name }}
+                        </span>
+                        <span class="text-xs text-zinc-500 dark:text-zinc-400">
+                            Cuenta BGG: {{ bggCollections[0]?.bgg_username }}
+                        </span>
+                    </div>
                     <select
+                        v-else-if="bggCollections.length > 1"
                         v-model.number="bggCollectionId"
+                        aria-label="Colección vinculada a BoardGameGeek"
                         class="min-w-48 flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
-                        @change="bggPreview = null"
                     >
                         <option value="">Selecciona una colección</option>
                         <option
-                            v-for="collection in collections.filter(
-                                collection => Boolean(collection.bgg_username)
-                            )"
+                            v-for="collection in bggCollections"
                             :key="collection.id"
                             :value="collection.id"
                         >
                             {{ collection.name }} · {{ collection.bgg_username }}
                         </option>
                     </select>
+                    <p
+                        v-else
+                        role="status"
+                        class="flex min-w-48 flex-1 items-center rounded-xl border border-dashed border-zinc-300 px-4 py-3 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400"
+                    >
+                        No hay colecciones vinculadas a BGG. La consulta y la sincronización
+                        estarán disponibles cuando se vincule una colección.
+                    </p>
 
                     <button
                         type="button"
@@ -776,7 +1036,7 @@ watch(
                         {{
                             bggSyncing
                                 ? 'Enviando sincronización...'
-                                : 'Sincronizar con BGG'
+                                : 'Importar novedades de BGG'
                         }}
                     </button>
                 </div>
@@ -1139,140 +1399,8 @@ watch(
                         actualizado ni eliminado ningún juego.
                     </p>
                 </div>
+                </div>
             </section>
-
-            <!-- ================================================== -->
-            <!-- LISTADO                                            -->
-            <!-- ================================================== -->
-
-            <div
-                v-if="collections.length"
-                class="mt-8 space-y-4"
-            >
-                <article
-                    v-for="collection in collections"
-                    :key="collection.id"
-                    class="group rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/30 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-violet-500 sm:p-6"
-                >
-                    <div
-                        class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                        <!-- INFO -->
-
-                        <div class="flex min-w-0 items-start gap-3">
-                            <span
-                                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-xl shadow-sm transition-colors duration-200 group-hover:bg-violet-200 dark:bg-violet-950/60 dark:group-hover:bg-violet-900/70"
-                                aria-hidden="true"
-                            >
-                                <FolderUser class="size-6 text-violet-700 dark:text-violet-200" aria-hidden="true" />
-                            </span>
-                            <div class="min-w-0">
-                                <div class="flex flex-wrap items-center gap-3">
-                                    <h2 class="min-w-0 break-words text-xl font-bold text-zinc-900 dark:text-zinc-100">
-                                        {{ collection.name }}
-                                    </h2>
-                                    <span
-                                        v-if="collection.is_default"
-                                        class="rounded-full bg-[#CCFF00] px-3 py-1 text-xs font-bold text-black"
-                                    >
-                                        Predeterminada
-                                    </span>
-                                </div>
-                                <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-                                    <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> {{ collection.games_count }}
-                                    {{ collection.games_count === 1 ? 'juego' : 'juegos' }}
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- ACCIONES -->
-
-                        <div
-                            class="flex flex-wrap gap-2 sm:justify-end"
-                        >
-                            <!-- VER -->
-
-                            <Link
-                                :href="`/games?collection_id=${collection.id}`"
-                                class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#5200FF] px-4 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#4000cc] hover:shadow-md hover:shadow-violet-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
-                            >
-                                Ver juegos
-                            </Link>
-
-                            <!-- PREDETERMINADA -->
-
-                            <button
-                                v-if="
-                                    !collection.is_default
-                                "
-                                type="button"
-                                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition-colors hover:border-[#5200FF] hover:text-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-zinc-700 dark:text-zinc-200"
-                                @click="
-                                    makeDefault(
-                                        collection
-                                    )
-                                "
-                            >
-                                Hacer predeterminada
-                            </button>
-
-                            <!-- VISIBILIDAD -->
-
-                            <button
-                                type="button"
-                                class="gap-2 inline-flex min-h-11 items-center justify-center rounded-xl border px-4 py-2 text-center text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
-                                :class="collection.is_public
-                                    ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                                    : 'border-zinc-300 text-zinc-600 hover:border-[#5200FF] hover:text-[#5200FF] dark:border-zinc-700 dark:text-zinc-300'"
-                                @click="togglePublic(collection)"
-                            >
-                                <UserLock v-if="!collection.is_public" class="size-4 shrink-0" aria-hidden="true" />
-                                {{ collection.is_public
-                                    ? '🌐 Pública · Hacer privada'
-                                    : 'Privada · Compartir'
-                                }}
-                            </button>
-
-                            <!-- ELIMINAR -->
-
-                            <button
-                                v-if="
-                                    !collection.is_default
-                                "
-                                type="button"
-                                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30"
-                                @click="
-                                    deleteCollection(
-                                        collection
-                                    )
-                                "
-                            >
-                                Eliminar
-                            </button>
-                        </div>
-                    </div>
-                </article>
-            </div>
-
-            <!-- SIN COLECCIONES -->
-
-            <div
-                v-else
-                class="mt-8 rounded-2xl border border-dashed border-zinc-300 p-10 text-center dark:border-zinc-700"
-            >
-                <p
-                    class="text-lg font-bold text-zinc-900 dark:text-zinc-100"
-                >
-                    No tienes colecciones
-                </p>
-
-                <p
-                    class="mt-2 text-zinc-500 dark:text-zinc-400"
-                >
-                    Crea la primera para empezar a
-                    organizar tus juegos.
-                </p>
-            </div>
         </div>
         <Dialog v-model:open="deleteCollectionDialogOpen">
             <DialogContent class="sm:max-w-md">

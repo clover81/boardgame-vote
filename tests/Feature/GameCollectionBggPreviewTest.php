@@ -97,3 +97,24 @@ test('BGG preview failures return a service unavailable response', function ($me
     'collection pending' => ['BGG sigue preparando la colección tras varios intentos.'],
     'BGG error' => ['BGG ha respondido con HTTP 500'],
 ]);
+
+
+test('consultas repetidas de vista previa reutilizan caché y no saturan BGG', function () {
+    $preview = [
+        'games' => [['bgg_id' => 123, 'name' => 'Juego', 'status' => 'existing']],
+        'expansions' => [],
+        'summary' => [
+            'games' => 1, 'games_existing' => 1, 'games_new' => 0,
+            'expansions' => 0, 'expansions_existing' => 0, 'expansions_new' => 0,
+        ],
+    ];
+
+    \Illuminate\Support\Facades\Cache::forget($this->collection->bggPreviewCacheKey());
+    $bgg = $this->mock(BggCollectionService::class);
+    $bgg->shouldReceive('preview')->once()->with('clover81')->andReturn($preview);
+    $bgg->shouldReceive('removalCandidates')->twice()->andReturn([]);
+    $bgg->shouldReceive('expansionRemovalCandidates')->twice()->andReturn([]);
+
+    $this->actingAs($this->user)->getJson($this->url)->assertOk();
+    $this->actingAs($this->user)->getJson($this->url)->assertOk();
+});

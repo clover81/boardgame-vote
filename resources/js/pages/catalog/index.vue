@@ -32,6 +32,8 @@ interface Game {
 
 const props = defineProps<{
     catalogToken: string;
+    catalogBasePath?: string;
+    catalogOwnerName?: string;
     collections: Collection[];
     games: Game[];
 }>();
@@ -412,13 +414,20 @@ const externalUrl = (url: string | null): string | undefined => {
 </script>
 
 <template>
-    <Head title="Catálogo de juegos de mesa" />
+    <Head :title="catalogOwnerName ? `Colección de ${catalogOwnerName}` : 'Catálogo de juegos de mesa'" />
 
     <div class="min-h-screen bg-[#f7f7f5] text-zinc-950">
 
         <!-- CABECERA PUBLICA COMPACTA - Clover -->
         <div class="mx-auto max-w-7xl px-4 pt-5 sm:px-8 sm:pt-8">
             <header class="relative overflow-hidden rounded-[28px] bg-[#181424] px-5 py-5 text-white shadow-lg shadow-[#181424]/10 sm:px-9 sm:py-7">
+                <Link
+                    v-if="catalogBasePath"
+                    href="/collections"
+                    class="relative mb-5 inline-flex min-h-11 items-center text-sm font-bold text-[#CCFF00] underline-offset-4 hover:underline focus-visible:underline"
+                >
+                    ← Volver a mis colecciones
+                </Link>
                 <!-- Iluminación discreta, sin alterar el contraste ni añadir imágenes. -->
                 <div aria-hidden="true" class="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-[#5200FF]/20 blur-3xl"></div>
 
@@ -435,13 +444,18 @@ const externalUrl = (url: string | null): string | undefined => {
                 <div class="relative mt-7 grid gap-5 sm:mt-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-8">
                     <div class="min-w-0">
                         <span class="inline-flex rounded-full border border-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#CCFF00]">
-                            Catálogo compartido
+                            {{ catalogBasePath ? 'Colección de un amigo · Solo consulta' : 'Catálogo compartido' }}
                         </span>
                         <h1 class="mt-3 text-3xl font-black leading-tight tracking-tight sm:text-5xl">
                             ¿A qué jugamos <span class="text-[#CCFF00]">hoy?</span>
                         </h1>
                         <p class="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-300 sm:text-base">
-                            Explora la colección, descubre nuevos juegos y encuentra el perfecto para tu próxima partida.
+                            <template v-if="catalogOwnerName">
+                                Explora los juegos de {{ catalogOwnerName }} y utiliza los filtros, sin modificar su colección.
+                            </template>
+                            <template v-else>
+                                Explora la colección, descubre nuevos juegos y encuentra el perfecto para tu próxima partida.
+                            </template>
                         </p>
                     </div>
 
@@ -688,7 +702,7 @@ const externalUrl = (url: string | null): string | undefined => {
                     <!-- Enlace que permite abrir la ficha pulsando
                          sobre cualquier zona libre de la tarjeta -->
                     <Link
-                        :href="`/catalog/${catalogToken}/games/${game.id}`"
+                        :href="`${catalogBasePath ?? `/catalog/${catalogToken}`}/games/${game.id}`"
                         :aria-label="`Ver ficha de ${game.name}`"
                         class="absolute inset-0 z-10 rounded-3xl focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#5200FF]"
                     />

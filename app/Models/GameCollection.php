@@ -21,6 +21,13 @@ class GameCollection extends Model
         ];
     }
 
+    // Cache de la última consulta BGG de esta colección (no de las fichas locales).
+    public function bggPreviewCacheKey(): string
+    {
+        return 'bgg:collection:preview:' . $this->id . ':'
+            . sha1(trim((string) $this->bgg_username));
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Propietario de la colección

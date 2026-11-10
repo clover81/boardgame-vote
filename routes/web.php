@@ -356,6 +356,18 @@ Route::middleware(Authenticate::class)->group(function () {
         [GameCollectionController::class, 'index']
     )->name('collections.index');
 
+    // Consulta de colecciones ajenas, accesible solo con sesion iniciada.
+    // Rutas independientes de las acciones privadas de modificacion.
+    Route::get(
+        '/friends/collections/{collection}',
+        [\App\Http\Controllers\FriendCollectionController::class, 'index']
+    )->name('friends.collections.index');
+
+    Route::get(
+        '/friends/collections/{collection}/games/{game}',
+        [\App\Http\Controllers\FriendCollectionController::class, 'show']
+    )->name('friends.collections.games.show');
+
     Route::post(
         '/collections',
         [GameCollectionController::class, 'store']
