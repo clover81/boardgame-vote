@@ -13,6 +13,7 @@ import {
 } from '@inertiajs/vue3';
 
 import AppLayout from '@/layouts/AppLayout.vue';
+import { FolderUser, UserLock } from '@lucide/vue';
 import InputError from '@/components/InputError.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 import {
@@ -1163,7 +1164,7 @@ watch(
                                 class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-xl shadow-sm transition-colors duration-200 group-hover:bg-violet-200 dark:bg-violet-950/60 dark:group-hover:bg-violet-900/70"
                                 aria-hidden="true"
                             >
-                                🗂️
+                                <FolderUser class="size-6 text-violet-700 dark:text-violet-200" aria-hidden="true" />
                             </span>
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-3">
@@ -1219,15 +1220,16 @@ watch(
 
                             <button
                                 type="button"
-                                class="inline-flex min-h-11 items-center justify-center rounded-xl border px-4 py-2 text-center text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                                class="gap-2 inline-flex min-h-11 items-center justify-center rounded-xl border px-4 py-2 text-center text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                                 :class="collection.is_public
                                     ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
                                     : 'border-zinc-300 text-zinc-600 hover:border-[#5200FF] hover:text-[#5200FF] dark:border-zinc-700 dark:text-zinc-300'"
                                 @click="togglePublic(collection)"
                             >
+                                <UserLock v-if="!collection.is_public" class="size-4 shrink-0" aria-hidden="true" />
                                 {{ collection.is_public
                                     ? '🌐 Pública · Hacer privada'
-                                    : '🔒 Privada · Compartir'
+                                    : 'Privada · Compartir'
                                 }}
                             </button>
 
@@ -1245,7 +1247,7 @@ watch(
                                     )
                                 "
                             >
-                                🗑️ Eliminar
+                                Eliminar
                             </button>
                         </div>
                     </div>

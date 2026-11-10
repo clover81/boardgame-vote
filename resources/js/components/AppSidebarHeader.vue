@@ -76,7 +76,7 @@ const currentSection = computed(() => {
 
 <template>
     <header
-        class="flex h-12 shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4"
+        class="flex h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4 sm:px-6"
     >
         <SidebarTrigger
             class="-ml-1 shrink-0 rounded-lg hover:bg-[#5200FF]/10"
@@ -95,18 +95,18 @@ const currentSection = computed(() => {
             </span>
         </div>
 
-        <div class="ml-auto flex min-w-0 items-center gap-2">
+        <div class="ml-auto flex min-w-0 items-center gap-3 pl-2">
             <span
-                class="flex size-8 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900"
+                class="flex size-9 shrink-0 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 dark:border-zinc-700 dark:bg-zinc-900"
                 aria-hidden="true"
             >
-                <MeepleIcon class="size-5" :class="welcomeMeepleColor" />
+                <MeepleIcon class="size-6" :class="welcomeMeepleColor" />
             </span>
             <div class="hidden min-w-0 text-right lg:block">
-                <span class="block truncate text-xs font-bold text-foreground">
+                <span class="block truncate text-sm font-bold leading-tight text-foreground">
                     ¡Bienvenido, {{ welcomeFirstName }}!
                 </span>
-                <span class="block text-[10px] text-muted-foreground">
+                <span class="block text-xs text-muted-foreground">
                     Tu ludoteca
                 </span>
             </div>
