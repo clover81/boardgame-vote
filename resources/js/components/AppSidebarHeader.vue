@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import MeepleIcon from '@/components/icons/MeepleIcon.vue';
+import { playerColorOptions } from '@/lib/player-colors';
 import {
     BarChart3,
     Gamepad2,
@@ -24,6 +26,27 @@ withDefaults(
 );
 
 const page = usePage();
+
+// El color pertenece a un jugador registrado por ESTA cuenta, no a otra cuenta.
+// Si el nombre de usuario incluye apellidos, intentamos también el primer nombre.
+const welcomeFirstName = computed(() => {
+    const name = page.props.auth?.user?.name?.trim() ?? '';
+    return name.split(/\s+/)[0] || 'jugador';
+});
+
+const welcomeMeepleColor = computed(() => {
+    const fullName = (page.props.auth?.user?.name ?? '')
+        .trim()
+        .toLocaleLowerCase('es');
+    const firstName = fullName.split(/\s+/)[0];
+    const assigned = page.props.player_colors as Record<string, string> | undefined;
+    const colorId = assigned?.[fullName] ?? assigned?.[firstName];
+
+    // Reutilizamos la paleta validada de Jugadores; sin color asignado, neutro.
+    return playerColorOptions.find((option) => option.id === colorId)?.text
+        ?? 'text-zinc-600 dark:text-white';
+});
+
 
 const currentSection = computed(() => {
     const path = page.url.split('?')[0];
@@ -72,10 +95,21 @@ const currentSection = computed(() => {
             </span>
         </div>
 
-        <span
-            class="ml-auto hidden text-xs font-medium text-muted-foreground/60 md:inline"
-        >
-            Juegos de mesa
-        </span>
+        <div class="ml-auto flex min-w-0 items-center gap-2">
+            <span
+                class="flex size-8 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900"
+                aria-hidden="true"
+            >
+                <MeepleIcon class="size-5" :class="welcomeMeepleColor" />
+            </span>
+            <div class="hidden min-w-0 text-right lg:block">
+                <span class="block truncate text-xs font-bold text-foreground">
+                    ¡Bienvenido, {{ welcomeFirstName }}!
+                </span>
+                <span class="block text-[10px] text-muted-foreground">
+                    Tu ludoteca
+                </span>
+            </div>
+        </div>
     </header>
 </template>
