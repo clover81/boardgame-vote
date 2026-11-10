@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -43,7 +44,7 @@ class BggService
     }
 
     return Cache::remember(
-      'bgg-search-' . md5(mb_strtolower($query)),
+      'bgg-search-with-images-v1-' . md5(mb_strtolower($query)),
       now()->addMinutes(30),
       function () use ($query) {
         $xml = $this->request(
@@ -75,28 +76,55 @@ class BggService
             continue;
           }
 
+          $bggId = (int) $item['id'];
+
           $results[] = [
-            'bgg_id' =>
-            (int) $item['id'],
-
-            'name' =>
-            $primaryName,
-
-            'year' =>
-            isset(
-              $item->yearpublished['value']
-            )
-              ? (int) $item
-                ->yearpublished['value']
+            'bgg_id' => $bggId,
+            'name' => $primaryName,
+            'year' => isset($item->yearpublished['value'])
+              ? (int) $item->yearpublished['value']
               : null,
+            'image_url' => null,
+            'thumbnail_url' => null,
+            'bgg_url' => 'https://boardgamegeek.com/boardgame/' . $bggId,
           ];
         }
 
-        return array_slice(
-          $results,
-          0,
-          20
-        );
+        $results = array_slice($results, 0, 20);
+
+        if (!$results) {
+          return [];
+        }
+
+        // /search no incluye portadas. /thing permite consultar
+        // hasta 20 juegos en un único lote, como las expansiones.
+        try {
+          $details = $this->request('/thing', [
+            'id' => implode(',', array_column($results, 'bgg_id')),
+            'type' => 'boardgame',
+          ]);
+
+          $imagesById = [];
+
+          foreach ($details->item as $item) {
+            $imagesById[(int) $item['id']] = [
+              'image_url' => $this->nullableString($item->image ?? null),
+              'thumbnail_url' => $this->nullableString($item->thumbnail ?? null),
+            ];
+          }
+
+          foreach ($results as &$result) {
+            if (isset($imagesById[$result['bgg_id']])) {
+              $result = array_merge($result, $imagesById[$result['bgg_id']]);
+            }
+          }
+          unset($result);
+        } catch (RuntimeException | ConnectionException $exception) {
+          // Si las imágenes fallan, el buscador sigue siendo utilizable.
+          report($exception);
+        }
+
+        return $results;
       }
     );
   }

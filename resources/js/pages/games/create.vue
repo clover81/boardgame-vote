@@ -19,6 +19,9 @@ interface BggSearchResult {
     bgg_id: number;
     name: string;
     year: number | null;
+    image_url: string | null;
+    thumbnail_url: string | null;
+    bgg_url: string;
 }
 
 interface BggGameDetail {
@@ -144,6 +147,7 @@ const form = useForm({
 
 const bggQuery = ref('');
 const bggResults = ref<BggSearchResult[]>([]);
+const brokenBggImages = ref<number[]>([]);
 const bggSearching = ref(false);
 const bggHasSearched = ref(false);
 const bggLoading = ref(false);
@@ -169,6 +173,12 @@ const bggPlaytime = (game: BggGameDetail): string => {
     return 'Sin dato';
 };
 
+const markBggImageBroken = (id: number) => {
+    if (!brokenBggImages.value.includes(id)) {
+        brokenBggImages.value.push(id);
+    }
+};
+
 const searchBgg = async () => {
     selectedBggId.value = null;
     selectedBggGame.value = null;
@@ -186,6 +196,7 @@ const searchBgg = async () => {
     bggHasSearched.value = false;
     bggError.value = '';
     bggResults.value = [];
+    brokenBggImages.value = [];
     existingImportedBggGame.value = null;
 
     try {
@@ -510,39 +521,63 @@ const submit = () => {
 
                 <div
                     v-if="!bggSearching && bggResults.length"
-                    class="mt-5 space-y-2"
+                    class="mt-6 grid gap-4 md:grid-cols-2"
                 >
-                    <button
+                    <article
                         v-for="result in bggResults"
                         :key="result.bgg_id"
-                        type="button"
-                        :disabled="bggLoading"
-                        class="flex w-full items-center justify-between gap-4 rounded-xl border border-zinc-200 p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-[#5200FF] hover:bg-violet-50 hover:shadow-md focus-visible:border-[#5200FF] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#5200FF]/20 disabled:cursor-wait disabled:opacity-50 motion-reduce:transform-none dark:border-zinc-800 dark:hover:bg-violet-950/20"
+                        class="flex min-w-0 gap-3 rounded-2xl border border-zinc-200 p-3 transition-colors sm:gap-4 sm:p-4 dark:border-zinc-800"
                         :class="selectedBggId === result.bgg_id
                             ? 'border-[#5200FF] bg-violet-50 dark:bg-violet-950/20'
-                            : ''"
-                        @click="loadBggGame(result)"
+                            : 'hover:border-[#5200FF]'"
                     >
-                        <div class="min-w-0">
-                            <p class="truncate font-black">
-                                {{ result.name }}
-                            </p>
-
-                            <p class="mt-1 text-xs text-zinc-500">
-                                BGG #{{ result.bgg_id }}
-
-                                <template v-if="result.year">
-                                    · {{ result.year }}
-                                </template>
-                            </p>
+                        <div class="h-28 w-20 shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:h-32 sm:w-24 dark:bg-zinc-900">
+                            <img
+                                v-if="(result.thumbnail_url || result.image_url) && !brokenBggImages.includes(result.bgg_id)"
+                                :src="result.thumbnail_url || result.image_url || ''"
+                                :alt="`Portada de ${result.name}`"
+                                loading="lazy"
+                                decoding="async"
+                                class="h-full w-full object-contain p-1"
+                                @error="markBggImageBroken(result.bgg_id)"
+                            />
+                            <div v-else class="flex h-full items-center justify-center" aria-label="Sin portada">
+                                <PlayingCardsFanIcon class="size-9 text-violet-600 dark:text-violet-300" aria-hidden="true" />
+                            </div>
                         </div>
 
-                        <span class="shrink-0 font-bold text-[#5200FF] dark:text-[#CCFF00]">
-                            {{ bggLoading && selectedBggId === result.bgg_id
-                                ? 'Cargando...'
-                                : 'Usar →' }}
-                        </span>
-                    </button>
+                        <div class="min-w-0 flex-1">
+                            <h3 class="break-words font-black leading-tight">
+                                {{ result.name }}
+                            </h3>
+                            <p class="mt-1 text-xs text-zinc-500">
+                                BGG #{{ result.bgg_id }}
+                                <template v-if="result.year"> · {{ result.year }}</template>
+                            </p>
+                            <a
+                                :href="result.bgg_url"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="mt-2 inline-block text-xs font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
+                            >
+                                Ver en BGG <ChainIcon class="ml-1 inline-block size-4 align-[-0.15em]" aria-hidden="true" />
+                            </a>
+                            <div class="mt-4">
+                                <button
+                                    type="button"
+                                    :disabled="bggLoading"
+                                    class="rounded-lg bg-[#CCFF00] px-3 py-2 text-sm font-black text-black transition hover:opacity-80 disabled:cursor-wait disabled:opacity-40 sm:px-4"
+                                    @click="loadBggGame(result)"
+                                >
+                                    {{ bggLoading && selectedBggId === result.bgg_id
+                                        ? 'Cargando…'
+                                        : selectedBggId === result.bgg_id && selectedBggGame
+                                          ? '✓ Seleccionado'
+                                          : 'Usar este juego' }}
+                                </button>
+                            </div>
+                        </div>
+                    </article>
                 </div>
 
                 <section

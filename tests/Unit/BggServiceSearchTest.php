@@ -107,17 +107,24 @@ test(
                 'bgg_id' => 1,
                 'name' => 'Heat',
                 'year' => 2022,
+                'image_url' => null,
+                'thumbnail_url' => null,
+                'bgg_url' => 'https://boardgamegeek.com/boardgame/1',
             ],
             [
                 'bgg_id' => 2,
                 'name' => 'Heat: Heavy Rain',
                 'year' => null,
+                'image_url' => null,
+                'thumbnail_url' => null,
+                'bgg_url' => 'https://boardgamegeek.com/boardgame/2',
             ],
         ]);
 
         Http::assertSent(
             fn (Request $request) =>
-                $request['query'] === 'Heat'
+                str_contains($request->url(), '/search')
+                && $request['query'] === 'Heat'
                 && $request['type'] === 'boardgame'
                 && $request->hasHeader(
                     'Authorization',
