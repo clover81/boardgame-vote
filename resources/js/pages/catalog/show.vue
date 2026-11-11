@@ -154,7 +154,7 @@ const externalUrl = (url: string | null): string | undefined => {
     <div class="min-h-screen bg-[#f7f7f5] text-zinc-950">
         <!-- CABECERA -->
         <header class="bg-[#181424] text-white">
-            <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:block sm:px-8 sm:py-5">
+            <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-8 sm:py-4">
                 <Link
                     :href="catalogUrl"
                     class="inline-flex items-center gap-2 text-sm font-semibold text-zinc-300 transition hover:text-[#CCFF00]"
@@ -162,7 +162,7 @@ const externalUrl = (url: string | null): string | undefined => {
                     ← Volver al catálogo
                 </Link>
 
-                <div class="mt-0 flex shrink-0 items-center gap-2 sm:mt-4 sm:gap-3">
+                <div class="flex shrink-0 items-center gap-2 sm:gap-3">
                     <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#CCFF00] text-[#5200FF] shadow-sm sm:size-11 sm:rounded-2xl" aria-hidden="true">
                         <PlayingCardsFanIcon class="!m-0 !size-5 shrink-0 sm:!size-6" />
                     </span>
@@ -283,13 +283,13 @@ const externalUrl = (url: string | null): string | undefined => {
                     <!-- JUGADORES IDEALES -->
                     <div
                         v-if="game.ideal_player_counts.length"
-                        class="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-lime-200 bg-lime-50 p-3 sm:mt-6 sm:block sm:p-5"
+                        class="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-lime-200 bg-lime-50 p-3 sm:mt-5 sm:gap-3 sm:p-4"
                     >
                         <p class="text-sm font-bold text-zinc-700">
                             Mejor número de jugadores
                         </p>
 
-                        <div class="flex flex-wrap gap-2 sm:mt-3">
+                        <div class="flex flex-wrap gap-2">
                             <span
                                 v-for="count in game.ideal_player_counts"
                                 :key="count"
