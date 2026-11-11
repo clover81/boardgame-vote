@@ -154,7 +154,7 @@ const externalUrl = (url: string | null): string | undefined => {
     <div class="min-h-screen bg-[#f7f7f5] text-zinc-950">
         <!-- CABECERA -->
         <header class="bg-[#181424] text-white">
-            <div class="mx-auto max-w-6xl px-5 py-5 sm:px-8">
+            <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:block sm:px-8 sm:py-5">
                 <Link
                     :href="catalogUrl"
                     class="inline-flex items-center gap-2 text-sm font-semibold text-zinc-300 transition hover:text-[#CCFF00]"
@@ -162,24 +162,24 @@ const externalUrl = (url: string | null): string | undefined => {
                     ← Volver al catálogo
                 </Link>
 
-                <div class="mt-4 flex items-center gap-3">
-                    <span class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#CCFF00] text-[#5200FF] shadow-sm" aria-hidden="true">
-                        <PlayingCardsFanIcon class="!m-0 !size-6 shrink-0" />
+                <div class="mt-0 flex shrink-0 items-center gap-2 sm:mt-4 sm:gap-3">
+                    <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#CCFF00] text-[#5200FF] shadow-sm sm:size-11 sm:rounded-2xl" aria-hidden="true">
+                        <PlayingCardsFanIcon class="!m-0 !size-5 shrink-0 sm:!size-6" />
                     </span>
                     <div class="min-w-0">
-                        <p class="text-base font-black leading-tight tracking-tight sm:text-lg">Juegos de mesa</p>
-                        <p class="mt-1 text-xs font-medium text-zinc-300">Clover</p>
+                        <p class="text-xs font-black leading-tight tracking-tight sm:text-lg">Juegos de mesa</p>
+                        <p class="mt-0.5 text-[11px] font-medium text-zinc-300 sm:mt-1 sm:text-xs">Clover</p>
                     </div>
                 </div>
             </div>
         </header>
 
-        <main class="mx-auto max-w-6xl px-5 py-6 sm:px-8 sm:py-10">
+        <main class="mx-auto max-w-6xl px-4 py-4 sm:px-8 sm:py-10">
             <!-- PRESENTACIÓN -->
-            <section class="grid gap-6 sm:gap-9 lg:grid-cols-[minmax(0,380px)_1fr]">
+            <section class="grid gap-4 sm:gap-9 lg:grid-cols-[minmax(0,380px)_1fr]">
                 <!-- PORTADA AMPLIABLE -->
                 <div
-                    class="flex min-h-60 items-center justify-center overflow-hidden rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:min-h-80 sm:p-7"
+                    class="flex min-h-0 items-center justify-center overflow-hidden rounded-3xl border border-zinc-200 bg-white p-3 shadow-sm sm:min-h-80 sm:p-7"
                 >
                     <button
                         v-if="game.image_url && !coverHasError"
@@ -192,7 +192,7 @@ const externalUrl = (url: string | null): string | undefined => {
                             :src="game.image_url"
                             :alt="`Portada de ${game.name}`"
                             @error="coverHasError = true"
-                            class="max-h-[260px] w-full object-contain transition-transform duration-300 group-hover:scale-105 sm:max-h-[440px]"
+                            class="max-h-[220px] w-full object-contain transition-transform duration-300 group-hover:scale-105 sm:max-h-[440px]"
                         />
                     </button>
 
@@ -234,15 +234,15 @@ const externalUrl = (url: string | null): string | undefined => {
 
                 <!-- INFORMACIÓN -->
                 <div class="flex flex-col justify-center">
-                    <p class="text-sm font-bold uppercase tracking-widest text-[#5200FF]">
+                    <p class="text-xs font-bold uppercase tracking-widest text-[#5200FF] sm:text-sm">
                         Ficha del juego
                     </p>
 
-                    <h1 class="mt-3 text-3xl font-black leading-tight tracking-tight sm:text-5xl">
+                    <h1 class="mt-2 text-2xl font-black leading-tight tracking-tight sm:mt-3 sm:text-5xl">
                         {{ game.name }}
                     </h1>
 
-                    <div class="mt-5 flex flex-wrap gap-2">
+                    <div class="mt-3 flex flex-wrap gap-2 sm:mt-5">
                         <span
                             v-for="collection in game.collections"
                             :key="collection.id"
@@ -253,25 +253,25 @@ const externalUrl = (url: string | null): string | undefined => {
                     </div>
 
                     <!-- DATOS PRINCIPALES -->
-                    <div class="catalog-stats mt-5 grid grid-cols-2 gap-2 sm:mt-8 sm:grid-cols-3 sm:gap-3">
-                        <div class="rounded-2xl bg-white p-4 shadow-sm">
-                            <p class="text-xs text-zinc-500">Jugadores</p>
-                            <p class="mt-2 text-xl font-black">
+                    <div class="catalog-stats mt-4 grid grid-cols-2 gap-2 min-[360px]:grid-cols-3 sm:mt-8 sm:gap-3">
+                        <div class="min-w-0 rounded-2xl bg-white p-2.5 shadow-sm sm:p-4">
+                            <p class="text-[11px] text-zinc-500 sm:text-xs">Jugadores</p>
+                            <p class="mt-1 text-base font-black sm:mt-2 sm:text-xl">
                                 {{ game.min_players }}–{{ game.max_players }}
                             </p>
                         </div>
 
-                        <div class="rounded-2xl bg-white p-4 shadow-sm">
-                            <p class="text-xs text-zinc-500">Duración</p>
-                            <p class="mt-2 text-lg font-black">
+                        <div class="min-w-0 rounded-2xl bg-white p-2.5 shadow-sm sm:p-4">
+                            <p class="text-[11px] text-zinc-500 sm:text-xs">Duración</p>
+                            <p class="mt-1 break-words text-sm font-black leading-snug sm:mt-2 sm:text-lg">
                                 {{ duration() }}
                             </p>
                         </div>
 
-                        <div class="rounded-2xl bg-white p-4 shadow-sm">
-                            <p class="text-xs text-zinc-500">Dificultad</p>
-                            <p class="mt-2 text-xl font-black inline-flex items-center gap-2">
-                                <BrainCog class="size-5 shrink-0 text-pink-600" :stroke-width="2" aria-hidden="true" />{{
+                        <div class="min-w-0 rounded-2xl bg-white p-2.5 shadow-sm sm:p-4">
+                            <p class="text-[11px] text-zinc-500 sm:text-xs">Dificultad</p>
+                            <p class="mt-1 inline-flex items-center gap-1 text-sm font-black sm:mt-2 sm:gap-2 sm:text-xl">
+                                <BrainCog class="size-4 shrink-0 text-pink-600 sm:size-5" :stroke-width="2" aria-hidden="true" />{{
                                     game.complexity !== null
                                         ? Number(game.complexity).toFixed(1) + ' / 5'
                                         : 'Sin datos'
@@ -283,29 +283,29 @@ const externalUrl = (url: string | null): string | undefined => {
                     <!-- JUGADORES IDEALES -->
                     <div
                         v-if="game.ideal_player_counts.length"
-                        class="mt-4 rounded-2xl border border-lime-200 bg-lime-50 p-4 sm:mt-6 sm:p-5"
+                        class="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-lime-200 bg-lime-50 p-3 sm:mt-6 sm:block sm:p-5"
                     >
                         <p class="text-sm font-bold text-zinc-700">
                             Mejor número de jugadores
                         </p>
 
-                        <div class="mt-3 flex flex-wrap gap-2">
+                        <div class="flex flex-wrap gap-2 sm:mt-3">
                             <span
                                 v-for="count in game.ideal_player_counts"
                                 :key="count"
-                                class="rounded-xl bg-[#CCFF00] px-4 py-2 text-base font-black"
+                                class="rounded-lg bg-[#CCFF00] px-3 py-1.5 text-sm font-black sm:rounded-xl sm:px-4 sm:py-2 sm:text-base"
                             >
                                 {{ count }}
                             </span>
                         </div>
                     </div>
 
-                    <p class="mt-5 text-sm font-medium text-zinc-500">
+                    <p class="mt-3 text-sm font-medium text-zinc-500 sm:mt-5">
                         Modalidad: <Swords v-if="game.game_modes.includes('competitive')" class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-orange-700" :stroke-width="2.2" aria-hidden="true" /> {{ gameMode() }}
                     </p>
 
                     <!-- ENLACES EXTERNOS -->
-                    <div class="mt-5 flex flex-wrap gap-2 sm:mt-7 sm:gap-3">
+                    <div class="mt-4 flex flex-wrap gap-2 sm:mt-7 sm:gap-3">
                         <button
                             type="button"
                             class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#181424] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#5200FF] sm:w-auto"
@@ -328,9 +328,9 @@ const externalUrl = (url: string | null): string | undefined => {
                             :href="externalUrl(game.bgg_url)"
                             target="_blank"
                             rel="noopener noreferrer"
-                            class="block w-full rounded-xl bg-[#5200FF] px-5 py-3 text-center text-sm font-bold text-white transition hover:bg-[#4000cc] sm:w-auto"
+                            class="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 px-3 py-2.5 text-center text-sm font-bold text-[#5200FF] transition hover:bg-violet-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] sm:flex-none sm:px-5"
                         >
-                            Ver en BoardGameGeek <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
+                            Ver en BGG <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                         </a>
 
                         <a
@@ -338,7 +338,7 @@ const externalUrl = (url: string | null): string | undefined => {
                             :href="externalUrl(game.youtube_url)"
                             target="_blank"
                             rel="noopener noreferrer"
-                            class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border-2 border-[#5200FF] bg-white px-5 py-3 text-center text-sm font-bold text-[#5200FF] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f1ebff] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:w-auto gap-1.5"
+                            class="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl border border-violet-200 bg-white px-3 py-2.5 text-center text-sm font-bold text-[#5200FF] transition-all duration-200 hover:bg-[#f1ebff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:flex-none sm:px-5"
                         >
                             <YoutubeLogoIcon class="size-4 shrink-0" aria-hidden="true" /> Ver tutorial <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                         </a>
@@ -349,18 +349,18 @@ const externalUrl = (url: string | null): string | undefined => {
             <!-- DESCRIPCIÓN -->
             <section
                 v-if="game.full_description || game.short_description || game.additional_information"
-                class="mt-7 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:mt-10 sm:p-8"
+                class="mt-6 rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:mt-10 sm:p-8"
             >
-                <h2 class="text-2xl font-black">
+                <h2 class="text-xl font-black sm:text-2xl">
                     Sobre el juego
                 </h2>
 
                 <div
                     v-if="game.full_description || game.short_description"
-                    class="mt-5 max-w-3xl"
+                    class="mt-3 max-w-3xl sm:mt-5"
                 >
                     <p
-                        class="whitespace-pre-line text-base leading-8 text-zinc-700"
+                        class="whitespace-pre-line text-base leading-7 text-zinc-700 sm:leading-8"
                         :class="{
                             'line-clamp-6':
                                 !showFullDescription &&
@@ -400,19 +400,19 @@ const externalUrl = (url: string | null): string | undefined => {
             </section>
 
             <!-- EXPANSIONES -->
-            <section v-if="game.expansions.length > 0" class="mt-8 sm:mt-12">
-                <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <section v-if="game.expansions.length > 0" class="mt-7 sm:mt-12">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3 sm:mb-6">
                     <div>
                         <p class="text-sm font-bold uppercase tracking-wider text-[#5200FF]">
                             Amplía la experiencia
                         </p>
-                        <h2 class="mt-2 text-2xl font-black">
+                        <h2 class="mt-1 text-xl font-black sm:mt-2 sm:text-2xl">
                             Expansiones
                         </h2>
                     </div>
 
                     <span class="rounded-full bg-white px-4 py-2 text-sm font-bold text-zinc-600">
-                        {{ game.expansions.length }} expansiones
+                        {{ game.expansions.length }} {{ game.expansions.length === 1 ? 'expansión' : 'expansiones' }}
                     </span>
                 </div>
 
@@ -423,11 +423,11 @@ const externalUrl = (url: string | null): string | undefined => {
                     <article
                         v-for="expansion in game.expansions"
                         :key="expansion.id"
-                        class="group flex h-full flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#5200FF] hover:shadow-xl focus-within:border-[#5200FF] motion-reduce:transform-none motion-reduce:transition-none"
+                        class="group flex h-full flex-row overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#5200FF] hover:shadow-xl focus-within:border-[#5200FF] motion-reduce:transform-none motion-reduce:transition-none sm:flex-col"
                     >
                         <!-- PORTADA -->
                         <div
-                            class="relative flex h-56 items-center justify-center overflow-hidden bg-gradient-to-br from-[#f0ebff] via-white to-[#eef2fa] p-5 sm:aspect-square sm:h-auto sm:p-6"
+                            class="relative flex w-28 shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-[#f0ebff] via-white to-[#eef2fa] p-2 sm:aspect-square sm:h-auto sm:w-auto sm:p-6"
                         >
                             <img
                                 v-if="expansion.image_url && !brokenExpansionIds.includes(expansion.id)"
@@ -435,7 +435,7 @@ const externalUrl = (url: string | null): string | undefined => {
                                 @error="markExpansionAsBroken(expansion.id)"
                                 :alt="`Portada de ${expansion.name}`"
                                 loading="lazy"
-                                class="h-full w-full object-contain drop-shadow-xl transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none"
+                                class="max-h-44 w-full object-contain drop-shadow-xl transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none sm:h-full sm:max-h-none"
                             />
 
                             <div
@@ -447,34 +447,34 @@ const externalUrl = (url: string | null): string | undefined => {
                             </div>
 
                             <span
-                                class="absolute left-3 top-3 rounded-full bg-[#181424] px-3 py-1.5 text-xs font-bold text-white shadow-md"
+                                class="absolute left-1.5 top-1.5 rounded-full bg-[#181424] px-2 py-1 text-[10px] font-bold text-white shadow-md sm:left-3 sm:top-3 sm:px-3 sm:py-1.5 sm:text-xs"
                             >
                                 Expansión
                             </span>
                         </div>
 
                         <!-- INFORMACIÓN -->
-                        <div class="flex flex-1 flex-col p-5">
-                            <p class="text-xs font-semibold uppercase tracking-wider text-[#5200FF]">
+                        <div class="flex min-w-0 flex-1 flex-col p-3 sm:p-5">
+                            <p class="text-[10px] font-semibold uppercase tracking-wider text-[#5200FF] sm:text-xs">
                                 Ampliación del juego base
                             </p>
 
-                            <h3 class="mt-2 text-lg font-black leading-snug">
+                            <h3 class="mt-1 break-words text-base font-black leading-snug sm:mt-2 sm:text-lg">
                                 {{ expansion.name }}
                             </h3>
 
-                            <p class="mt-2 text-sm text-zinc-500">
+                            <p class="mt-1 text-xs text-zinc-500 sm:mt-2 sm:text-sm">
                                 {{ game.name }}
                             </p>
 
                             <!-- ENLACES -->
-                            <div class="mt-auto flex flex-wrap gap-2 pt-6">
+                            <div class="mt-auto flex flex-wrap gap-2 pt-3 sm:pt-6">
                                 <a
                                     v-if="externalUrl(expansion.bgg_url)"
                                     :href="externalUrl(expansion.bgg_url)"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    class="inline-flex min-h-11 min-w-[125px] flex-1 items-center justify-center rounded-xl bg-[#5200FF] px-3 py-2.5 text-center text-sm font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#4000cc] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none"
+                                    class="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-xl bg-[#5200FF] px-2 py-2.5 text-center text-xs font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#4000cc] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:min-w-[125px] sm:px-3 sm:text-sm"
                                 >
                                     Ver en BGG <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                                 </a>
@@ -484,7 +484,7 @@ const externalUrl = (url: string | null): string | undefined => {
                                     :href="externalUrl(expansion.youtube_url)"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    class="inline-flex min-h-11 min-w-[125px] flex-1 items-center justify-center rounded-xl border-2 border-[#5200FF] bg-white px-3 py-2 text-center text-sm font-bold text-[#5200FF] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f1ebff] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none gap-1.5"
+                                    class="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-xl border-2 border-[#5200FF] bg-white px-2 py-2 text-center text-xs font-bold text-[#5200FF] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f1ebff] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:min-w-[125px] sm:gap-1.5 sm:px-3 sm:text-sm"
                                 >
                                     <YoutubeLogoIcon class="size-4 shrink-0" aria-hidden="true" /> Ver tutorial <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                                 </a>
@@ -516,14 +516,14 @@ const externalUrl = (url: string | null): string | undefined => {
             <a href="/creditos-iconos.html" class="ml-2 inline-block font-semibold text-[#5200FF] underline-offset-4 hover:underline focus-visible:underline">Créditos de iconos</a>
         </footer>
 
-        <ScrollToTopProgress :remember-position="false" />
+        <ScrollToTopProgress :remember-position="false" compact />
     </div>
 </template>
 
 <style scoped>
 
-/* La última característica ocupa toda la fila cuando queda sola. */
-@media (max-width: 639px) {
+/* En móviles muy estrechos mantenemos dos columnas para que los datos no se aprieten. */
+@media (max-width: 359px) {
     .catalog-stats > :last-child:nth-child(odd) {
         grid-column: 1 / -1;
     }
