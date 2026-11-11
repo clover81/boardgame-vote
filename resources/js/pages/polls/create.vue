@@ -732,6 +732,42 @@ const visibleOtherGames = computed(() =>
 );
 
 /*
+| Mostrar una lista manejable en móvil y escritorio.
+| Los candidatos ya marcados siguen visibles sin alterar su orden original.
+*/
+const GAMES_PER_BATCH = 24;
+const idealVisibleLimit = ref(GAMES_PER_BATCH);
+const otherVisibleLimit = ref(GAMES_PER_BATCH);
+
+const limitGamesPreservingSelected = (games: Game[], limit: number): Game[] =>
+    games.filter((game, index) => index < limit || form.candidate_ids.includes(game.id));
+
+const displayedIdealGames = computed(() =>
+    limitGamesPreservingSelected(visibleIdealGames.value, idealVisibleLimit.value)
+);
+
+const displayedOtherGames = computed(() =>
+    limitGamesPreservingSelected(visibleOtherGames.value, otherVisibleLimit.value)
+);
+
+watch(
+    [
+        gameSearch,
+        gameDifficultyFilter,
+        gameDurationFilter,
+        gameModeFilter,
+        gameSort,
+        playerCount,
+        () => [...form.collection_ids],
+    ],
+    () => {
+        idealVisibleLimit.value = GAMES_PER_BATCH;
+        otherVisibleLimit.value = GAMES_PER_BATCH;
+    },
+    { deep: true }
+);
+
+/*
 |--------------------------------------------------------------------------
 | Cambio de jugadores y colecciones
 |--------------------------------------------------------------------------
@@ -1374,21 +1410,6 @@ const submit = () => {
 
                         <div class="flex gap-2">
                             <button
-                                type="button"
-                                class="text-sm font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
-                                @click="
-                                    form.candidate_ids = [
-                                        ...new Set([
-                                            ...form.candidate_ids,
-                                            ...visibleIdealGames.map((game) => game.id),
-                                        ]),
-                                    ]
-                                "
-                            >
-                                Seleccionar ideales
-                            </button>
-
-                            <button
                                 v-if="form.candidate_ids.length"
                                 type="button"
                                 class="text-sm font-semibold text-zinc-500 hover:text-red-500"
@@ -1456,7 +1477,7 @@ const submit = () => {
                         class="mt-6 grid gap-4 sm:grid-cols-2"
                     >
                         <article
-                            v-for="game in visibleIdealGames"
+                            v-for="game in displayedIdealGames"
                             :key="game.id"
                             class="group relative flex min-w-0 self-start items-start overflow-hidden rounded-2xl border-2 shadow-sm transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/30 dark:hover:border-violet-400"
                             :class="form.candidate_ids.includes(game.id)
@@ -1704,31 +1725,41 @@ const submit = () => {
                                         </p>
                                     </div>
 
-                                    <!-- NOTA -->
-
-                                    <div>
-                                        <label
-                                            class="text-sm font-semibold"
+                                    <!-- La nota es opcional: no ocupar espacio hasta que se necesite.
+                                         Al cerrar, v-model conserva su contenido en el formulario. -->
+                                    <details class="group rounded-xl border border-zinc-200 bg-zinc-50/70 dark:border-zinc-700 dark:bg-zinc-800/40">
+                                        <summary
+                                            class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-sm font-semibold text-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-zinc-100 [&::-webkit-details-marker]:hidden"
                                         >
-                                            Información para esta
-                                            partida
-                                        </label>
-
-                                        <textarea
-                                            v-model="
-                                                form
-                                                    .candidate_notes[
-                                                    game.id
-                                                ]
-                                            "
-                                            rows="2"
-                                            class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
-                                            placeholder="Ej: Podemos jugar el escenario avanzado..."
-                                        ></textarea>
-                                    </div>
+                                            <span>Información para esta partida <span class="font-normal text-zinc-500 dark:text-zinc-400">(opcional)</span></span>
+                                            <span class="flex shrink-0 items-center gap-2">
+                                                <span v-if="form.candidate_notes[game.id]?.trim()" class="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-800 dark:bg-violet-900/60 dark:text-violet-200">Nota añadida</span>
+                                                <span aria-hidden="true" class="transition-transform group-open:rotate-180">⌄</span>
+                                            </span>
+                                        </summary>
+                                        <div class="px-3 pb-3">
+                                            <textarea
+                                                v-model="form.candidate_notes[game.id]"
+                                                :aria-label="`Información opcional para ${game.name}`"
+                                                rows="2"
+                                                class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                                                placeholder="Ej: Podemos jugar el escenario avanzado..."
+                                            ></textarea>
+                                        </div>
+                                    </details>
                                 </div>
                             </div>
                         </article>
+                    </div>
+
+                    <div v-if="visibleIdealGames.length > displayedIdealGames.length" class="mt-4 text-center">
+                        <button
+                            type="button"
+                            class="min-h-11 rounded-xl border border-violet-400/50 px-5 py-2.5 text-sm font-bold text-[#5200FF] transition hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-[#CCFF00] dark:hover:bg-violet-950/30"
+                            @click="idealVisibleLimit += GAMES_PER_BATCH"
+                        >
+                            Mostrar más juegos (quedan {{ visibleIdealGames.length - displayedIdealGames.length }})
+                        </button>
                     </div>
 
                     <div
@@ -1799,7 +1830,7 @@ const submit = () => {
                             class="mt-5 grid gap-4 sm:grid-cols-2"
                         >
                             <article
-                                v-for="game in visibleOtherGames"
+                                v-for="game in displayedOtherGames"
                                 :key="game.id"
                                 class="group relative self-start rounded-2xl border-2 p-4 shadow-sm transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/30 dark:hover:border-violet-400"
                                 :class="form.candidate_ids.includes(game.id)
@@ -1988,28 +2019,42 @@ const submit = () => {
                                         </select>
                                     </div>
 
-                                    <div>
-                                        <label
-                                            class="text-sm font-semibold"
+                                    <!-- La nota es opcional: no ocupar espacio hasta que se necesite.
+                                         Al cerrar, v-model conserva su contenido en el formulario. -->
+                                    <details class="group rounded-xl border border-zinc-200 bg-zinc-50/70 dark:border-zinc-700 dark:bg-zinc-800/40">
+                                        <summary
+                                            class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-sm font-semibold text-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-zinc-100 [&::-webkit-details-marker]:hidden"
                                         >
-                                            Información para esta
-                                            partida
-                                        </label>
-
-                                        <textarea
-                                            v-model="
-                                                form
-                                                    .candidate_notes[
-                                                    game.id
-                                                ]
-                                            "
-                                            rows="2"
-                                            class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
-                                            placeholder="Información opcional..."
-                                        ></textarea>
-                                    </div>
+                                            <span>Información para esta partida <span class="font-normal text-zinc-500 dark:text-zinc-400">(opcional)</span></span>
+                                            <span class="flex shrink-0 items-center gap-2">
+                                                <span v-if="form.candidate_notes[game.id]?.trim()" class="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-800 dark:bg-violet-900/60 dark:text-violet-200">Nota añadida</span>
+                                                <span aria-hidden="true" class="transition-transform group-open:rotate-180">⌄</span>
+                                            </span>
+                                        </summary>
+                                        <div class="px-3 pb-3">
+                                            <textarea
+                                                v-model="form.candidate_notes[game.id]"
+                                                :aria-label="`Información opcional para ${game.name}`"
+                                                rows="2"
+                                                class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                                                placeholder="Información opcional..."
+                                            ></textarea>
+                                        </div>
+                                    </details>
                                 </div>
                             </article>
+                        </div>
+                        <div
+                            v-if="(showOtherGames || hasActiveGameFilters) && visibleOtherGames.length > displayedOtherGames.length"
+                            class="mt-4 text-center"
+                        >
+                            <button
+                                type="button"
+                                class="min-h-11 rounded-xl border border-violet-400/50 px-5 py-2.5 text-sm font-bold text-[#5200FF] transition hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-[#CCFF00] dark:hover:bg-violet-950/30"
+                                @click="otherVisibleLimit += GAMES_PER_BATCH"
+                            >
+                                Mostrar más compatibles (quedan {{ visibleOtherGames.length - displayedOtherGames.length }})
+                            </button>
                         </div>
                     </div>
 
