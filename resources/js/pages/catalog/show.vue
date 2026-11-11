@@ -154,7 +154,7 @@ const externalUrl = (url: string | null): string | undefined => {
     <div class="min-h-screen bg-[#f7f7f5] text-zinc-950">
         <!-- CABECERA -->
         <header class="bg-[#181424] text-white">
-            <div class="mx-auto max-w-6xl px-5 py-6 sm:px-8">
+            <div class="mx-auto max-w-6xl px-5 py-5 sm:px-8">
                 <Link
                     :href="catalogUrl"
                     class="inline-flex items-center gap-2 text-sm font-semibold text-zinc-300 transition hover:text-[#CCFF00]"
@@ -162,11 +162,14 @@ const externalUrl = (url: string | null): string | undefined => {
                     ← Volver al catálogo
                 </Link>
 
-                <div class="mt-6 flex items-center gap-3">
-                    <span class="text-2xl"><PlayingCardsFanIcon class="mr-1 inline-block size-6 shrink-0 align-[-0.14em] text-violet-700" aria-hidden="true" /></span>
-                    <span class="text-lg font-black tracking-tight">
-                        BOARDGAME<span class="text-[#CCFF00]">VOTE</span>
+                <div class="mt-4 flex items-center gap-3">
+                    <span class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#CCFF00] text-[#5200FF] shadow-sm" aria-hidden="true">
+                        <PlayingCardsFanIcon class="!m-0 !size-6 shrink-0" />
                     </span>
+                    <div class="min-w-0">
+                        <p class="text-base font-black leading-tight tracking-tight sm:text-lg">Juegos de mesa</p>
+                        <p class="mt-1 text-xs font-medium text-zinc-300">Clover</p>
+                    </div>
                 </div>
             </div>
         </header>

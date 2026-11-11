@@ -420,7 +420,7 @@ const externalUrl = (url: string | null): string | undefined => {
 
         <!-- CABECERA PUBLICA COMPACTA - Clover -->
         <div class="mx-auto max-w-7xl px-4 pt-5 sm:px-8 sm:pt-8">
-            <header class="relative overflow-hidden rounded-[28px] bg-[#181424] px-5 py-5 text-white shadow-lg shadow-[#181424]/10 sm:px-9 sm:py-7">
+            <header class="relative overflow-hidden rounded-[28px] bg-[#181424] px-5 py-5 text-white shadow-lg shadow-[#181424]/10 sm:px-8 sm:py-6">
                 <Link
                     v-if="catalogBasePath"
                     href="/collections"
@@ -441,15 +441,15 @@ const externalUrl = (url: string | null): string | undefined => {
                     </div>
                 </div>
 
-                <div class="relative mt-7 grid gap-5 sm:mt-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-8">
+                <div class="relative mt-5 grid gap-3 sm:mt-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-6">
                     <div class="min-w-0">
                         <span class="inline-flex rounded-full border border-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#CCFF00]">
                             {{ catalogBasePath ? 'Colección de un amigo · Solo consulta' : 'Catálogo compartido' }}
                         </span>
-                        <h1 class="mt-3 text-3xl font-black leading-tight tracking-tight sm:text-5xl">
+                        <h1 class="mt-2 text-3xl font-black leading-tight tracking-tight sm:text-4xl">
                             ¿A qué jugamos <span class="text-[#CCFF00]">hoy?</span>
                         </h1>
-                        <p class="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-300 sm:text-base">
+                        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-300 sm:text-base">
                             <template v-if="catalogOwnerName">
                                 Explora los juegos de {{ catalogOwnerName }} y utiliza los filtros, sin modificar su colección.
                             </template>
@@ -460,10 +460,10 @@ const externalUrl = (url: string | null): string | undefined => {
                     </div>
 
                     <div class="flex flex-wrap gap-2 text-xs font-semibold sm:text-sm lg:justify-end">
-                        <span class="rounded-full border border-white/10 bg-white/10 px-3.5 py-2">
+                        <span class="rounded-full border border-white/10 bg-white/10 px-3 py-1.5">
                             {{ games.length }} juegos
                         </span>
-                        <span class="rounded-full border border-white/10 bg-white/10 px-3.5 py-2">
+                        <span class="rounded-full border border-white/10 bg-white/10 px-3 py-1.5">
                             {{ collections.length }} colecciones
                         </span>
                     </div>
@@ -471,10 +471,10 @@ const externalUrl = (url: string | null): string | undefined => {
             </header>
         </div>
 
-        <main class="mx-auto max-w-7xl px-4 py-6 sm:px-8 sm:py-10">
+        <main class="mx-auto max-w-7xl px-4 py-5 sm:px-8 sm:py-7">
             <!-- FILTROS -->
-            <section class="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-7">
-                <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <section class="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <h2 class="text-xl font-black">
                         Encuentra tu juego
                     </h2>
@@ -505,7 +505,7 @@ const externalUrl = (url: string | null): string | undefined => {
                 </div>
 
                 <div
-                    class="catalog-filters-grid grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+                    class="catalog-filters-grid grid gap-3 md:grid-cols-2 xl:grid-cols-3"
                     :class="{ 'catalog-filters-collapsed': !showAdvancedFilters }"
                 >
                     <div>
@@ -656,7 +656,7 @@ const externalUrl = (url: string | null): string | undefined => {
             </div>
 
             <!-- RESULTADOS -->
-            <div class="mb-6 flex flex-wrap items-end justify-between gap-3" :class="activeFilterChips.length ? 'mt-5' : 'mt-10'">
+            <div class="mb-6 flex flex-wrap items-end justify-between gap-3" :class="activeFilterChips.length ? 'mt-5' : 'mt-7'">
                 <div>
                     <p class="text-sm font-bold uppercase tracking-wider text-[#5200FF]">
                         Explorar biblioteca
@@ -730,24 +730,23 @@ const externalUrl = (url: string | null): string | undefined => {
                             </span>
                         </div>
 
-                        <!-- DISTINTIVO DE JUGADORES IDEALES -->
-                        <div
-                            v-if="game.ideal_player_counts.length"
-                            class="absolute bottom-2 left-2 rounded-xl border border-white/80 bg-white/95 px-2.5 py-1.5 shadow-md sm:bottom-3 sm:left-3 sm:px-3 sm:py-2"
-                        >
-                            <span class="text-xs font-black text-[#5200FF]">
-                                Ideal:
-                                {{ game.ideal_player_counts.join(', ') }}
-                                jugadores
-                            </span>
-                        </div>
+
                     </div>
 
                     <div class="flex flex-1 flex-col p-4 sm:p-5">
                         <div class="sm:min-h-14">
-                            <h3 class="line-clamp-2 text-lg font-black leading-snug tracking-tight sm:text-xl">
+                            <h3 class="line-clamp-2 text-lg font-black leading-snug tracking-tight sm:text-xl" :title="game.name">
                                 {{ game.name }}
                             </h3>
+                        </div>
+
+                        <!-- Los jugadores ideales no ocultan la portada. -->
+                        <div v-if="game.ideal_player_counts.length" class="mt-2">
+                            <span class="inline-flex max-w-full items-center gap-1.5 rounded-full bg-[#f0ebff] px-3 py-1.5 text-xs font-bold text-[#5200FF]">
+                                <UsersRound class="size-3.5 shrink-0" aria-hidden="true" />
+                                Ideal: {{ game.ideal_player_counts.join(', ') }}
+                                {{ game.ideal_player_counts.length === 1 && game.ideal_player_counts[0] === 1 ? 'jugador' : 'jugadores' }}
+                            </span>
                         </div>
 
                         <div class="mt-3 flex flex-wrap items-center gap-2">
@@ -795,7 +794,7 @@ const externalUrl = (url: string | null): string | undefined => {
                             </template>
                         </div>
 
-                        <div class="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-zinc-100 pt-3 text-sm font-semibold text-zinc-800 sm:pt-4">
+                        <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-zinc-100 pt-3 text-sm font-semibold text-zinc-800 sm:pt-4">
                             <span class="inline-flex items-center gap-1.5 whitespace-nowrap">
                                 <UsersRound class="size-4 shrink-0 text-[#6D28D9]" :stroke-width="2.2" aria-hidden="true" />
                                 <span class="sr-only">Jugadores:</span>
@@ -820,30 +819,42 @@ const externalUrl = (url: string | null): string | undefined => {
                             {{ game.short_description }}
                         </p>
 
-                        <!-- ENLACES EXTERNOS -->
-                        <div
-                            v-if="externalUrl(game.bgg_url) || externalUrl(game.youtube_url)"
-                            class="relative z-20 mt-4 flex flex-wrap gap-2 border-t border-zinc-100 pt-4 sm:mt-5"
-                        >
-                            <a
-                                v-if="externalUrl(game.bgg_url)"
-                                :href="externalUrl(game.bgg_url)"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-xl bg-[#5200FF] px-3 py-2.5 text-center text-sm font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#4000cc] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none"
+                        <!-- El Link superpuesto ya abre la ficha al pulsar cualquier zona libre. -->
+                        <div class="mt-auto pt-4 sm:pt-5">
+                            <!-- Enlaces externos independientes de la ficha de nuestra aplicación. -->
+                            <div
+                                v-if="externalUrl(game.bgg_url) || externalUrl(game.youtube_url)"
+                                class="relative z-20 mb-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-1"
                             >
-                                BGG <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
-                            </a>
+                                <a
+                                    v-if="externalUrl(game.bgg_url)"
+                                    :href="externalUrl(game.bgg_url)"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    :aria-label="`Consultar ${game.name} en BoardGameGeek (nueva pestaña)`"
+                                    class="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-[#5200FF] underline-offset-4 transition-colors hover:text-[#4000cc] hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                                >
+                                    BGG <ChainIcon class="size-4 shrink-0" aria-hidden="true" />
+                                </a>
 
-                            <a
-                                v-if="externalUrl(game.youtube_url)"
-                                :href="externalUrl(game.youtube_url)"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-xl border-2 border-[#5200FF] bg-white px-2 py-2 text-center text-sm font-extrabold text-[#5200FF] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f1ebff] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none gap-1.5"
+                                <a
+                                    v-if="externalUrl(game.youtube_url)"
+                                    :href="externalUrl(game.youtube_url)"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    :aria-label="`Ver tutorial de ${game.name} (nueva pestaña)`"
+                                    class="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-[#5200FF] underline-offset-4 transition-colors hover:text-[#4000cc] hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                                >
+                                    <YoutubeLogoIcon class="size-4 shrink-0" aria-hidden="true" /> Tutorial <ChainIcon class="size-3.5 shrink-0" aria-hidden="true" />
+                                </a>
+                            </div>
+
+                            <div
+                                aria-hidden="true"
+                                class="pointer-events-none flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#5200FF] px-3 py-2.5 text-center text-sm font-extrabold text-white shadow-sm transition-all duration-200 group-hover:bg-[#4000cc] group-hover:shadow-lg group-focus-within:ring-2 group-focus-within:ring-[#5200FF] group-focus-within:ring-offset-2 motion-reduce:transition-none"
                             >
-                                <YoutubeLogoIcon class="size-4 shrink-0" aria-hidden="true" /> Tutorial <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
-                            </a>
+                                Ver ficha del juego <span aria-hidden="true">→</span>
+                            </div>
                         </div>
                     </div>
                 </article>
