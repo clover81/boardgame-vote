@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
-const props = withDefaults(defineProps<{ rememberPosition?: boolean; hideOnMobile?: boolean; compact?: boolean }>(), {
+const props = withDefaults(defineProps<{ rememberPosition?: boolean; hideOnMobile?: boolean; compact?: boolean; hideNearBottom?: boolean }>(), {
     rememberPosition: true,
     hideOnMobile: false,
     compact: false,
+    hideNearBottom: false,
 });
 
 const scrollY = ref(0);
 const progress = ref(0);
+const nearBottom = ref(false);
 
 const circumference = 2 * Math.PI * 20;
 
@@ -16,7 +18,9 @@ const progressOffset = computed(
     () => circumference * (1 - progress.value / 100),
 );
 
-const visible = computed(() => scrollY.value > 300);
+const visible = computed(
+    () => scrollY.value > 300 && !(props.hideNearBottom && nearBottom.value),
+);
 
 let storageKey = '';
 
@@ -26,6 +30,10 @@ const updateScroll = () => {
     const maxScroll =
         document.documentElement.scrollHeight -
         window.innerHeight;
+
+    // Ocultar el botón flotante en el tramo final de formularios largos
+    // para evitar que se superponga al botón principal de envío.
+    nearBottom.value = maxScroll - scrollY.value <= window.innerHeight * 0.85;
 
     progress.value = maxScroll > 0
         ? Math.min(100, (scrollY.value / maxScroll) * 100)

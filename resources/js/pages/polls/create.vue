@@ -891,31 +891,25 @@ const submit = () => {
                 aria-label="Progreso de creación de la votación"
                 class="sticky top-2 z-30 mt-4 min-w-0 rounded-2xl border border-zinc-200 bg-white/95 p-2 shadow-md backdrop-blur dark:border-zinc-700 dark:bg-zinc-950/95 sm:mt-6 sm:p-3"
             >
-                <div class="flex min-w-0 items-center gap-2 text-xs font-bold sm:text-sm">
-                    <div class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap pb-1 sm:gap-2 sm:overflow-visible sm:pb-0">
-                    <a href="#poll-collections" class="shrink-0 rounded-full px-2 py-2 transition hover:opacity-80 sm:px-3"
+                <div class="flex flex-wrap items-center justify-between gap-1 text-xs font-bold sm:flex-nowrap sm:gap-2 sm:text-sm">
+                    <div class="flex shrink-0 items-center gap-0.5 whitespace-nowrap sm:min-w-0 sm:flex-1 sm:gap-2">
+                    <a href="#poll-collections" class="shrink-0 rounded-full px-1.5 py-2 transition hover:opacity-80 sm:px-3"
                         :class="form.collection_ids.length ? 'bg-violet-100 text-[#5200FF] dark:bg-violet-950 dark:text-violet-200' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300'">
-                        {{ form.collection_ids.length ? '✓' : '1' }} Colecciones · {{ form.collection_ids.length }}
+                        <span class="sm:hidden">{{ form.collection_ids.length ? '✓' : '1' }} Colec. · {{ form.collection_ids.length }}</span>
+                        <span class="hidden sm:inline">{{ form.collection_ids.length ? '✓' : '1' }} Colecciones · {{ form.collection_ids.length }}</span>
                     </a>
-                    <a href="#poll-players" class="shrink-0 rounded-full px-2 py-2 transition hover:opacity-80 sm:px-3"
+                    <a href="#poll-players" class="shrink-0 rounded-full px-1.5 py-2 transition hover:opacity-80 sm:px-3"
                         :class="playerCount >= 2 ? 'bg-violet-100 text-[#5200FF] dark:bg-violet-950 dark:text-violet-200' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300'">
-                        {{ playerCount >= 2 ? '✓' : '2' }} Jugadores · {{ playerCount }}
+                        <span class="sm:hidden">{{ playerCount >= 2 ? '✓' : '2' }} Jug. · {{ playerCount }}</span>
+                        <span class="hidden sm:inline">{{ playerCount >= 2 ? '✓' : '2' }} Jugadores · {{ playerCount }}</span>
                     </a>
-                    <a href="#poll-candidates" class="shrink-0 rounded-full px-2 py-2 transition hover:opacity-80 sm:px-3"
+                    <a href="#poll-candidates" class="shrink-0 rounded-full px-1.5 py-2 transition hover:opacity-80 sm:px-3"
                         :class="form.candidate_ids.length ? 'bg-violet-100 text-[#5200FF] dark:bg-violet-950 dark:text-violet-200' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300'">
                         {{ form.candidate_ids.length ? '✓' : '3' }} Juegos · {{ form.candidate_ids.length }}
                     </a>
                     </div>
                     <a href="#poll-review" class="shrink-0 whitespace-nowrap rounded-lg bg-violet-100 px-2 py-2 text-[#5200FF] hover:bg-violet-200 dark:bg-zinc-800 dark:text-[#CCFF00] dark:hover:bg-zinc-700">
                         Revisar ↓
-                    </a>
-                    <a
-                        href="#poll-start"
-                        aria-label="Volver al inicio"
-                        title="Volver arriba"
-                        class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-zinc-300 text-base font-bold text-[#5200FF] hover:bg-violet-100 dark:border-zinc-700 dark:text-[#CCFF00] dark:hover:bg-zinc-800 sm:hidden"
-                    >
-                        ↑
                     </a>
                 </div>
             </nav>
@@ -2272,7 +2266,7 @@ const submit = () => {
 
             <!-- Mismo indicador circular del catálogo, sin restaurar la posición
                  anterior al iniciar una votación nueva. -->
-            <ScrollToTopProgress :remember-position="false" hide-on-mobile />
+            <ScrollToTopProgress :remember-position="false" compact hide-near-bottom />
         </div>
     </AppLayout>
 </template>
