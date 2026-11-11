@@ -984,12 +984,12 @@ const modeLabel = (
                         :key="
                             result.candidate_id
                         "
-                        class="group flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/30 sm:flex-row sm:items-center dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-violet-500"
+                        class="group flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/30 sm:flex-row sm:items-center max-sm:grid max-sm:grid-cols-[2.5rem_4rem_minmax(0,1fr)] max-sm:items-center max-sm:gap-3 max-sm:p-3 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-violet-500"
                     >
                         <!-- POSICIÓN -->
 
                         <div
-                            class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl font-black"
+                            class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl font-black max-sm:h-10 max-sm:w-10 max-sm:text-base"
                             :class="{
                                 'bg-[#CCFF00] text-black':
                                     result.is_winner,
@@ -1018,7 +1018,7 @@ const modeLabel = (
                         <!-- PORTADA -->
 
                         <div
-                            class="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-900"
+                            class="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-zinc-100 max-sm:h-20 max-sm:w-16 dark:bg-zinc-900"
                         >
                             <img
                                 v-if="
@@ -1047,8 +1047,8 @@ const modeLabel = (
 
                         <!-- INFO -->
 
-                        <div class="flex-1">
-                            <h3 class="text-lg font-bold">
+                        <div class="flex-1 max-sm:min-w-0">
+                            <h3 class="text-lg font-bold max-sm:text-base max-sm:leading-snug">
                                 <Link
                                     :href="`/games/${result.game.id}`"
                                     class="rounded text-zinc-900 transition-colors hover:text-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-zinc-100 dark:hover:text-violet-300"
@@ -1070,7 +1070,7 @@ const modeLabel = (
                             </p>
 
                             <p
-                                class="mt-2 text-sm text-zinc-500 dark:text-zinc-400"
+                                class="mt-2 text-sm text-zinc-500 max-sm:mt-1 max-sm:text-xs dark:text-zinc-400"
                             >
                                 🥇
                                 {{
@@ -1084,12 +1084,18 @@ const modeLabel = (
                                 }}
                                 segundas
                             </p>
+
+                            <!-- En móvil, los puntos acompañan al título en vez de ocupar otra fila. -->
+                            <p class="mt-1 flex items-baseline gap-1.5 sm:hidden">
+                                <span class="text-xl font-black text-[#5200FF] dark:text-[#CCFF00]">{{ result.points }}</span>
+                                <span class="text-xs font-semibold text-zinc-500 dark:text-zinc-400">puntos</span>
+                            </p>
                         </div>
 
                         <!-- PUNTOS -->
 
                         <div
-                            class="sm:text-right"
+                            class="sm:text-right max-sm:hidden"
                         >
                             <p
                                 class="text-3xl font-black text-[#5200FF] dark:text-[#CCFF00]"
