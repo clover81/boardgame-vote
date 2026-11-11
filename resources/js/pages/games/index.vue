@@ -372,7 +372,7 @@ const formatDate = (date: string | null): string => {
 
                             <span
                                 v-if="game.bgg_id"
-                                class="shrink-0 rounded-full bg-[#CCFF00] px-2 py-1 text-xs font-black text-black"
+                                class="shrink-0 rounded-full border border-zinc-200 bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
                             >
                                 BGG
                             </span>
@@ -493,20 +493,20 @@ const formatDate = (date: string | null): string => {
                         <!-- HISTORIAL -->
 
                         <div
-                            class="mt-5 rounded-xl bg-zinc-50 p-3 dark:bg-zinc-900"
+                            class="mt-4 flex min-h-10 items-center border-t border-zinc-200 pt-3 dark:border-zinc-800"
                         >
                             <p
                                 v-if="
                                     game.total_plays === 0
                                 "
-                                class="text-sm font-semibold text-zinc-500"
+                                class="text-xs font-medium text-zinc-500 dark:text-zinc-400"
                             >
                                 <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Sin partidas registradas
                             </p>
 
                             <div
                                 v-else
-                                class="flex flex-wrap items-center justify-between gap-2 text-sm"
+                                class="flex w-full flex-wrap items-center justify-between gap-2 text-sm"
                             >
                                 <p
                                     class="font-bold text-[#5200FF] dark:text-[#CCFF00]"

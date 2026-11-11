@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
+import MeepleIcon from '@/components/icons/MeepleIcon.vue';
+import { playerNameColor } from '@/lib/player-colors';
 import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, CalendarHeart, UsersRound, HourglassCog, Swords, BrainCog } from '@lucide/vue';
 
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
@@ -1215,12 +1217,11 @@ const formatGameMode = (
                                         <span
                                             v-for="player in play.players"
                                             :key="player.id"
-                                            class="rounded-xl border px-3 py-2 text-sm font-medium dark:border-zinc-700"
+                                            class="inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium dark:border-zinc-700"
+                                            :class="playerNameColor(player.name)"
                                         >
-                                            👤
-                                            {{
-                                                player.name
-                                            }}
+                                            <MeepleIcon class="h-4 w-4 shrink-0" />
+                                            {{ player.name }}
                                         </span>
                                     </div>
                                 </div>
