@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
-const props = withDefaults(defineProps<{ rememberPosition?: boolean; hideOnMobile?: boolean; compact?: boolean; hideNearBottom?: boolean }>(), {
+const props = withDefaults(defineProps<{ rememberPosition?: boolean; hideOnMobile?: boolean; compact?: boolean; compactOnMobile?: boolean; hideNearBottom?: boolean }>(), {
     rememberPosition: true,
     hideOnMobile: false,
     compact: false,
+    compactOnMobile: false,
     hideNearBottom: false,
 });
 
@@ -109,7 +110,9 @@ onBeforeUnmount(() => {
                 props.hideOnMobile ? 'hidden sm:flex' : 'flex',
                 props.compact
                     ? 'bottom-3 right-2 h-11 w-11 sm:bottom-4 sm:right-2'
-                    : 'bottom-6 right-2 h-14 w-14 sm:bottom-8 sm:right-2',
+                    : props.compactOnMobile
+                      ? 'bottom-3 right-2 h-11 w-11 sm:bottom-8 sm:right-2 sm:h-14 sm:w-14'
+                      : 'bottom-6 right-2 h-14 w-14 sm:bottom-8 sm:right-2',
             ]"
             @click="scrollToTop"
         >
@@ -147,7 +150,11 @@ onBeforeUnmount(() => {
             <!-- Flecha -->
             <svg
                 viewBox="0 0 24 24"
-                :class="props.compact ? 'relative h-5 w-5' : 'relative h-6 w-6'"
+                :class="props.compact
+                    ? 'relative h-5 w-5'
+                    : props.compactOnMobile
+                      ? 'relative h-5 w-5 sm:h-6 sm:w-6'
+                      : 'relative h-6 w-6'"
                 fill="none"
                 stroke="currentColor"
                 stroke-width="2.5"
