@@ -267,3 +267,25 @@ test('a single candidate poll still rejects a first choice from another poll', f
 
     expect($this->participant->votes()->get()->toArray())->toBe($originalVotes);
 });
+
+test('after confirming votes the participant link is stable and a reload keeps both choices', function () {
+    // Una procedencia diferente no debe decidir a dónde redirige el POST.
+    $this->from('/games')->post($this->voteUrl, [
+        'first_candidate_id' => $this->candidates[1]->id,
+        'second_candidate_id' => $this->candidates[2]->id,
+    ])
+        ->assertRedirect($this->publicUrl)
+        ->assertSessionHasNoErrors();
+
+    $this->withoutVite();
+    $this->get($this->publicUrl)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('vote/show')
+            ->where('currentParticipantId', $this->participant->id)
+            ->where('poll.participants.0.votes.0.candidate_id', $this->candidates[1]->id)
+            ->where('poll.participants.0.votes.0.position', 1)
+            ->where('poll.participants.0.votes.1.candidate_id', $this->candidates[2]->id)
+            ->where('poll.participants.0.votes.1.position', 2)
+        );
+});

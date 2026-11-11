@@ -653,6 +653,9 @@ class PublicPollController extends Controller
             }
         });
 
-        return back()->with('success', 'Voto guardado correctamente.');
+        return redirect()->route('vote.participant.show', [
+            'token' => $token,
+            'voteToken' => $voteToken,
+        ])->with('success', 'Voto guardado correctamente.');
     }
 }

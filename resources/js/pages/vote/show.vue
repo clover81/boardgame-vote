@@ -300,6 +300,11 @@ watch(
             }
         }
 
+        // Al recargar, la confirmación depende de los votos guardados,
+        // no de un estado temporal del navegador.
+        voteSaved.value = participant.votes.some((vote) => vote.position === 1)
+            && (!needsSecondChoice.value || participant.votes.some((vote) => vote.position === 2));
+
         /*
          * Si solo existe un candidato,
          * lo seleccionamos directamente.
