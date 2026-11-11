@@ -7,6 +7,7 @@ use App\Models\Expansion;
 use App\Models\Game;
 use App\Models\GameCollection;
 use App\Services\BggCollectionService;
+use App\Services\BggSyncRecoveryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,8 +27,13 @@ class GameCollectionController extends Controller
     */
 
     public function index(
-        Request $request
+        Request $request,
+        BggSyncRecoveryService $recovery
     ): Response {
+        // Recuperar solicitudes antiguas sin trabajo asociado solo cuando
+        // el propietario consulta sus colecciones. No hace falta un cron.
+        $recovery->recoverForUser((int) $request->user()->id);
+
         $collections =
             GameCollection::query()
             ->where(
