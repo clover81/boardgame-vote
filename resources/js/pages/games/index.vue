@@ -193,17 +193,15 @@ const formatDate = (date: string | null): string => {
                 <div class="flex flex-wrap gap-2">
                     <Link
                         href="/polls/create"
-                        class="inline-flex min-h-12 items-center gap-2.5 rounded-xl border border-[#5200FF]/35 bg-[#5200FF]/5 px-4 py-2 font-bold text-[#5200FF] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#5200FF] hover:bg-[#5200FF]/10 hover:shadow-[0_8px_22px_rgba(82,0,255,0.16)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none dark:border-[#CCFF00]/45 dark:bg-[#5200FF]/15 dark:text-[#CCFF00] dark:hover:bg-[#5200FF]/25"
+                        class="inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-[#5200FF]/35 bg-[#5200FF]/5 px-4 py-2 font-bold text-[#5200FF] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#5200FF] hover:bg-[#5200FF]/10 hover:shadow-[0_8px_22px_rgba(82,0,255,0.16)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none dark:border-[#CCFF00]/45 dark:bg-[#5200FF]/10 dark:text-[#CCFF00] dark:hover:bg-[#5200FF]/20"
                     >
-                        <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#5200FF] shadow-sm" aria-hidden="true">
-                            <RollingDicesIcon class="size-6 text-[#CCFF00]" />
-                        </span>
+                        <RollingDicesIcon class="size-7 shrink-0 text-[#5200FF] dark:text-[#CCFF00]" aria-hidden="true" />
                         <span>Nueva votación</span>
                     </Link>
 
                     <Link
                         href="/games/create"
-                        class="rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90"
+                        class="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#5200FF] px-5 py-2.5 font-bold text-white transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                     >
                         + Añadir juego
                     </Link>
@@ -215,15 +213,15 @@ const formatDate = (date: string | null): string => {
             <!-- ================================================== -->
 
             <form
-                class="mt-5 mb-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:mt-7 sm:mb-8 sm:p-6"
+                class="mt-5 mb-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:mt-5 sm:mb-6 sm:p-5"
                 @submit.prevent="applyFilters"
             >
-                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div class="grid gap-x-4 gap-y-3 md:grid-cols-2 xl:grid-cols-3">
                     <div class="min-w-0">
                         <label for="game-search" class="text-sm font-bold">Buscar juego</label>
                         <input id="game-search" v-model="search" type="search"
                             placeholder="Busca por nombre o temática..."
-                            class="mt-2 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
+                            class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
                     </div>
                     <button type="button" class="rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-bold md:hidden dark:border-zinc-700"
                         :aria-expanded="showMobileFilters" aria-controls="game-advanced-filters"
@@ -234,24 +232,24 @@ const formatDate = (date: string | null): string => {
                     <div id="game-advanced-filters" :class="showMobileFilters ? 'contents' : 'hidden md:contents'">
                         <div class="min-w-0">
                             <label for="game-player-count" class="text-sm font-bold">Jugadores ideales</label>
-                            <select id="game-player-count" v-model.number="playerCount" class="mt-2 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                            <select id="game-player-count" v-model.number="playerCount" class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                 <option value="">Cualquier número</option>
                                 <option v-for="number in playerOptions" :key="number" :value="number">
                                     {{ number }} {{ number === 1 ? 'jugador' : 'jugadores' }}
                                 </option>
                             </select>
-                            <p class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">Solo juegos recomendados para ese número de jugadores.</p>
+                            <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Solo juegos recomendados para ese número de jugadores.</p>
                         </div>
                         <div class="min-w-0">
                             <label for="games-collection" class="text-sm font-bold">Colección</label>
-                            <select id="games-collection" v-model="selectedCollectionId" class="mt-2 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                            <select id="games-collection" v-model="selectedCollectionId" class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                 <option :value="null">Todas las colecciones</option>
                                 <option v-for="collection in collections" :key="collection.id" :value="collection.id">{{ collection.name }}</option>
                             </select>
                         </div>
                         <div class="min-w-0">
                             <label for="games-duration" class="text-sm font-bold">Tiempo disponible</label>
-                            <select id="games-duration" v-model.number="durationLimit" class="mt-2 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                            <select id="games-duration" v-model.number="durationLimit" class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                 <option value="">Cualquier duración</option>
                                 <option :value="30">Hasta 30 minutos</option>
                                 <option :value="60">Hasta 1 hora</option>
@@ -262,7 +260,7 @@ const formatDate = (date: string | null): string => {
                         </div>
                         <div class="min-w-0">
                             <label for="games-difficulty" class="text-sm font-bold">Dificultad</label>
-                            <select id="games-difficulty" v-model="difficulty" class="mt-2 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                            <select id="games-difficulty" v-model="difficulty" class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                 <option value="">Cualquier dificultad</option>
                                 <option value="light">Ligero (hasta 2)</option>
                                 <option value="medium">Medio (más de 2 a 3)</option>
@@ -271,34 +269,36 @@ const formatDate = (date: string | null): string => {
                         </div>
                         <div class="min-w-0">
                             <label for="game-mode-filter" class="text-sm font-bold">Tipo de juego</label>
-                            <select id="game-mode-filter" v-model="gameMode" class="mt-2 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                            <select id="game-mode-filter" v-model="gameMode" class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                 <option value="">Todos los tipos</option>
                                 <option value="competitive">Competitivo</option>
                                 <option value="cooperative">Cooperativo</option>
                                 <option value="semi_cooperative">Semicooperativo</option>
                             </select>
                         </div>
-                    <div class="min-w-0">
-                        <label for="games-sort-filter" class="mb-2 block text-sm font-bold text-zinc-800 dark:text-zinc-200">Ordenar juegos</label>
-                        <select
-                            id="game-sort"
-                            v-model="sortOrder"
-                            class="min-w-0 flex-1 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 sm:flex-none"
-                            @change="applyFilters"
-                        >
-                            <option value="name">Nombre (A–Z)</option>
-                            <option value="name_desc">Nombre (Z–A)</option>
-                            <option value="recent">Últimos jugados</option>
-                            <option value="most_played">Más jugados</option>
-                        </select>
-                    </div>
                     </div>
                 </div>
-                <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-                    <p class="text-sm text-zinc-500 dark:text-zinc-400" aria-live="polite">
-                        Mostrando <strong class="text-zinc-900 dark:text-zinc-100">{{ games.length }}</strong>
-                        {{ games.length === 1 ? 'juego' : 'juegos' }}
-                    </p>
+                <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 pt-3 dark:border-zinc-800">
+                    <div class="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+                        <p class="text-sm text-zinc-500 dark:text-zinc-400" aria-live="polite">
+                            Mostrando <strong class="text-zinc-900 dark:text-zinc-100">{{ games.length }}</strong>
+                            {{ games.length === 1 ? 'juego' : 'juegos' }}
+                        </p>
+                        <div class="flex min-w-0 items-center gap-2">
+                            <label for="game-sort" class="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Ordenar</label>
+                            <select
+                                id="game-sort"
+                                v-model="sortOrder"
+                                class="min-w-0 max-w-[12rem] rounded-xl border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                                @change="applyFilters"
+                            >
+                                <option value="name">Nombre (A–Z)</option>
+                                <option value="name_desc">Nombre (Z–A)</option>
+                                <option value="recent">Últimos jugados</option>
+                                <option value="most_played">Más jugados</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="flex flex-wrap items-center gap-3">
                         <button v-if="hasActiveFilters" type="button"
                             class="text-sm font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
