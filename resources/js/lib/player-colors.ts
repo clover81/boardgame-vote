@@ -10,6 +10,19 @@ export const playerColorOptions = [
     { id: 'red', label: 'Rojo', swatch: 'bg-red-500', text: 'text-red-700 dark:text-red-300' },
 ] as const;
 
+// Tonalidad original del meeple; no debe confundirse con el color
+// más oscuro del texto, que se usa para asegurar legibilidad.
+const meepleColors: Record<string, string> = {
+    violet: 'text-violet-500',
+    pink: 'text-pink-500',
+    yellow: 'text-yellow-400',
+    teal: 'text-teal-400',
+    blue: 'text-blue-500',
+    green: 'text-green-500',
+    orange: 'text-orange-500',
+    red: 'text-red-500',
+};
+
 const fallbackNames: Record<string, string> = {
     alejandro: 'violet',
     ana: 'pink',
@@ -27,9 +40,17 @@ export function setPlayerColors(colors: Record<string, string> | undefined): voi
     assignedColors = colors ?? {};
 }
 
-export function playerNameColor(name: string | null | undefined, savedColor?: string | null): string {
+const resolvePlayerColor = (name: string | null | undefined, savedColor?: string | null): string => {
     const key = normalize(name);
-    const color = savedColor || assignedColors[key] || fallbackNames[key] || '';
+    return savedColor || assignedColors[key] || fallbackNames[key] || '';
+};
+
+export function playerNameColor(name: string | null | undefined, savedColor?: string | null): string {
+    const color = resolvePlayerColor(name, savedColor);
     return playerColorOptions.find((option) => option.id === color)?.text
         ?? 'text-zinc-700 dark:text-zinc-200';
+}
+
+export function playerMeepleColor(name: string | null | undefined, savedColor?: string | null): string {
+    return meepleColors[resolvePlayerColor(name, savedColor)] ?? 'text-zinc-500';
 }

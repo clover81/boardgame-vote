@@ -33,7 +33,7 @@ class PublicPollController extends Controller
         // votación, no únicamente al participante que abre este enlace.
         // Por privacidad, solo incluimos los votos de quien está autenticado
         // mediante su token personal; nunca enviamos los votos de los demás.
-        $allParticipants = $poll->participants()->get();
+        $allParticipants = $poll->participants()->with('player:id,color')->get();
 
         $allParticipants->each(function ($pollParticipant) use ($participant) {
             $pollParticipant->setRelation(
@@ -307,6 +307,10 @@ class PublicPollController extends Controller
                                     'display_name' =>
                                     $participant
                                         ->display_name,
+
+                                    // Solo se comparte el color visual del jugador,
+                                    // sin exponer la ficha privada ni su identificador.
+                                    'color' => $participant->player?->color,
 
                                     /*
                                          * Necesitamos recuperar

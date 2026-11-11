@@ -227,7 +227,7 @@ test('personal links show group names without revealing other participants votes
                     && $visible->every(function ($entry) use ($participant) {
                         return array_diff(
                             array_keys($entry),
-                            ['id', 'display_name', 'votes']
+                            ['id', 'display_name', 'color', 'votes']
                         ) === []
                         && (
                             $entry['id'] === $participant->id
@@ -292,4 +292,24 @@ test('a personal link cannot use the token of a participant from another poll', 
         ->assertNotFound();
 
     $this->get('/vote/'.$this->poll->token)->assertNotFound();
+});
+
+
+test('el enlace de votacion publica muestra el color guardado sin exponer datos privados del jugador', function () {
+    $player = \App\Models\Player::create([
+        'created_by' => $this->poll->created_by,
+        'name' => 'Miki',
+        'color' => 'yellow',
+        'is_active' => true,
+    ]);
+    $this->participant->update(['player_id' => $player->id, 'display_name' => 'Miki']);
+
+    $this->get($this->personalUrl)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('vote/show')
+            ->where('poll.participants.0.display_name', 'Miki')
+            ->where('poll.participants.0.color', 'yellow')
+            ->where('poll.candidates.0.history.participants.0.display_name', 'Miki')
+        );
 });

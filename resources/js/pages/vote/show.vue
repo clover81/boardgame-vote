@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { playerNameColor } from '@/lib/player-colors';
+import { playerMeepleColor, playerNameColor } from '@/lib/player-colors';
 import MeepleIcon from '@/components/icons/MeepleIcon.vue';
 import YoutubeLogoIcon from '@/components/icons/YoutubeLogoIcon.vue';
-import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, UsersRound, HourglassCog, Swords, BrainCog } from '@lucide/vue';
+import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, UsersRound, HourglassCog, Swords, BrainCog, NotebookPen } from '@lucide/vue';
 
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 
@@ -33,6 +33,7 @@ interface Vote {
 interface Participant {
     id: number;
     display_name: string;
+    color: string | null;
     votes: Vote[];
 }
 
@@ -136,6 +137,17 @@ const props = defineProps<{
     currentParticipantId: number;
     voteToken: string;
 }>();
+
+// La votación pública usa siempre fondo claro, aunque la aplicación esté en modo oscuro.
+// Evitamos que las variantes dark: conviertan los nombres de colores en tonos pálidos.
+const publicPlayerNameColor = (name: string, savedColor?: string | null): string =>
+    playerNameColor(name, savedColor)
+        .split(/\s+/)
+        .filter((className) => !className.startsWith('dark:'))
+        .join(' ');
+
+const colorForParticipant = (id: number): string | null =>
+    props.poll.participants.find((participant) => participant.id === id)?.color ?? null;
 
 const resultExpansion = (candidateId: number): Expansion | null => {
     return props.poll.candidates.find(
@@ -794,11 +806,9 @@ const formatDate = (
                             Estás votando como
                         </p>
 
-                        <p class="font-bold">
-                            {{
-                                selectedParticipant
-                                    ?.display_name
-                            }}
+                        <p :class="['mt-1 inline-flex items-center gap-2 font-bold', publicPlayerNameColor(selectedParticipant?.display_name ?? '', selectedParticipant?.color)]">
+                            <MeepleIcon :class="['size-4 shrink-0', playerMeepleColor(selectedParticipant?.display_name, selectedParticipant?.color)]" aria-hidden="true" />
+                            {{ selectedParticipant?.display_name }}
                         </p>
 
                         <p
@@ -813,7 +823,7 @@ const formatDate = (
 
                 <!-- JUEGOS -->
 
-                <div class="grid items-start gap-4 lg:grid-cols-2">
+                <div class="grid items-stretch gap-4 lg:grid-cols-2">
                     <article
                         v-for="candidate in poll.candidates"
                         :key="candidate.id"
@@ -894,15 +904,19 @@ const formatDate = (
                             <BuildingComplexPlus class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" /> Con expansión: <strong>{{ candidate.expansion.name }}</strong>
                         </p>
 
-                        <p
+                        <div
                             v-if="candidate.note"
-                            class="mx-3 mb-3 break-words rounded-lg bg-zinc-100 px-3 py-2 text-sm text-zinc-700 sm:mx-4"
+                            class="mx-3 mb-3 rounded-xl border border-violet-100 bg-violet-50/60 p-3 text-sm sm:mx-4"
                         >
-                            ℹ️ {{ candidate.note }}
-                        </p>
+                            <p class="mb-1 flex items-center gap-1.5 font-bold text-zinc-900">
+                                <NotebookPen class="size-4 shrink-0 text-[#5200FF]" aria-hidden="true" />
+                                Para esta partida
+                            </p>
+                            <p class="whitespace-pre-line break-words text-zinc-700">{{ candidate.note }}</p>
+                        </div>
 
                         <!-- Los jugadores del grupo son visibles sin desplegar nada. -->
-                        <div class="border-t border-zinc-100 px-3 py-3 sm:px-4 lg:min-h-[5.75rem]">
+                        <div class="border-t border-zinc-100 px-3 py-3 sm:px-4 lg:mt-auto lg:min-h-[5.75rem]">
                             <p class="text-xs font-bold uppercase tracking-wide text-zinc-500">
                                 <UsersRound class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9]" :stroke-width="2.2" role="img" aria-label="Jugadores" /> Jugadores de hoy ({{ candidate.history.participants.length }})
                             </p>
@@ -912,7 +926,7 @@ const formatDate = (
                                     :key="participant.participant_id"
                                     class="max-w-full break-words rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700"
                                 >
-                                    <span :class="['inline-flex items-center gap-1.5', playerNameColor(participant.display_name)]"><MeepleIcon class="h-3.5 w-3.5 shrink-0" />{{ participant.display_name }}</span><template v-if="participant.participant_id === currentParticipantId"> (tú)</template>
+                                    <span :class="['inline-flex items-center gap-1.5', publicPlayerNameColor(participant.display_name, colorForParticipant(participant.participant_id))]"><MeepleIcon :class="['h-3.5 w-3.5 shrink-0', playerMeepleColor(participant.display_name, colorForParticipant(participant.participant_id))]" />{{ participant.display_name }}</span><template v-if="participant.participant_id === currentParticipantId"> (tú)</template>
                                 </span>
                             </div>
                         </div>
@@ -974,7 +988,7 @@ const formatDate = (
                                             :key="participant.participant_id"
                                             class="flex items-start justify-between gap-2"
                                         >
-                                            <span class="min-w-0 break-words text-zinc-700"><span :class="['inline-flex items-center gap-1.5', playerNameColor(participant.display_name)]"><MeepleIcon class="h-3.5 w-3.5 shrink-0" />{{ participant.display_name }}</span></span>
+                                            <span class="min-w-0 break-words text-zinc-700"><span :class="['inline-flex items-center gap-1.5', publicPlayerNameColor(participant.display_name, colorForParticipant(participant.participant_id))]"><MeepleIcon :class="['h-3.5 w-3.5 shrink-0', playerMeepleColor(participant.display_name, colorForParticipant(participant.participant_id))]" />{{ participant.display_name }}</span></span>
                                             <span class="shrink-0 text-zinc-500">
                                                 {{ !participant.tracked ? 'Sin historial' : participant.play_count === 0 ? 'Nunca' : `${participant.play_count} ${participant.play_count === 1 ? 'partida' : 'partidas'}` }}
                                             </span>
@@ -1005,7 +1019,7 @@ const formatDate = (
 
                 <!-- CONFIRMAR -->
 
-                <div class="relative z-10 mx-auto mt-6 max-w-3xl rounded-2xl border border-zinc-200 bg-white p-2.5 shadow-[0_14px_38px_rgba(82,0,255,0.13)] sm:sticky sm:bottom-2 sm:z-20 sm:bg-white/95 sm:p-4 sm:backdrop-blur">
+                <div class="mx-auto mt-6 max-w-3xl rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
                     <div class="mb-3 hidden min-w-0 gap-2 text-xs sm:grid sm:text-sm" :class="needsSecondChoice ? 'grid-cols-2' : 'grid-cols-1'">
                         <p class="min-w-0 truncate rounded-xl bg-lime-100 px-3 py-2.5 font-medium" :title="selectedFirstGame?.name ?? ''">
                             🥇 {{ selectedFirstGame?.name ?? 'Elige primera opción' }}
