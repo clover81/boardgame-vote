@@ -2,7 +2,7 @@
 import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
 import { playerNameColor } from '@/lib/player-colors';
 import MeepleIcon from '@/components/icons/MeepleIcon.vue';
-import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, CalendarHeart, UsersRound, HourglassCog, Swords, BrainCog } from '@lucide/vue';
+import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, CalendarHeart, UsersRound, HourglassCog, Swords, BrainCog, NotebookPen } from '@lucide/vue';
 
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 
@@ -889,8 +889,9 @@ const modeLabel = (
                                 "
                                 class="mt-4 rounded-xl bg-zinc-100 p-4 text-sm dark:bg-zinc-900"
                             >
-                                <p class="font-bold">
-                                    ℹ️ Para esta partida
+                                <p class="flex items-center gap-2 font-bold">
+                                    <NotebookPen class="size-5 shrink-0 text-[#CCFF00]" aria-hidden="true" />
+                                    <span>Para esta partida</span>
                                 </p>
 
                                 <p
