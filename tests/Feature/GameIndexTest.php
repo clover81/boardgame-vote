@@ -107,17 +107,59 @@ test('a foreign collection filter returns no games even if some are shared', fun
         ->assertInertia(fn (Assert $page) => $page->has('games', 0));
 });
 
-test('search trims whitespace and includes a thematic description', function () {
+test('search prioritizes titles even when a description contains the same words', function () {
     $this->sky->update(['short_description' => 'The White Castle']);
 
     $this->actingAs($this->user)->get(route('games.index', ['q' => '  White Castle  ']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->has('games', 2)
-            ->where('games.0.id', $this->sky->id)
-            ->where('games.1.id', $this->castle->id)
+            ->has('games', 1)
+            ->where('games.0.id', $this->castle->id)
             ->where('filters.q', 'White Castle')
         );
+});
+
+test('a single letter prioritizes titles beginning with that letter', function () {
+    // The White Castle contiene la letra s pero no empieza por ella.
+    $this->actingAs($this->user)->get(route('games.index', ['q' => 's']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('games', 1)
+            ->where('games.0.id', $this->sky->id)
+            ->where('filters.q', 's')
+        );
+});
+
+test('search falls back to the short description when no title matches', function () {
+    $this->sky->update(['short_description' => 'Una aventura de espiritus y aviacion']);
+
+    $this->actingAs($this->user)->get(route('games.index', ['q' => 'espiritus']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('games', 1)
+            ->where('games.0.id', $this->sky->id)
+        );
+});
+
+test('title priority only considers games matching the other selected filters', function () {
+    $this->sky->update(['short_description' => 'Viaje por un castillo medieval']);
+
+    // La ficha con "Castle" en el título no coincide con este filtro de colección.
+    $this->actingAs($this->user)->get(route('games.index', [
+        'collection_id' => $this->secondCollection->id,
+        'q' => 'medieval',
+    ]))->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->has('games', 0)
+    );
+
+    // En la colección principal solo hay descripción coincidente.
+    $this->actingAs($this->user)->get(route('games.index', [
+        'collection_id' => $this->collection->id,
+        'q' => 'medieval',
+    ]))->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->has('games', 1)
+        ->where('games.0.id', $this->sky->id)
+    );
 });
 
 test('player count shows only games ideal for that exact group size', function ($players, $expectedNames) {

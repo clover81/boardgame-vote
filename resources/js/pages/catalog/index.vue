@@ -92,15 +92,8 @@ const filteredGames = computed(() => {
     const players = Number(playerCount.value);
     const collection = Number(collectionId.value);
 
-    return props.games.filter(game => {
-        const searchable = normalizeText(
-            `${game.name} ${game.short_description ?? ''}`
-        );
-
-        const matchesSearch = terms.every(
-            term => searchable.includes(term)
-        );
-
+    // Filtrar primero por las opciones elegidas; después buscar entre esos juegos.
+    const candidates = props.games.filter(game => {
         const matchesPlayers =
             !players || game.ideal_player_counts.includes(players);
 
@@ -134,12 +127,33 @@ const filteredGames = computed(() => {
             !selectedGameMode.value ||
             game.game_modes.includes(selectedGameMode.value);
 
-        return matchesSearch &&
-            matchesPlayers &&
+        return matchesPlayers &&
             matchesCollection &&
             matchesDuration &&
             matchesDifficulty &&
             matchesGameMode;
+    });
+
+    if (!terms.length) return candidates;
+
+    // Primero títulos que empiezan por lo escrito; después títulos que lo contienen.
+    const prefix = terms.join(' ');
+    const prefixMatches = candidates.filter(game =>
+        normalizeText(game.name).startsWith(prefix)
+    );
+    if (prefixMatches.length) return prefixMatches;
+
+    const titleMatches = candidates.filter(game =>
+        terms.every(term => normalizeText(game.name).includes(term))
+    );
+    if (titleMatches.length) return titleMatches;
+
+    // Sin títulos coincidentes, se conserva la búsqueda por temática.
+    return candidates.filter(game => {
+        const searchable = normalizeText(
+            `${game.name} ${game.short_description ?? ''}`
+        );
+        return terms.every(term => searchable.includes(term));
     });
 });
 

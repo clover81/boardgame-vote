@@ -601,14 +601,6 @@ class GameController extends Controller
                 ->whereHas('collections', fn ($collectionQuery) => $collectionQuery
                     ->where('game_collections.id', $collectionId)
                     ->where('game_collections.created_by', $userId)))
-            ->when($search, function ($query, $search) {
-                // Buscar cada término tanto en el nombre como en la descripción breve.
-                foreach (preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) as $term) {
-                    $query->where(fn ($part) => $part
-                        ->where('name', 'like', '%' . $term . '%')
-                        ->orWhere('short_description', 'like', '%' . $term . '%'));
-                }
-            })
             ->when($playerCount, fn ($query, $players) => $query
                 ->whereHas('idealPlayerCounts', fn ($ideal) => $ideal
                     ->where('player_count', $players)))
@@ -632,6 +624,38 @@ class GameController extends Controller
                     $gameMode
                 )
             )
+            ->when($search, function ($query, $search) {
+                $terms = preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY);
+
+                // Mientras se escribe, mostrar primero títulos que empiezan por el texto.
+                $prefix = implode(' ', $terms);
+                if ((clone $query)->where('games.name', 'like', $prefix . '%')->exists()) {
+                    $query->where('games.name', 'like', $prefix . '%');
+
+                    return;
+                }
+
+                // Si no hay prefijos, buscar títulos que contienen todos los términos.
+                $titleQuery = clone $query;
+                foreach ($terms as $term) {
+                    $titleQuery->where('games.name', 'like', '%' . $term . '%');
+                }
+
+                if ($titleQuery->exists()) {
+                    foreach ($terms as $term) {
+                        $query->where('games.name', 'like', '%' . $term . '%');
+                    }
+
+                    return;
+                }
+
+                // Si ningún título coincide, permitir búsquedas por temática.
+                foreach ($terms as $term) {
+                    $query->where(fn ($part) => $part
+                        ->where('games.name', 'like', '%' . $term . '%')
+                        ->orWhere('games.short_description', 'like', '%' . $term . '%'));
+                }
+            })
             ->with([
                 'idealPlayerCounts',
                 'collections' => fn ($query) => $query

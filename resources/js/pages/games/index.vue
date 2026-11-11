@@ -2,7 +2,7 @@
 import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import { HourglassCog, Swords, UsersRound, BrainCog } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import {
     Head,
     Link,
@@ -98,7 +98,20 @@ const markCoverAsBroken = (gameId: number) => {
     }
 };
 
+// En el buscador esperamos un momento para evitar una petición por tecla.
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+const cancelSearchTimer = () => {
+    if (searchTimer !== null) {
+        clearTimeout(searchTimer);
+        searchTimer = null;
+    }
+};
+
+onBeforeUnmount(cancelSearchTimer);
+
 const applyFilters = () => {
+    cancelSearchTimer();
     router.get('/games', {
         collection_id: selectedCollectionId.value ?? undefined,
         q: search.value.trim() || undefined,
@@ -109,7 +122,22 @@ const applyFilters = () => {
         sort: sortOrder.value === 'name' ? undefined : sortOrder.value,
     }, {
         preserveScroll: true,
+        preserveState: true,
+        replace: true,
     });
+};
+
+const scheduleSearch = () => {
+    cancelSearchTimer();
+
+    // La primera letra (y borrar la búsqueda) actualiza de inmediato.
+    // Las siguientes pulsaciones se agrupan para no consultar Laravel por cada tecla.
+    if (search.value.trim().length <= 1) {
+        applyFilters();
+        return;
+    }
+
+    searchTimer = setTimeout(applyFilters, 220);
 };
 
 const clearFilters = () => {
@@ -140,6 +168,52 @@ const gameModeLabels: Record<string, string> = {
     competitive: 'Competitivo',
     cooperative: 'Cooperativo',
     semi_cooperative: 'Semicooperativo',
+};
+
+type FilterKey = 'search' | 'players' | 'collection' | 'duration' | 'difficulty' | 'mode';
+type FilterChip = { key: FilterKey; label: string };
+
+const activeFilterChips = computed<FilterChip[]>(() => {
+    const chips: FilterChip[] = [];
+
+    if (search.value.trim()) {
+        chips.push({ key: 'search', label: `Buscar: ${search.value.trim()}` });
+    }
+    if (playerCount.value !== '') {
+        const count = Number(playerCount.value);
+        chips.push({ key: 'players', label: `Ideal: ${count} ${count === 1 ? 'jugador' : 'jugadores'}` });
+    }
+    if (selectedCollectionId.value !== null) {
+        const collection = props.collections.find(c => c.id === Number(selectedCollectionId.value));
+        chips.push({ key: 'collection', label: `Colección: ${collection?.name ?? 'Seleccionada'}` });
+    }
+    if (durationLimit.value !== '') {
+        const durationLabels: Record<number, string> = {
+            30: 'Hasta 30 min', 60: 'Hasta 1 hora', 90: 'Hasta 1 h 30 min',
+            120: 'Hasta 2 horas', 180: 'Hasta 3 horas',
+        };
+        chips.push({ key: 'duration', label: durationLabels[Number(durationLimit.value)] ?? `Hasta ${durationLimit.value} min` });
+    }
+    if (difficulty.value !== '') {
+        const difficultyLabels = { light: 'Ligera', medium: 'Media', heavy: 'Exigente' };
+        chips.push({ key: 'difficulty', label: `Dificultad: ${difficultyLabels[difficulty.value]}` });
+    }
+    if (gameMode.value !== '') {
+        chips.push({ key: 'mode', label: gameModeLabels[gameMode.value] ?? gameMode.value });
+    }
+    return chips;
+});
+
+const removeFilter = (key: FilterKey) => {
+    switch (key) {
+        case 'search': search.value = ''; break;
+        case 'players': playerCount.value = ''; break;
+        case 'collection': selectedCollectionId.value = null; break;
+        case 'duration': durationLimit.value = ''; break;
+        case 'difficulty': difficulty.value = ''; break;
+        case 'mode': gameMode.value = ''; break;
+    }
+    applyFilters();
 };
 
 const formatDate = (date: string | null): string => {
@@ -213,13 +287,15 @@ const formatDate = (date: string | null): string => {
             <!-- ================================================== -->
 
             <form
-                class="mt-5 mb-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:mt-5 sm:mb-6 sm:p-5"
+                class="mt-5 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:mt-5 sm:p-5"
+                :class="activeFilterChips.length ? 'mb-3' : 'mb-6'"
                 @submit.prevent="applyFilters"
             >
                 <div class="grid gap-x-4 gap-y-3 md:grid-cols-2 xl:grid-cols-3">
                     <div class="min-w-0">
                         <label for="game-search" class="text-sm font-bold">Buscar juego</label>
                         <input id="game-search" v-model="search" type="search"
+                            @input="scheduleSearch"
                             placeholder="Busca por nombre o temática..."
                             class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
                     </div>
@@ -232,7 +308,7 @@ const formatDate = (date: string | null): string => {
                     <div id="game-advanced-filters" :class="showMobileFilters ? 'contents' : 'hidden md:contents'">
                         <div class="min-w-0">
                             <label for="game-player-count" class="text-sm font-bold">Jugadores ideales</label>
-                            <select id="game-player-count" v-model.number="playerCount" class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                            <select id="game-player-count" v-model.number="playerCount" @change="applyFilters" class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                 <option value="">Cualquier número</option>
                                 <option v-for="number in playerOptions" :key="number" :value="number">
                                     {{ number }} {{ number === 1 ? 'jugador' : 'jugadores' }}
@@ -242,14 +318,14 @@ const formatDate = (date: string | null): string => {
                         </div>
                         <div class="min-w-0">
                             <label for="games-collection" class="text-sm font-bold">Colección</label>
-                            <select id="games-collection" v-model="selectedCollectionId" class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                            <select id="games-collection" v-model="selectedCollectionId" @change="applyFilters" class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                 <option :value="null">Todas las colecciones</option>
                                 <option v-for="collection in collections" :key="collection.id" :value="collection.id">{{ collection.name }}</option>
                             </select>
                         </div>
                         <div class="min-w-0">
                             <label for="games-duration" class="text-sm font-bold">Tiempo disponible</label>
-                            <select id="games-duration" v-model.number="durationLimit" class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                            <select id="games-duration" v-model.number="durationLimit" @change="applyFilters" class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                 <option value="">Cualquier duración</option>
                                 <option :value="30">Hasta 30 minutos</option>
                                 <option :value="60">Hasta 1 hora</option>
@@ -260,7 +336,7 @@ const formatDate = (date: string | null): string => {
                         </div>
                         <div class="min-w-0">
                             <label for="games-difficulty" class="text-sm font-bold">Dificultad</label>
-                            <select id="games-difficulty" v-model="difficulty" class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                            <select id="games-difficulty" v-model="difficulty" @change="applyFilters" class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                 <option value="">Cualquier dificultad</option>
                                 <option value="light">Ligero (hasta 2)</option>
                                 <option value="medium">Medio (más de 2 a 3)</option>
@@ -269,7 +345,7 @@ const formatDate = (date: string | null): string => {
                         </div>
                         <div class="min-w-0">
                             <label for="game-mode-filter" class="text-sm font-bold">Tipo de juego</label>
-                            <select id="game-mode-filter" v-model="gameMode" class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                            <select id="game-mode-filter" v-model="gameMode" @change="applyFilters" class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                 <option value="">Todos los tipos</option>
                                 <option value="competitive">Competitivo</option>
                                 <option value="cooperative">Cooperativo</option>
@@ -303,13 +379,23 @@ const formatDate = (date: string | null): string => {
                         <button v-if="hasActiveFilters" type="button"
                             class="text-sm font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                             @click="clearFilters">Limpiar filtros</button>
-                        <button type="submit"
-                            class="rounded-xl bg-[#5200FF] px-5 py-3 text-sm font-black text-white transition hover:bg-[#3F00C7]">
-                            Aplicar filtros
-                        </button>
                     </div>
                 </div>
             </form>
+
+            <!-- Filtros activos: cada etiqueta puede quitarse por separado. -->
+            <div v-if="activeFilterChips.length"
+                class="mb-6 flex flex-wrap items-center gap-2"
+                aria-label="Filtros aplicados">
+                <span class="mr-1 text-sm font-semibold text-zinc-500 dark:text-zinc-400">Filtros aplicados:</span>
+                <button v-for="chip in activeFilterChips" :key="chip.key" type="button"
+                    :aria-label="`Quitar filtro ${chip.label}`"
+                    class="inline-flex max-w-full items-center gap-2 rounded-full border border-violet-200 bg-violet-100 px-3 py-2 text-xs font-bold text-violet-800 transition hover:bg-violet-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-violet-700/50 dark:bg-violet-950/60 dark:text-violet-200 dark:hover:bg-violet-900/80"
+                    @click="removeFilter(chip.key)">
+                    <span class="max-w-[190px] truncate sm:max-w-xs">{{ chip.label }}</span>
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
 
             <!-- ================================================== -->
             <!-- JUEGOS                                             -->
