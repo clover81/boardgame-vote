@@ -81,6 +81,12 @@ interface Candidate {
     game: Game;
 }
 
+interface AvailableGame {
+    id: number;
+    name: string;
+    image_url: string | null;
+}
+
 interface Result {
     candidate_id: number;
 
@@ -164,9 +170,40 @@ interface Poll {
 const props = defineProps<{
     poll: Poll;
     results: Result[];
+    availableGames: AvailableGame[];
+    canAddCandidates: boolean;
 }>();
 
 const page = usePage();
+
+const addCandidateOpen = ref(false);
+const candidateQuery = ref('');
+const addingCandidateId = ref<number | null>(null);
+const matchingCandidateGames = computed(() => {
+    const query = candidateQuery.value.trim().toLocaleLowerCase();
+    if (query.length < 2) return [];
+    return props.availableGames
+        .filter((game) => game.name.toLocaleLowerCase().includes(query))
+        .slice(0, 12);
+});
+const candidateError = computed(() => {
+    const errors = page.props.errors as Record<string, string>;
+    return errors.game_id ?? null;
+});
+
+const addCandidate = (gameId: number) => {
+    if (!props.canAddCandidates || addingCandidateId.value !== null) return;
+
+    router.post(`/polls/${props.poll.id}/candidates`, { game_id: gameId }, {
+        preserveScroll: true,
+        onStart: () => { addingCandidateId.value = gameId; },
+        onSuccess: () => {
+            candidateQuery.value = '';
+            addCandidateOpen.value = false;
+        },
+        onFinish: () => { addingCandidateId.value = null; },
+    });
+};
 
 // Si BGG no sirve una imagen, mostramos la alternativa sin iconos rotos.
 const failedGameImageIds = ref<number[]>([]);
@@ -701,11 +738,73 @@ const modeLabel = (
             <!-- ================================================== -->
 
             <section class="mt-10">
-                <h2
-                    class="text-xl font-bold text-zinc-900 dark:text-zinc-100"
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h2 class="text-xl font-bold text-zinc-900 dark:text-zinc-100">
+                        Juegos candidatos
+                    </h2>
+                    <button
+                        v-if="canAddCandidates"
+                        type="button"
+                        class="rounded-xl border border-[#5200FF] px-4 py-2 text-sm font-bold text-[#5200FF] transition hover:bg-violet-50 dark:border-[#CCFF00] dark:text-[#CCFF00] dark:hover:bg-zinc-900"
+                        :aria-expanded="addCandidateOpen"
+                        @click="addCandidateOpen = !addCandidateOpen"
+                    >
+                        {{ addCandidateOpen ? 'Cerrar' : '+ Añadir juego' }}
+                    </button>
+                </div>
+
+                <div
+                    v-if="canAddCandidates && addCandidateOpen"
+                    class="mt-4 rounded-2xl border border-violet-300 bg-violet-50/60 p-4 dark:border-violet-900 dark:bg-violet-950/20"
                 >
-                    Juegos candidatos
-                </h2>
+                    <label for="candidate-search" class="block text-sm font-bold">
+                        Buscar un juego de las colecciones de esta votación
+                    </label>
+                    <input
+                        id="candidate-search"
+                        v-model="candidateQuery"
+                        type="search"
+                        autocomplete="off"
+                        placeholder="Escribe el nombre del juego…"
+                        class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-3 py-3 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                    />
+                    <p v-if="candidateError" class="mt-2 text-sm font-semibold text-red-600 dark:text-red-300" role="alert">
+                        {{ candidateError }}
+                    </p>
+                    <div class="mt-3 max-h-56 space-y-2 overflow-y-auto sm:max-h-80">
+                        <p v-if="candidateQuery.trim().length < 2" class="text-sm text-zinc-500 dark:text-zinc-400">
+                            Escribe al menos 2 letras para buscar un juego.
+                        </p>
+                        <div
+                            v-for="game in matchingCandidateGames"
+                            :key="game.id"
+                            class="flex items-center justify-between gap-3 rounded-xl bg-white p-2 dark:bg-zinc-900"
+                        >
+                            <span class="min-w-0 text-sm font-semibold">{{ game.name }}</span>
+                            <button
+                                type="button"
+                                :disabled="addingCandidateId !== null"
+                                class="shrink-0 rounded-lg bg-[#5200FF] px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
+                                @click="addCandidate(game.id)"
+                            >
+                                {{ addingCandidateId === game.id ? 'Añadiendo…' : 'Añadir' }}
+                            </button>
+                        </div>
+                        <p v-if="candidateQuery.trim().length >= 2 && !matchingCandidateGames.length" class="text-sm text-zinc-500 dark:text-zinc-400">
+                            No hay juegos disponibles con esa búsqueda.
+                        </p>
+                    </div>
+                    <p class="mt-3 text-xs text-zinc-600 dark:text-zinc-400">
+                        ¿Todavía no tienes el juego en tu colección?
+                        <a href="/games/create" target="_blank" rel="noopener noreferrer" class="font-bold text-[#5200FF] underline dark:text-[#CCFF00]">
+                            Añadir juego a la colección
+                        </a>
+                        Después recarga esta votación para incluirlo, si pertenece a sus colecciones.
+                    </p>
+                </div>
+                <p v-else-if="poll.status === 'open' && !canAddCandidates" class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                    Ya hay votos recibidos. Para respetar las elecciones, no se pueden añadir más candidatos.
+                </p>
 
                 <div
                     v-if="
@@ -716,8 +815,15 @@ const modeLabel = (
                     <article
                         v-for="candidate in poll.candidates"
                         :key="candidate.id"
-                        class="group overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/30 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-violet-500"
+                        class="group relative cursor-pointer overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/30 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-violet-500"
                     >
+                        <a
+                            :href="`/games/${candidate.game.id}/edit`"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            :aria-label="`Editar ${candidate.game.name} en otra pestaña`"
+                            class="absolute inset-0 z-10 rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#5200FF]"
+                        />
                         <!-- PORTADA -->
 
                         <div
@@ -726,7 +832,7 @@ const modeLabel = (
                                     .image_url &&
                                 !failedGameImageIds.includes(candidate.game.id)
                             "
-                            class="flex aspect-[4/3] items-center justify-center bg-zinc-100 p-3 dark:bg-zinc-900"
+                            class="relative flex aspect-[4/3] items-center justify-center bg-zinc-100 p-3 dark:bg-zinc-900"
                         >
                             <img
                                 :src="
@@ -752,13 +858,8 @@ const modeLabel = (
                         </div>
 
                         <div class="p-5">
-                            <h3 class="text-xl font-bold">
-                                <Link
-                                    :href="`/games/${candidate.game.id}`"
-                                    class="rounded text-zinc-900 transition-colors hover:text-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-zinc-100 dark:hover:text-violet-300"
-                                >
-                                    {{ candidate.game.name }}
-                                </Link>
+                            <h3 class="text-xl font-bold text-zinc-900 dark:text-zinc-100">
+                                {{ candidate.game.name }}
                             </h3>
 
                             <!-- IDEALES -->
@@ -1189,7 +1290,7 @@ const modeLabel = (
                     </Link>
                 </div>
             </section>
-            <ScrollToTopProgress />
+            <ScrollToTopProgress :hide-on-mobile="addCandidateOpen" />
         </div>
         <Dialog v-model:open="closePollDialogOpen">
             <DialogContent class="sm:max-w-md">

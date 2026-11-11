@@ -11,6 +11,7 @@ import {
 } from '@lucide/vue';
 
 import NavMain from '@/components/NavMain.vue';
+import SidebarAppearanceSwitcher from '@/components/SidebarAppearanceSwitcher.vue';
 import NavUser from '@/components/NavUser.vue';
 
 import {
@@ -90,6 +91,7 @@ const mainNavItems: NavItem[] = [
         </SidebarContent>
 
         <SidebarFooter class="border-t border-border pt-3">
+            <SidebarAppearanceSwitcher />
             <NavUser />
         </SidebarFooter>
     </Sidebar>

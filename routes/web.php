@@ -250,6 +250,11 @@ Route::middleware(Authenticate::class)->group(function () {
         [PollController::class, 'show']
     )->name('polls.show');
 
+    Route::post(
+        '/polls/{poll}/candidates',
+        [PollController::class, 'addCandidate']
+    )->name('polls.candidates.store');
+
     Route::patch(
         '/polls/{poll}/open',
         [PollController::class, 'open']

@@ -921,9 +921,31 @@ class PollController extends Controller
     |--------------------------------------------------------------------------
     */
 
+        // Ampliar una votación solo antes de recibir el primer voto.
+        $canAddCandidates = in_array($poll->status, ['draft', 'open'], true)
+            && !$poll->votes()->exists();
+
+        $availableGames = collect();
+        if ($canAddCandidates) {
+            $collectionIds = $poll->gameCollections
+                ->where('created_by', request()->user()->id)
+                ->pluck('id');
+
+            $availableGames = Game::query()
+                ->where('is_active', true)
+                ->whereNotIn('id', $candidateGameIds)
+                ->whereHas('collections', fn ($query) => $query
+                    ->where('game_collections.created_by', request()->user()->id)
+                    ->whereIn('game_collections.id', $collectionIds))
+                ->orderBy('name')
+                ->get(['id', 'name', 'image_url']);
+        }
+
         return Inertia::render(
             'polls/show',
             [
+                'canAddCandidates' => $canAddCandidates,
+                'availableGames' => $availableGames,
                 'poll' => [
                     'id' =>
                     $poll->id,
@@ -1166,6 +1188,64 @@ class PollController extends Controller
                 $results,
             ]
         );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | AÑADIR JUEGO CANDIDATO A UNA VOTACIÓN EXISTENTE
+    |--------------------------------------------------------------------------
+    */
+
+    public function addCandidate(Request $request, Poll $poll): RedirectResponse
+    {
+        $userId = (int) $request->user()->id;
+        abort_unless((int) $poll->created_by === $userId, 403);
+
+        if (!in_array($poll->status, ['draft', 'open'], true)) {
+            return back()->withErrors([
+                'game_id' => 'No puedes añadir candidatos a una votación cerrada.',
+            ]);
+        }
+
+        // No se alteran las opciones de una votación una vez emitidos votos.
+        if ($poll->votes()->exists()) {
+            return back()->withErrors([
+                'game_id' => 'Ya se han recibido votos. No puedes añadir candidatos.',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'game_id' => ['required', 'integer', Rule::exists('games', 'id')],
+        ]);
+
+        $ownedCollectionIds = $poll->gameCollections()
+            ->where('game_collections.created_by', $userId)
+            ->pluck('game_collections.id');
+
+        $game = Game::query()
+            ->whereKey((int) $validated['game_id'])
+            ->where('is_active', true)
+            ->whereHas('collections', fn ($query) => $query
+                ->where('game_collections.created_by', $userId)
+                ->whereIn('game_collections.id', $ownedCollectionIds))
+            ->first();
+
+        if (!$game) {
+            return back()->withErrors([
+                'game_id' => 'El juego no pertenece a las colecciones de esta votación.',
+            ]);
+        }
+
+        if ($poll->candidates()->where('game_id', $game->id)->exists()) {
+            return back()->withErrors([
+                'game_id' => 'Este juego ya está incluido en la votación.',
+            ]);
+        }
+
+        $poll->candidates()->create(['game_id' => $game->id]);
+
+        return redirect()->route('polls.show', $poll)
+            ->with('success', 'Juego añadido a la votación.');
     }
 
     /*
