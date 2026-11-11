@@ -516,7 +516,7 @@ const externalUrl = (url: string | null): string | undefined => {
             <a href="/creditos-iconos.html" class="ml-2 inline-block font-semibold text-[#5200FF] underline-offset-4 hover:underline focus-visible:underline">Créditos de iconos</a>
         </footer>
 
-        <ScrollToTopProgress :remember-position="false" compact />
+        <ScrollToTopProgress :remember-position="false" compact-on-mobile />
     </div>
 </template>
 
