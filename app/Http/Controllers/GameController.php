@@ -625,35 +625,58 @@ class GameController extends Controller
                 )
             )
             ->when($search, function ($query, $search) {
-                $terms = preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY);
+                $replacements = [
+                    '‘' => "'", '’' => "'",
+                    '-' => ' ', '‐' => ' ', '‑' => ' ', '‒' => ' ',
+                    '–' => ' ', '—' => ' ', '−' => ' ',
+                ];
+                $terms = preg_split('/\s+/u', strtr($search, $replacements), -1, PREG_SPLIT_NO_EMPTY);
 
-                // Mientras se escribe, mostrar primero títulos que empiezan por el texto.
-                $prefix = implode(' ', $terms);
-                if ((clone $query)->where('games.name', 'like', $prefix . '%')->exists()) {
-                    $query->where('games.name', 'like', $prefix . '%');
+                if ($terms === []) {
+                    return;
+                }
+
+                $bindings = [];
+                foreach ($replacements as $original => $replacement) {
+                    $bindings[] = $original;
+                    $bindings[] = $replacement;
+                }
+
+                $normalizedColumn = fn (string $column): string =>
+                    str_repeat('REPLACE(', count($replacements) + 2)
+                    . $column . str_repeat(', ?, ?)', count($replacements))
+                    . ", '  ', ' '), '  ', ' ')";
+
+                $name = $normalizedColumn('games.name');
+                $description = $normalizedColumn('games.short_description');
+
+                // Priorizar los títulos que comienzan por la búsqueda.
+                $prefix = implode(' ', $terms) . '%';
+                if ((clone $query)->whereRaw("$name LIKE ?", [...$bindings, $prefix])->exists()) {
+                    $query->whereRaw("$name LIKE ?", [...$bindings, $prefix]);
 
                     return;
                 }
 
-                // Si no hay prefijos, buscar títulos que contienen todos los términos.
                 $titleQuery = clone $query;
                 foreach ($terms as $term) {
-                    $titleQuery->where('games.name', 'like', '%' . $term . '%');
+                    $titleQuery->whereRaw("$name LIKE ?", [...$bindings, "%$term%"]);
                 }
 
                 if ($titleQuery->exists()) {
                     foreach ($terms as $term) {
-                        $query->where('games.name', 'like', '%' . $term . '%');
+                        $query->whereRaw("$name LIKE ?", [...$bindings, "%$term%"]);
                     }
 
                     return;
                 }
 
-                // Si ningún título coincide, permitir búsquedas por temática.
+                // Buscar también en la descripción si ningún título coincide.
                 foreach ($terms as $term) {
+                    $pattern = "%$term%";
                     $query->where(fn ($part) => $part
-                        ->where('games.name', 'like', '%' . $term . '%')
-                        ->orWhere('games.short_description', 'like', '%' . $term . '%'));
+                        ->whereRaw("$name LIKE ?", [...$bindings, $pattern])
+                        ->orWhereRaw("$description LIKE ?", [...$bindings, $pattern]));
                 }
             })
             ->with([
