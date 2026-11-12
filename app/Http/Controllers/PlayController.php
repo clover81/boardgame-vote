@@ -712,13 +712,11 @@ class PlayController extends Controller
             ->whereHas('collections', fn ($query) => $query
                 ->where('game_collections.created_by', $userId))
             ->with([
-                'expansions' =>
-                function ($query) {
+                'expansions' => function ($query) use ($play) {
                     $query
-                        ->where(
-                            'is_active',
-                            true
-                        )
+                        ->where(fn ($expansions) => $expansions
+                            ->where('is_active', true)
+                            ->orWhere('id', $play->expansion_id))
                         ->orderBy('name');
                 },
             ])

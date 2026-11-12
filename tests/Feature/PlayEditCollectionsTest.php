@@ -49,7 +49,7 @@ test('editing a play lists unique owned games including inactive games and only 
     $foreignGame->collections()->attach($foreignCollection);
     $zExpansion = $this->game->expansions()->create(['name' => 'Zeta', 'is_active' => true]);
     $aExpansion = $this->game->expansions()->create(['name' => 'Alfa', 'is_active' => true]);
-    $this->game->expansions()->create(['name' => 'Inactiva', 'is_active' => false]);
+    $inactiveExpansion = $this->game->expansions()->create(['name' => 'Inactiva', 'is_active' => false]);
 
     $this->actingAs($this->user)->get(route('plays.edit', $this->play))
         ->assertOk()
@@ -63,6 +63,19 @@ test('editing a play lists unique owned games including inactive games and only 
             ->where('games.2.id', $this->game->id)
             ->where('games.2.expansions', [
                 ['id' => $aExpansion->id, 'name' => 'Alfa'],
+                ['id' => $zExpansion->id, 'name' => 'Zeta'],
+            ])
+        );
+
+    $this->play->update(['expansion_id' => $inactiveExpansion->id]);
+
+    $this->get(route('plays.edit', $this->play))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('play.expansion_id', $inactiveExpansion->id)
+            ->where('games.2.expansions', [
+                ['id' => $aExpansion->id, 'name' => 'Alfa'],
+                ['id' => $inactiveExpansion->id, 'name' => 'Inactiva'],
                 ['id' => $zExpansion->id, 'name' => 'Zeta'],
             ])
         );
