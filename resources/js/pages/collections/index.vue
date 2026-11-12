@@ -1222,7 +1222,11 @@ watch(
                     </div>
 
                     <div
-                        class="mt-4 max-h-96 overflow-y-auto rounded-xl border border-zinc-200 dark:border-zinc-700"
+                        :key="bggTab"
+                        :tabindex="bggPreviewItems.length ? 0 : undefined"
+                        role="region"
+                        :aria-label="bggTab === 'games' ? 'Juegos de BGG' : 'Expansiones de BGG'"
+                        class="mt-4 max-h-96 overflow-y-auto rounded-xl border border-zinc-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-zinc-700"
                     >
                         <p v-if="!bggPreviewItems.length" class="px-4 py-5 text-sm text-zinc-600 dark:text-zinc-400">
                             {{ bggTab === 'games'
