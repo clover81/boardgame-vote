@@ -33,6 +33,9 @@ class PlayController extends Controller
                 'game',
                 'players',
                 'expansion',
+                'poll' => fn ($query) => $query
+                    ->where('created_by', $request->user()->id)
+                    ->select('id', 'name'),
             ])
             ->orderByDesc('played_at')
             ->orderByDesc('id')
@@ -65,6 +68,8 @@ class PlayController extends Controller
 
                         'notes' =>
                         $play->notes,
+
+                        'poll' => $play->poll?->only(['id', 'name']),
 
                         'game' => [
                             'id' =>

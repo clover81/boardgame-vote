@@ -49,6 +49,7 @@ interface Play {
     id: number;
     played_at: string;
     notes: string | null;
+    poll: { id: number; name: string } | null;
 
     game: Game;
 
@@ -736,6 +737,14 @@ const confirmDeletePlay = () => {
                             <p class="mt-1 text-sm font-semibold text-[#5200FF] dark:text-[#CCFF00]">
                                 <CalendarHeart class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-lime-700 dark:text-[#CCFF00]" :stroke-width="2.2" aria-hidden="true" /> {{ formatDate(play.played_at) }}
                             </p>
+
+                            <Link
+                                v-if="play.poll"
+                                :href="`/polls/${play.poll.id}`"
+                                class="mt-2 inline-block max-w-full break-words text-sm font-semibold text-[#5200FF] hover:underline dark:text-violet-300"
+                            >
+                                Votación: {{ play.poll.name }}
+                            </Link>
 
                             <p
                                 v-if="play.expansion"
