@@ -214,7 +214,12 @@ watch(
 */
 
 const submit = () => {
-    form.post('/plays');
+    form.transform((data) => ({
+        ...data,
+        expansion_ids: Object.fromEntries(
+            data.game_ids.map((gameId) => [gameId, data.expansion_ids[gameId] ?? null])
+        ),
+    })).post('/plays');
 };
 </script>
 
