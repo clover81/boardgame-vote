@@ -165,6 +165,16 @@ const players = computed(() => {
     );
 });
 
+watch([games, players], ([availableGames, availablePlayers]) => {
+    if (!availableGames.some((game) => game.id === selectedGameId.value)) {
+        selectedGameId.value = null;
+    }
+
+    if (!availablePlayers.some((player) => player.id === selectedPlayerId.value)) {
+        selectedPlayerId.value = null;
+    }
+});
+
 /*
 |--------------------------------------------------------------------------
 | Partidas filtradas
