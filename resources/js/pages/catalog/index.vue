@@ -3,7 +3,7 @@ import YoutubeLogoIcon from '@/components/icons/YoutubeLogoIcon.vue';
 import { ChevronDown, Link as ChainIcon, UsersRound, HourglassCog, Swords, BrainCog } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
@@ -246,7 +246,12 @@ const advancedFilterCount = computed(() =>
     activeFilterChips.value.filter(chip => chip.key !== 'search').length,
 );
 
-const removeFilter = (key: FilterKey) => {
+const resultsHeading = ref<HTMLHeadingElement | null>(null);
+
+const removeFilter = async (key: FilterKey, event: MouseEvent) => {
+    const chip = event.currentTarget as HTMLButtonElement;
+    const adjacentChip = chip.nextElementSibling ?? chip.previousElementSibling;
+
     switch (key) {
         case 'search':
             search.value = '';
@@ -266,6 +271,14 @@ const removeFilter = (key: FilterKey) => {
         case 'mode':
             selectedGameMode.value = '';
             break;
+    }
+
+    await nextTick();
+
+    if (adjacentChip instanceof HTMLButtonElement) {
+        adjacentChip.focus();
+    } else {
+        resultsHeading.value?.focus();
     }
 };
 
@@ -389,13 +402,16 @@ const sortedGames = computed(() => {
     });
 });
 
-const clearFilters = () => {
+const clearFilters = async () => {
     search.value = '';
     playerCount.value = '';
     collectionId.value = '';
     durationLimit.value = '';
     difficulty.value = '';
     selectedGameMode.value = '';
+
+    await nextTick();
+    resultsHeading.value?.focus();
 };
 
 const hasFilters = computed(() =>
@@ -662,7 +678,7 @@ const externalUrl = (url: string | null): string | undefined => {
                     type="button"
                     :aria-label="`Quitar filtro ${chip.label}`"
                     class="inline-flex max-w-full items-center gap-2 rounded-full bg-violet-100 px-3 py-2 text-xs font-bold text-violet-800 transition hover:bg-violet-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
-                    @click="removeFilter(chip.key)"
+                    @click="removeFilter(chip.key, $event)"
                 >
                     <span class="max-w-[180px] truncate sm:max-w-xs">
                         {{ chip.label }}
@@ -677,7 +693,7 @@ const externalUrl = (url: string | null): string | undefined => {
                     <p class="text-sm font-bold uppercase tracking-wider text-[#5200FF]">
                         Explorar biblioteca
                     </p>
-                    <h2 class="mt-1 text-2xl font-black">
+                    <h2 ref="resultsHeading" tabindex="-1" class="mt-1 text-2xl font-black">
                         {{ hasFilters ? 'Resultados filtrados' : 'Todos los juegos' }}
                     </h2>
                 </div>
