@@ -61,15 +61,8 @@ const gameModeLabels: Record<string, string> = {
 };
 
 const playerOptions = computed(() =>
-    Array.from(
-        {
-            length: Math.max(
-                8,
-                ...props.games.map(g => g.max_players),
-            ),
-        },
-        (_, index) => index + 1,
-    ),
+    [...new Set(props.games.flatMap(game => game.ideal_player_counts))]
+        .sort((a, b) => a - b),
 );
 
 const normalizeText = (text: string): string =>
@@ -274,7 +267,8 @@ onMounted(() => {
         const filters = JSON.parse(saved);
 
         search.value = filters.search ?? '';
-        playerCount.value = filters.playerCount ?? '';
+        const savedPlayerCount = Number(filters.playerCount);
+        playerCount.value = playerOptions.value.includes(savedPlayerCount) ? savedPlayerCount : '';
         collectionId.value = filters.collectionId ?? '';
         durationLimit.value = filters.durationLimit ?? '';
         difficulty.value = filters.difficulty ?? '';
