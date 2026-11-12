@@ -26,6 +26,14 @@ beforeEach(function () {
         'token' => 'POLLTEST',
         'status' => 'closed',
     ]);
+    $this->castFirstVote = function ($candidate, $participant = null): void {
+        $participant ??= $this->poll->participants()->create(['display_name' => 'Votante de prueba']);
+        $participant->votes()->create([
+            'poll_id' => $this->poll->id,
+            'poll_candidate_id' => $candidate->id,
+            'position' => 1,
+        ]);
+    };
     $this->createRegisteredPlay = fn () => Play::create([
         'created_by' => $this->user->id,
         'poll_id' => $this->poll->id,
@@ -37,8 +45,8 @@ beforeEach(function () {
 test('an unregistered closed poll opens the special form with its ID and existing defaults', function () {
     $player = Player::create(['name' => 'Ana', 'is_active' => true]);
     $expansion = $this->game->expansions()->create(['name' => 'Matcha', 'is_active' => true]);
-    $this->poll->participants()->create(['player_id' => $player->id, 'display_name' => 'Ana']);
-    $this->poll->candidates()->create(['game_id' => $this->game->id, 'expansion_id' => $expansion->id]);
+    $participant = $this->poll->participants()->create(['player_id' => $player->id, 'display_name' => 'Ana']);
+    ($this->castFirstVote)($this->poll->candidates()->create(['game_id' => $this->game->id, 'expansion_id' => $expansion->id]), $participant);
 
     $this->actingAs($this->user)->get(route('plays.create-from-poll', $this->poll))
         ->assertOk()
@@ -89,6 +97,7 @@ test('the form includes other active games from owned collections without duplic
     $expansion = $otherGame->expansions()->create(['name' => 'Expansión activa', 'is_active' => true]);
     $otherGame->expansions()->create(['name' => 'Expansión archivada', 'is_active' => false]);
     $candidate = $this->poll->candidates()->create(['game_id' => $this->game->id]);
+    ($this->castFirstVote)($candidate);
 
     $this->actingAs($this->user)->get(route('plays.create-from-poll', $this->poll))
         ->assertOk()
@@ -121,7 +130,7 @@ test('an unavailable historical winner cannot be selected or preselected', funct
         }
     }
     $expansion = $this->game->expansions()->create(['name' => 'Prevista', 'is_active' => true]);
-    $this->poll->candidates()->create(['game_id' => $this->game->id, 'expansion_id' => $expansion->id]);
+    ($this->castFirstVote)($this->poll->candidates()->create(['game_id' => $this->game->id, 'expansion_id' => $expansion->id]));
 
     $this->actingAs($this->user)->get(route('plays.create-from-poll', $this->poll))
         ->assertOk()
@@ -218,7 +227,7 @@ test('default players include linked poll participants and exclude deleted or un
 
 test('an inactive planned expansion is not preselected for the winning game', function () {
     $expansion = $this->game->expansions()->create(['name' => 'Inactiva', 'is_active' => false]);
-    $this->poll->candidates()->create(['game_id' => $this->game->id, 'expansion_id' => $expansion->id]);
+    ($this->castFirstVote)($this->poll->candidates()->create(['game_id' => $this->game->id, 'expansion_id' => $expansion->id]));
 
     $this->actingAs($this->user)->get(route('plays.create-from-poll', $this->poll))
         ->assertOk()
