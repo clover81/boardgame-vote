@@ -269,7 +269,7 @@ const externalUrl = (url: string | null): string | undefined => {
                             <p class="mt-1 inline-flex items-center gap-1 text-sm font-black sm:mt-2 sm:gap-2 sm:text-xl">
                                 <BrainCog class="size-4 shrink-0 text-pink-600 sm:size-5" :stroke-width="2" aria-hidden="true" />{{
                                     game.complexity !== null
-                                        ? Number(game.complexity).toFixed(1) + ' / 5'
+                                        ? Number(game.complexity).toFixed(2) + ' / 5'
                                         : 'Sin datos'
                                 }}
                             </p>

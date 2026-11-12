@@ -817,7 +817,7 @@ const externalUrl = (url: string | null): string | undefined => {
                             <span v-if="game.complexity !== null" class="inline-flex items-center gap-1.5 whitespace-nowrap" title="Dificultad sobre 5">
                                 <BrainCog class="size-4 shrink-0 text-pink-600" :stroke-width="2" aria-hidden="true" />
                                 <span class="sr-only">Dificultad:</span>
-                                {{ Number(game.complexity).toFixed(1) }}/5
+                                {{ Number(game.complexity).toFixed(2) }}/5
                             </span>
                         </div>
 
