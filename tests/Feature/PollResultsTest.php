@@ -70,7 +70,7 @@ test('public and owner results agree and only a clear winner is preselected', fu
     $publicResponse->assertOk()->assertInertia(fn (Assert $page) => $page
         ->component('vote/show')
         ->where('poll.has_clear_winner', $winningGame !== null)
-        ->has('results', $games->count())
+        ->has('results', count($expectedNames))
     );
     $results = $publicResponse->inertiaProps('results');
 
@@ -119,8 +119,7 @@ test('public and owner results agree and only a clear winner is preselected', fu
     ],
     'no votes does not select an alphabetical winner' => [
         [],
-        ['Heat', 'Sky Team', 'White Castle'],
-        [0, 0, 0], [1, 1, 1], [false, false, false], [true, true, true], null,
+        [], [], [], [], [], null,
     ],
 ]);
 

@@ -289,3 +289,37 @@ test('after confirming votes the participant link is stable and a reload keeps b
             ->where('poll.participants.0.votes.1.position', 2)
         );
 });
+
+test('a single-choice poll with several candidates stores one vote and counts it in the results', function () {
+    $this->poll->update(['single_choice' => true]);
+
+    $this->post($this->voteUrl, [
+        'first_candidate_id' => $this->candidates[2]->id,
+    ])->assertRedirect($this->publicUrl)->assertSessionHasNoErrors();
+
+    $this->assertDatabaseCount('votes', 1);
+    $this->assertDatabaseHas('votes', [
+        'poll_id' => $this->poll->id,
+        'poll_participant_id' => $this->participant->id,
+        'poll_candidate_id' => $this->candidates[2]->id,
+        'position' => 1,
+    ]);
+
+    $this->withoutVite();
+    $this->actingAs($this->poll->creator)->get(route('polls.show', $this->poll))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('poll.required_vote_count', 1)
+            ->where('poll.voted_participants_count', 1)
+        );
+
+    $this->poll->update(['status' => 'closed']);
+    $this->get($this->publicUrl)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('poll.single_choice', true)
+            ->where('poll.has_clear_winner', true)
+            ->where('results.0.candidate_id', $this->candidates[2]->id)
+            ->where('results.0.points', 1)
+        );
+});

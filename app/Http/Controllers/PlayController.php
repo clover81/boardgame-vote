@@ -303,14 +303,14 @@ class PlayController extends Controller
         ]);
 
         $ranking = $poll->candidates
-            ->map(function ($candidate) {
+            ->map(function ($candidate) use ($poll) {
                 $firstVotes = $candidate->votes->where('position', 1)->count();
                 $secondVotes = $candidate->votes->where('position', 2)->count();
 
                 return [
                     'candidate' => $candidate,
                     'first_votes' => $firstVotes,
-                    'points' => ($firstVotes * 2) + $secondVotes,
+                    'points' => $poll->votePoints($firstVotes, $secondVotes),
                 ];
             })
             ->sort(function (array $a, array $b) {
@@ -325,7 +325,7 @@ class PlayController extends Controller
         $winnerCandidate = null;
         $hasClearWinner = false;
 
-        if ($ranking->isNotEmpty()) {
+        if ($ranking->isNotEmpty() && $ranking->first()['points'] > 0) {
             $first = $ranking->get(0);
             $second = $ranking->get(1);
 

@@ -18,7 +18,20 @@ class Poll extends Model
         'name',
         'token',
         'status',
+        'single_choice',
     ];
+
+    protected $casts = ['single_choice' => 'boolean'];
+
+    public function requiredVoteCount(int $candidateCount): int
+    {
+        return min($this->single_choice ? 1 : 2, $candidateCount);
+    }
+
+    public function votePoints(int $firstVotes, int $secondVotes): int
+    {
+        return $this->single_choice ? $firstVotes : ($firstVotes * 2) + $secondVotes;
+    }
 
     public function creator(): BelongsTo
     {

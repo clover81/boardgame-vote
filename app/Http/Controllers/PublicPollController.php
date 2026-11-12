@@ -101,10 +101,10 @@ class PublicPollController extends Controller
         $results = collect();
         $hasClearWinner = false;
 
-        if ($poll->status === 'closed') {
+        if ($poll->status === 'closed' && $poll->candidates->contains(fn ($candidate) => $candidate->votes->isNotEmpty())) {
             $sortedResults =
                 $poll->candidates
-                    ->map(function ($candidate) {
+                    ->map(function ($candidate) use ($poll) {
                         $firstVotes =
                             $candidate->votes
                                 ->where('position', 1)
@@ -137,8 +137,7 @@ class PublicPollController extends Controller
                                 $secondVotes,
 
                             'points' =>
-                                ($firstVotes * 2)
-                                + $secondVotes,
+                                $poll->votePoints($firstVotes, $secondVotes),
                         ];
                     })
                     ->sort(function (
@@ -198,7 +197,7 @@ class PublicPollController extends Controller
                     );
 
                 $hasClearWinner =
-                    $topResults->count() === 1;
+                    $first['points'] > 0 && $topResults->count() === 1;
             }
 
             /*
@@ -282,6 +281,9 @@ class PublicPollController extends Controller
 
                     'status' =>
                     $poll->status,
+
+                    'single_choice' => (bool) $poll->single_choice,
+                    'required_vote_count' => $poll->requiredVoteCount($poll->candidates->count()),
 
                     'has_clear_winner' =>
                     $hasClearWinner,
@@ -608,7 +610,7 @@ class PublicPollController extends Controller
 
         abort_unless($candidateIds->contains($firstCandidateId), 422);
 
-        $needsSecondChoice = $candidateIds->count() >= 2;
+        $needsSecondChoice = $poll->requiredVoteCount($candidateIds->count()) === 2;
         $secondCandidateId = null;
 
         if ($needsSecondChoice) {

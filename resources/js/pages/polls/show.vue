@@ -153,6 +153,7 @@ interface Poll {
         | 'closed';
 
     has_clear_winner: boolean;
+    single_choice: boolean;
 
     participants_count: number;
     voted_participants_count: number;
@@ -1028,11 +1029,11 @@ const modeLabel = (
                     <p
                         class="mt-2 text-sm text-zinc-500 dark:text-zinc-400"
                     >
-                        Primera opción: 2 puntos.
-                        Segunda opción: 1 punto.
-                        En caso de empate se
-                        priorizan las primeras
-                        opciones.
+                        <template v-if="poll.single_choice">Un voto por persona.</template>
+                        <template v-else>
+                            Primera opción: 2 puntos. Segunda opción: 1 punto.
+                            En caso de empate se priorizan las primeras opciones.
+                        </template>
                     </p>
                 </div>
 
@@ -1165,6 +1166,7 @@ const modeLabel = (
                             </p>
 
                             <p
+                                v-if="!poll.single_choice"
                                 class="mt-2 text-sm text-zinc-500 max-sm:mt-1 max-sm:text-xs dark:text-zinc-400"
                             >
                                 🥇
@@ -1183,7 +1185,7 @@ const modeLabel = (
                             <!-- En móvil, los puntos acompañan al título en vez de ocupar otra fila. -->
                             <p class="mt-1 flex items-baseline gap-1.5 sm:hidden">
                                 <span class="text-xl font-black text-[#5200FF] dark:text-[#CCFF00]">{{ result.points }}</span>
-                                <span class="text-xs font-semibold text-zinc-500 dark:text-zinc-400">puntos</span>
+                                <span class="text-xs font-semibold text-zinc-500 dark:text-zinc-400">{{ poll.single_choice ? (result.points === 1 ? 'voto' : 'votos') : 'puntos' }}</span>
                             </p>
                         </div>
 
@@ -1203,11 +1205,15 @@ const modeLabel = (
                             <p
                                 class="text-xs font-semibold text-zinc-500"
                             >
-                                puntos
+                                {{ poll.single_choice ? (result.points === 1 ? 'voto' : 'votos') : 'puntos' }}
                             </p>
                         </div>
                     </article>
                 </div>
+
+                <p v-else class="mt-5 rounded-2xl border border-dashed border-zinc-300 p-6 text-center text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+                    No hay votos registrados.
+                </p>
 
                 <!-- PARTIDAS REALMENTE JUGADAS -->
 

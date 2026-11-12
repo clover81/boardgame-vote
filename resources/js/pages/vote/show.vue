@@ -127,6 +127,8 @@ interface Poll {
         | 'closed';
 
     has_clear_winner: boolean;
+    single_choice: boolean;
+    required_vote_count: number;
 
     participants: Participant[];
     candidates: Candidate[];
@@ -229,9 +231,7 @@ const form = useForm({
         null as number | null,
 });
 
-const needsSecondChoice = computed(() => {
-    return props.poll.candidates.length >= 2;
-});
+const needsSecondChoice = computed(() => props.poll.required_vote_count === 2);
 
 const canSubmit = computed(() => {
     if (
@@ -461,6 +461,7 @@ const formatDate = (
         )
     );
 };
+const hasRecordedVotes = computed(() => props.results.some(result => result.points > 0));
 </script>
 
 <template>
@@ -490,7 +491,7 @@ const formatDate = (
                         {{
                             needsSecondChoice
                                 ? 'Elige tu primera y segunda opción.'
-                                : 'Confirma tu voto para este juego.'
+                                : poll.candidates.length > 1 ? 'Elige un juego y confirma tu voto.' : 'Confirma tu voto para este juego.'
                         }}
                     </template>
 
@@ -524,17 +525,20 @@ const formatDate = (
                 </h2>
 
                 <p
+                    v-if="hasRecordedVotes"
                     class="mt-2 text-zinc-500"
                 >
                     {{
-                        needsSecondChoice
-                            ? 'Primera opción: 2 puntos · Segunda opción: 1 punto'
-                            : 'Cada voto vale 2 puntos'
+                        poll.single_choice
+                            ? 'Un voto por persona.'
+                            : needsSecondChoice
+                                ? 'Primera opción: 2 puntos · Segunda opción: 1 punto'
+                                : 'Cada voto vale 2 puntos'
                     }}
                 </p>
 
                 <div
-                    v-if="results.length && poll.status === 'closed'"
+                    v-if="hasRecordedVotes"
                     class="mt-5 mb-5"
                 >
                     <div
@@ -560,17 +564,15 @@ const formatDate = (
                         </p>
 
                         <p class="mt-1 text-sm">
-                            Hay varios juegos con los
-                            mismos puntos y el mismo número
-                            de primeras opciones.
+                            {{ poll.single_choice
+                                ? 'Hay varios juegos con el mismo número de votos.'
+                                : 'Hay varios juegos con los mismos puntos y el mismo número de primeras opciones.' }}
                         </p>
                     </div>
                 </div>
 
                 <div
-                    v-if="
-                        results.length
-                    "
+                    v-if="hasRecordedVotes"
                     class="mt-7 space-y-4"
                 >
                     <article
@@ -654,6 +656,7 @@ const formatDate = (
                             </p>
 
                             <p
+                                v-if="!poll.single_choice"
                                 class="mt-1 text-sm text-zinc-500"
                             >
                                 🥇
@@ -688,7 +691,7 @@ const formatDate = (
                             <p
                                 class="text-xs text-zinc-500"
                             >
-                                puntos
+                                {{ poll.single_choice ? (result.points === 1 ? 'voto' : 'votos') : 'puntos' }}
                             </p>
                         </div>
                     </article>
@@ -1012,7 +1015,7 @@ const formatDate = (
                 <div class="mx-auto mt-6 max-w-3xl rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
                     <div class="mb-3 hidden min-w-0 gap-2 text-xs sm:grid sm:text-sm" :class="needsSecondChoice ? 'grid-cols-2' : 'grid-cols-1'">
                         <p class="min-w-0 truncate rounded-xl bg-lime-100 px-3 py-2.5 font-medium" :title="selectedFirstGame?.name ?? ''">
-                            🥇 {{ selectedFirstGame?.name ?? 'Elige primera opción' }}
+                            🥇 {{ selectedFirstGame?.name ?? (needsSecondChoice ? 'Elige primera opción' : 'Elige un juego') }}
                         </p>
                         <p
                             v-if="needsSecondChoice"
@@ -1034,7 +1037,7 @@ const formatDate = (
                         @click="submit"
                     >
                         <span class="sm:hidden">
-                            {{ form.processing ? 'Guardando...' : canSubmit ? (needsSecondChoice ? 'Confirmar votos' : 'Confirmar voto') : form.first_candidate_id === null ? 'Elige tu 1.ª opción' : 'Elige tu 2.ª opción' }}
+                            {{ form.processing ? 'Guardando...' : canSubmit ? (needsSecondChoice ? 'Confirmar votos' : 'Confirmar voto') : form.first_candidate_id === null ? (needsSecondChoice ? 'Elige tu 1.ª opción' : 'Elige un juego') : 'Elige tu 2.ª opción' }}
                             <span v-if="!form.processing" class="ml-1 opacity-75">
                                 ({{ Number(form.first_candidate_id !== null) + Number(needsSecondChoice && form.second_candidate_id !== null) }}/{{ requiredVoteCount }})
                             </span>

@@ -96,6 +96,7 @@ const defaultCollectionIds =
 
 const form = useForm({
     name: 'Partida',
+    single_choice: false,
 
     collection_ids:
         defaultCollectionIds,
@@ -969,6 +970,19 @@ const submit = () => {
                     />
 
                     <InputError :message="form.errors.name" />
+
+                    <label for="poll-single-choice" class="mt-4 block font-semibold">
+                        Modo de votación
+                    </label>
+                    <select
+                        id="poll-single-choice"
+                        v-model="form.single_choice"
+                        class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900"
+                    >
+                        <option :value="false">Primera y segunda opción</option>
+                        <option :value="true">Un voto por persona</option>
+                    </select>
+                    <InputError :message="form.errors.single_choice" />
                 </section>
 
                 <!-- ================================================== -->

@@ -351,6 +351,8 @@ class PollController extends Controller
                     'max:255',
                 ],
 
+                'single_choice' => ['sometimes', 'boolean'],
+
                 'collection_ids' => [
                     'required',
                     'array',
@@ -652,6 +654,8 @@ class PollController extends Controller
 
                         'status' =>
                             'draft',
+
+                        'single_choice' => $validated['single_choice'] ?? false,
                     ]);
 
                 /*
@@ -801,7 +805,7 @@ class PollController extends Controller
     */
 
         $candidateCount = $poll->candidates->count();
-        $requiredVoteCount = min(2, $candidateCount);
+        $requiredVoteCount = $poll->requiredVoteCount($candidateCount);
 
         $hasCompletedVote = function ($participant) use ($requiredVoteCount): bool {
             if ($requiredVoteCount === 0) {
@@ -835,9 +839,11 @@ class PollController extends Controller
         $results = collect();
         $hasClearWinner = false;
 
-        if ($poll->status === 'closed') {
+        $hasRecordedVotes = $poll->candidates->contains(fn ($candidate) => $candidate->votes->isNotEmpty());
+
+        if ($poll->status === 'closed' && $hasRecordedVotes) {
             $results = $poll->candidates
-                ->map(function ($candidate) {
+                ->map(function ($candidate) use ($poll) {
                     $firstVotes = $candidate->votes->where('position', 1)->count();
                     $secondVotes = $candidate->votes->where('position', 2)->count();
 
@@ -850,7 +856,7 @@ class PollController extends Controller
                         ],
                         'first_votes' => $firstVotes,
                         'second_votes' => $secondVotes,
-                        'points' => ($firstVotes * 2) + $secondVotes,
+                        'points' => $poll->votePoints($firstVotes, $secondVotes),
                     ];
                 })
                 // El nombre estabiliza el orden visual; no decide el ganador.
@@ -972,6 +978,8 @@ class PollController extends Controller
 
                     'candidate_count' =>
                     $candidateCount,
+
+                    'single_choice' => (bool) $poll->single_choice,
 
                     'required_vote_count' =>
                     $requiredVoteCount,
@@ -1774,7 +1782,7 @@ class PollController extends Controller
         ]);
 
         $candidateCount = $poll->candidates->count();
-        $requiredVoteCount = min(2, $candidateCount);
+        $requiredVoteCount = $poll->requiredVoteCount($candidateCount);
 
         if ($requiredVoteCount === 0) {
             return back()->withErrors([
