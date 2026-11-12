@@ -58,7 +58,18 @@ const gameModeLabels: Record<string, string> = {
     competitive: 'Competitivo',
     cooperative: 'Cooperativo',
     semi_cooperative: 'Semicooperativo',
+    solo: 'Solitario',
+    unclassified: 'Sin clasificar',
 };
+
+const catalogGameModes = (game: Game): string[] =>
+    game.game_modes.length ? game.game_modes : [game.max_players === 1 ? 'solo' : 'unclassified'];
+
+const gameModeOptions = computed(() => {
+    const availableModes = new Set(props.games.flatMap(catalogGameModes));
+
+    return Object.entries(gameModeLabels).filter(([mode]) => availableModes.has(mode));
+});
 
 const playerOptions = computed(() =>
     [...new Set(props.games.flatMap(game => game.ideal_player_counts))]
@@ -110,7 +121,7 @@ const filteredGames = computed(() => {
 
         const matchesGameMode =
             !selectedGameMode.value ||
-            game.game_modes.includes(selectedGameMode.value);
+            catalogGameModes(game).includes(selectedGameMode.value);
 
         return matchesPlayers &&
             matchesCollection &&
@@ -272,7 +283,9 @@ onMounted(() => {
         collectionId.value = filters.collectionId ?? '';
         durationLimit.value = filters.durationLimit ?? '';
         difficulty.value = filters.difficulty ?? '';
-        selectedGameMode.value = filters.selectedGameMode ?? '';
+        selectedGameMode.value = gameModeOptions.value.some(([mode]) => mode === filters.selectedGameMode)
+            ? filters.selectedGameMode
+            : '';
         sortBy.value = filters.sortBy ?? 'name';
         showAdvancedFilters.value = filters.showAdvancedFilters === true;
     } catch {
@@ -620,9 +633,9 @@ const externalUrl = (url: string | null): string | undefined => {
                             class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
                         >
                             <option value="">Todos los tipos</option>
-                            <option value="competitive">Competitivo</option>
-                            <option value="cooperative">Cooperativo</option>
-                            <option value="semi_cooperative">Semicooperativo</option>
+                            <option v-for="[mode, label] in gameModeOptions" :key="mode" :value="mode">
+                                {{ label }}
+                            </option>
                         </select>
                     </div>
                 </div>
@@ -750,7 +763,7 @@ const externalUrl = (url: string | null): string | undefined => {
 
                         <div class="mt-3 flex flex-wrap items-center gap-2">
                             <span
-                                v-for="mode in game.game_modes"
+                                v-for="mode in catalogGameModes(game)"
                                 :key="mode"
                                 class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold sm:px-3 sm:py-1.5"
                                 :class="{
@@ -760,18 +773,14 @@ const externalUrl = (url: string | null): string | undefined => {
                                         mode === 'competitive',
                                     'bg-purple-100 text-purple-800':
                                         mode === 'semi_cooperative',
+                                    'bg-zinc-100 text-zinc-600':
+                                        mode === 'solo' || mode === 'unclassified',
                                 }"
                             >
                                 <Swords v-if="mode === 'competitive'" class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-orange-700" :stroke-width="2.2" aria-hidden="true" />
                                 {{ gameModeLabels[mode] ?? mode }}
                             </span>
 
-                            <span
-                                v-if="game.game_modes.length === 0"
-                                class="inline-flex items-center rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-bold text-zinc-600"
-                            >
-                                {{ game.max_players === 1 ? 'Solitario' : 'Sin clasificar' }}
-                            </span>
                             <template v-if="game.collections.length">
                                 <span
                                     v-for="(collection, index) in game.collections"
