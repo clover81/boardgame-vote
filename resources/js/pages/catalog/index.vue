@@ -475,10 +475,10 @@ const externalUrl = (url: string | null): string | undefined => {
 
                     <div class="flex flex-wrap gap-2 text-xs font-semibold sm:text-sm lg:justify-end">
                         <span class="rounded-full border border-white/10 bg-white/10 px-3 py-1.5">
-                            {{ games.length }} juegos
+                            {{ games.length }} {{ games.length === 1 ? 'juego' : 'juegos' }}
                         </span>
                         <span class="rounded-full border border-white/10 bg-white/10 px-3 py-1.5">
-                            {{ collections.length }} colecciones
+                            {{ collections.length }} {{ collections.length === 1 ? 'colección' : 'colecciones' }}
                         </span>
                     </div>
                 </div>
@@ -682,7 +682,7 @@ const externalUrl = (url: string | null): string | undefined => {
 
                 <div class="flex flex-wrap items-center gap-3">
                     <p class="text-sm text-zinc-500" aria-live="polite" aria-atomic="true">
-                        {{ filteredGames.length }} de {{ games.length }} juegos
+                        {{ filteredGames.length }} de {{ games.length }} {{ games.length === 1 ? 'juego' : 'juegos' }}
                     </p>
 
                     <label for="catalog-sort" class="sr-only">

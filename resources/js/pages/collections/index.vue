@@ -616,34 +616,16 @@ watch(
 
     <AppLayout>
         <div
-            class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6"
+            class="mx-auto w-full max-w-7xl px-4 pt-6 pb-24 sm:px-6"
         >
             <!-- ================================================== -->
             <!-- CABECERA                                           -->
             <!-- ================================================== -->
 
-            <div
-                class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
-            >
-                <div>
-                    <p
-                        class="font-semibold text-[#5200FF]"
-                    >
-                        COLECCIONES
-                    </p>
-
-                    <h1
-                        class="mt-1 text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl"
-                    >
-                        Colecciones
-                    </h1>
-
-                    <p
-                        class="mt-2 text-zinc-500 dark:text-zinc-400"
-                    >
-                        Organiza tus juegos y descubre colecciones públicas de otros usuarios.
-                    </p>
-                </div>
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <h1 class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
+                    Mis colecciones
+                </h1>
 
                 <button
                     type="button"
@@ -735,21 +717,9 @@ watch(
             <!-- LISTADO                                            -->
             <!-- ================================================== -->
 
-            <div class="mb-4 mt-8">
-                <p class="text-sm font-bold uppercase tracking-wide text-[#5200FF] dark:text-[#CCFF00]">
-                    TU ESPACIO
-                </p>
-                <h2 class="mt-1 text-2xl font-black text-zinc-900 dark:text-zinc-100">
-                    Mis colecciones
-                </h2>
-                <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-                    Solo tú puedes administrar estas colecciones. Publica las que quieras compartir.
-                </p>
-            </div>
-
             <div
                 v-if="collections.length"
-                class="space-y-4"
+                class="mt-6 space-y-4"
             >
                 <article
                     v-for="collection in collections"
@@ -788,7 +758,7 @@ watch(
                                    :class="collection.is_public ? 'text-emerald-700 dark:text-emerald-300' : 'text-zinc-500 dark:text-zinc-400'">
                                     <Globe2 v-if="collection.is_public" class="size-4 shrink-0" aria-hidden="true" />
                                     <LockKeyhole v-else class="size-4 shrink-0" aria-hidden="true" />
-                                    <span>{{ collection.is_public ? 'Pública · visible en tu catálogo y para otros usuarios' : 'Privada · solo tú puedes verla' }}</span>
+                                    <span>{{ collection.is_public ? 'Pública' : 'Privada' }}</span>
                                 </p>
                             </div>
                         </div>
@@ -860,17 +830,9 @@ watch(
             </div>
             <!-- Colecciones de otros usuarios: SOLO LECTURA. -->
             <section v-if="friendCollections.length" class="mt-10">
-                <div class="mb-5">
-                    <p class="font-bold uppercase tracking-wide text-[#5200FF] dark:text-[#CCFF00]">
-                        OTRAS COLECCIONES
-                    </p>
-                    <h2 class="mt-1 text-2xl font-black text-zinc-900 dark:text-zinc-100">
-                        Colecciones públicas de otros usuarios
-                    </h2>
-                    <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-                        Consulta y filtra los juegos que otros usuarios han publicado. Las colecciones privadas solo las ve su propietario.
-                    </p>
-                </div>
+                <h2 class="mb-4 text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+                    De otros usuarios
+                </h2>
 
                 <div class="space-y-4">
                     <article
