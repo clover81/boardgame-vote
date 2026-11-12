@@ -250,6 +250,11 @@ Route::middleware(Authenticate::class)->group(function () {
         [PollController::class, 'show']
     )->name('polls.show');
 
+    Route::patch(
+        '/polls/{poll}/voting-mode',
+        [PollController::class, 'updateVotingMode']
+    )->name('polls.voting-mode.update');
+
     Route::post(
         '/polls/{poll}/candidates',
         [PollController::class, 'addCandidate']

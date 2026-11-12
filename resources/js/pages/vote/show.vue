@@ -228,6 +228,10 @@ const form = useForm({
 
 const needsSecondChoice = computed(() => props.poll.required_vote_count === 2);
 
+watch(needsSecondChoice, (required) => {
+    if (!required) form.second_candidate_id = null;
+});
+
 const canSubmit = computed(() => {
     if (
         form.participant_id === null ||
@@ -382,7 +386,7 @@ const submit = () => {
         return;
     }
 
-    form.post(
+    form.transform((data) => ({ ...data, single_choice: props.poll.single_choice })).post(
         `/vote/${props.poll.token}/${props.voteToken}`,
         {
             preserveScroll: true,

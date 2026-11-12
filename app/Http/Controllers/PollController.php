@@ -951,6 +951,7 @@ class PollController extends Controller
             'polls/show',
             [
                 'canAddCandidates' => $canAddCandidates,
+                'canChangeVotingMode' => $canAddCandidates,
                 'availableGames' => $availableGames,
                 'poll' => [
                     'id' =>
@@ -1196,6 +1197,27 @@ class PollController extends Controller
                 $results,
             ]
         );
+    }
+
+    public function updateVotingMode(Request $request, Poll $poll): RedirectResponse
+    {
+        abort_unless((int) $poll->created_by === (int) $request->user()->id, 403);
+        $validated = $request->validate(['single_choice' => ['required', 'boolean']]);
+
+        return DB::transaction(function () use ($poll, $validated): RedirectResponse {
+            $current = Poll::query()->lockForUpdate()->findOrFail($poll->id);
+
+            if (! in_array($current->status, ['draft', 'open'], true) || $current->votes()->exists()) {
+                return back()->withErrors([
+                    'poll' => 'Solo puedes cambiar el modo de una votación sin votos que esté en borrador o abierta.',
+                ]);
+            }
+
+            $current->update(['single_choice' => $validated['single_choice']]);
+
+            return redirect()->route('polls.show', $current)
+                ->with('success', 'Modo de votación actualizado.');
+        });
     }
 
     /*

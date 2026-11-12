@@ -173,9 +173,25 @@ const props = defineProps<{
     results: Result[];
     availableGames: AvailableGame[];
     canAddCandidates: boolean;
+    canChangeVotingMode: boolean;
 }>();
 
 const page = usePage();
+const changingVotingMode = ref(false);
+
+const changeVotingMode = () => {
+    if (changingVotingMode.value) return;
+
+    router.patch(
+        `/polls/${props.poll.id}/voting-mode`,
+        { single_choice: !props.poll.single_choice },
+        {
+            preserveScroll: true,
+            onStart: () => { changingVotingMode.value = true; },
+            onFinish: () => { changingVotingMode.value = false; },
+        },
+    );
+};
 
 const addCandidateOpen = ref(false);
 const candidateQuery = ref('');
@@ -443,6 +459,15 @@ const modeLabel = (
                                 ? 'Un voto por persona'
                                 : 'Primera y segunda opción' }}
                         </span>
+                        <button
+                            v-if="canChangeVotingMode"
+                            type="button"
+                            :disabled="changingVotingMode"
+                            class="min-h-9 rounded-full border border-violet-300 px-3 py-1 text-sm font-semibold text-[#5200FF] hover:bg-violet-50 disabled:opacity-50 dark:border-violet-700 dark:text-violet-200 dark:hover:bg-violet-950"
+                            @click="changeVotingMode"
+                        >
+                            {{ poll.single_choice ? 'Cambiar a primera y segunda opción' : 'Cambiar a voto único' }}
+                        </button>
                     </div>
 
                     <div

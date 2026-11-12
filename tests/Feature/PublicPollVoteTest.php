@@ -323,3 +323,54 @@ test('a single-choice poll with several candidates stores one vote and counts it
             ->where('results.0.points', 1)
         );
 });
+
+test('the owner can change the voting mode before the first vote without replacing the links', function ($status) {
+    $this->poll->update(['status' => $status]);
+    $this->participant->votes()->delete();
+    $modeUrl = route('polls.voting-mode.update', $this->poll);
+
+    $this->actingAs($this->poll->creator)
+        ->patch($modeUrl, ['single_choice' => true])
+        ->assertRedirect(route('polls.show', $this->poll))
+        ->assertSessionHasNoErrors();
+
+    expect($this->poll->refresh()->single_choice)->toBeTrue()
+        ->and($this->poll->status)->toBe($status)
+        ->and($this->poll->token)->toBe('PUBLICVOTE')
+        ->and($this->participant->fresh()->vote_token)->toBe($this->participant->vote_token);
+    expect($this->poll->candidates()->count())->toBe(3);
+
+    $this->poll->update(['status' => 'open']);
+    $this->from($this->publicUrl)->post($this->voteUrl, $this->payload + ['single_choice' => false])
+        ->assertRedirect($this->publicUrl)
+        ->assertSessionHasErrors('vote');
+    $this->assertDatabaseCount('votes', 0);
+
+    $this->post($this->voteUrl, [
+        'first_candidate_id' => $this->candidates[0]->id,
+        'single_choice' => true,
+    ])->assertRedirect($this->publicUrl)->assertSessionHasNoErrors();
+    $this->assertDatabaseCount('votes', 1);
+
+    $this->from(route('polls.show', $this->poll))
+        ->patch($modeUrl, ['single_choice' => false])
+        ->assertSessionHasErrors('poll');
+    expect($this->poll->refresh()->single_choice)->toBeTrue();
+})->with(['draft', 'open']);
+
+test('a closed poll and a poll owned by someone else cannot have their voting mode changed', function () {
+    $this->participant->votes()->delete();
+    $this->poll->update(['status' => 'closed']);
+    $modeUrl = route('polls.voting-mode.update', $this->poll);
+
+    $this->actingAs(User::factory()->create())
+        ->patch($modeUrl, ['single_choice' => true])
+        ->assertForbidden();
+
+    $this->actingAs($this->poll->creator)
+        ->from(route('polls.show', $this->poll))
+        ->patch($modeUrl, ['single_choice' => true])
+        ->assertSessionHasErrors('poll');
+
+    expect($this->poll->refresh()->single_choice)->toBeFalse();
+});

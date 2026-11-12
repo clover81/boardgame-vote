@@ -581,62 +581,64 @@ class PublicPollController extends Controller
         string $token,
         string $voteToken
     ): RedirectResponse {
-        $poll = Poll::where('token', $token)->firstOrFail();
+        return DB::transaction(function () use ($request, $token, $voteToken): RedirectResponse {
+            $poll = Poll::where('token', $token)->lockForUpdate()->firstOrFail();
 
-        $participant = $poll->participants()
-            ->where('vote_token', $voteToken)
-            ->firstOrFail();
+            $participant = $poll->participants()
+                ->where('vote_token', $voteToken)
+                ->firstOrFail();
 
-        if ($poll->status !== 'open') {
-            return back()->withErrors([
-                'vote' => 'La votación ya no está abierta.',
-            ]);
-        }
-
-        $candidateIds = $poll->candidates()->pluck('id');
-
-        if ($candidateIds->isEmpty()) {
-            return back()->withErrors([
-                'vote' => 'La votación no tiene juegos candidatos.',
-            ]);
-        }
-
-        $validated = $request->validate([
-            'first_candidate_id' => ['required', 'integer'],
-            'second_candidate_id' => ['nullable', 'integer'],
-        ]);
-
-        $firstCandidateId = (int) $validated['first_candidate_id'];
-
-        abort_unless($candidateIds->contains($firstCandidateId), 422);
-
-        $needsSecondChoice = $poll->requiredVoteCount($candidateIds->count()) === 2;
-        $secondCandidateId = null;
-
-        if ($needsSecondChoice) {
-            if (empty($validated['second_candidate_id'])) {
+            if ($poll->status !== 'open') {
                 return back()->withErrors([
-                    'second_candidate_id' => 'Debes elegir una segunda opción.',
+                    'vote' => 'La votación ya no está abierta.',
                 ]);
             }
 
-            $secondCandidateId = (int) $validated['second_candidate_id'];
+            $candidateIds = $poll->candidates()->pluck('id');
 
-            abort_unless($candidateIds->contains($secondCandidateId), 422);
-
-            if ($firstCandidateId === $secondCandidateId) {
+            if ($candidateIds->isEmpty()) {
                 return back()->withErrors([
-                    'second_candidate_id' => 'La primera y segunda opción deben ser distintas.',
+                    'vote' => 'La votación no tiene juegos candidatos.',
                 ]);
             }
-        }
 
-        DB::transaction(function () use (
-            $poll,
-            $participant,
-            $firstCandidateId,
-            $secondCandidateId
-        ) {
+            $validated = $request->validate([
+                'first_candidate_id' => ['required', 'integer'],
+                'second_candidate_id' => ['nullable', 'integer'],
+                'single_choice' => ['sometimes', 'boolean'],
+            ]);
+
+            if (isset($validated['single_choice']) && (bool) $validated['single_choice'] !== $poll->single_choice) {
+                return back()->withErrors([
+                    'vote' => 'Ha cambiado el modo de votación. Revisa las opciones y confirma de nuevo.',
+                ]);
+            }
+
+            $firstCandidateId = (int) $validated['first_candidate_id'];
+
+            abort_unless($candidateIds->contains($firstCandidateId), 422);
+
+            $needsSecondChoice = $poll->requiredVoteCount($candidateIds->count()) === 2;
+            $secondCandidateId = null;
+
+            if ($needsSecondChoice) {
+                if (empty($validated['second_candidate_id'])) {
+                    return back()->withErrors([
+                        'second_candidate_id' => 'Debes elegir una segunda opción.',
+                    ]);
+                }
+
+                $secondCandidateId = (int) $validated['second_candidate_id'];
+
+                abort_unless($candidateIds->contains($secondCandidateId), 422);
+
+                if ($firstCandidateId === $secondCandidateId) {
+                    return back()->withErrors([
+                        'second_candidate_id' => 'La primera y segunda opción deben ser distintas.',
+                    ]);
+                }
+            }
+
             // Si ya había votado, sustituimos sus votos.
             $participant->votes()->delete();
 
@@ -653,11 +655,11 @@ class PublicPollController extends Controller
                     'position' => 2,
                 ]);
             }
-        });
 
-        return redirect()->route('vote.participant.show', [
-            'token' => $token,
-            'voteToken' => $voteToken,
-        ])->with('success', 'Voto guardado correctamente.');
+            return redirect()->route('vote.participant.show', [
+                'token' => $token,
+                'voteToken' => $voteToken,
+            ])->with('success', 'Voto guardado correctamente.');
+        });
     }
 }
