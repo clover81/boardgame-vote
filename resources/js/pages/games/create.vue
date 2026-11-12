@@ -151,6 +151,9 @@ const brokenBggImages = ref<number[]>([]);
 const bggSearching = ref(false);
 const bggHasSearched = ref(false);
 const bggLoading = ref(false);
+const bggBusy = computed(
+    () => bggSearching.value || bggLoading.value || importingBgg.value,
+);
 const bggError = ref('');
 const selectedBggId = ref<number | null>(null);
 const selectedBggGame = ref<BggGameDetail | null>(null);
@@ -180,6 +183,8 @@ const markBggImageBroken = (id: number) => {
 };
 
 const searchBgg = async () => {
+    if (bggBusy.value) return;
+
     selectedBggId.value = null;
     selectedBggGame.value = null;
     existingBggGame.value = null;
@@ -228,6 +233,8 @@ const searchBgg = async () => {
 };
 
 const loadBggGame = async (result: BggSearchResult) => {
+    if (bggBusy.value) return;
+
     selectedBggId.value = result.bgg_id;
     selectedBggGame.value = null;
     bggLoading.value = true;
@@ -273,13 +280,8 @@ const loadBggGame = async (result: BggSearchResult) => {
         form.name = game.name;
         form.image_url = game.image_url ?? '';
 
-        if (game.min_players !== null) {
-            form.min_players = game.min_players;
-        }
-
-        if (game.max_players !== null) {
-            form.max_players = game.max_players;
-        }
+        form.min_players = game.min_players;
+        form.max_players = game.max_players;
 
         form.min_playtime = game.min_playtime;
         form.max_playtime = game.max_playtime;
@@ -313,6 +315,8 @@ const loadBggGame = async (result: BggSearchResult) => {
 };
 
 const importFromBgg = async () => {
+    if (bggBusy.value) return;
+
     if (!bggUrl.value.trim()) {
         bggImportError.value = 'Introduce una URL de BoardGameGeek.';
         return;
@@ -498,7 +502,7 @@ const submit = () => {
 
                     <button
                         type="button"
-                        :disabled="bggSearching || bggQuery.trim().length < 2"
+                        :disabled="bggBusy || bggQuery.trim().length < 2"
                         class="rounded-xl bg-[#5200FF] px-5 py-3 font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                         @click="searchBgg"
                     >
@@ -561,7 +565,7 @@ const submit = () => {
                             <div class="mt-4">
                                 <button
                                     type="button"
-                                    :disabled="bggLoading"
+                                    :disabled="bggBusy"
                                     class="rounded-lg bg-[#CCFF00] px-3 py-2 text-sm font-black text-black transition hover:opacity-80 disabled:cursor-wait disabled:opacity-40 sm:px-4"
                                     @click="loadBggGame(result)"
                                 >
@@ -788,9 +792,7 @@ const submit = () => {
 
                         <button
                             type="button"
-                            :disabled="
-                                importingBgg
-                            "
+                            :disabled="bggBusy"
                             class="rounded-xl border border-[#5200FF] px-5 py-3 font-bold text-[#5200FF] transition hover:bg-violet-50 disabled:opacity-50 dark:text-violet-300 dark:hover:bg-violet-950/30"
                             @click="
                                 importFromBgg
@@ -865,9 +867,9 @@ const submit = () => {
                             <p
                                 class="mt-2 text-sm text-zinc-600 dark:text-zinc-300"
                             >
-                                No crearemos otra ficha.
-                                Puedes añadir este juego a
-                                otras colecciones.
+                                {{ existingImportedBggGame.collection_ids.length
+                                    ? 'Puedes añadir el juego a otras colecciones.'
+                                    : 'Añádelo a una de tus colecciones para abrir su ficha.' }}
                             </p>
 
                             <!-- YA ESTÁ -->
@@ -996,6 +998,7 @@ const submit = () => {
                     </div>
 
                     <Link
+                        v-if="existingImportedBggGame.collection_ids.length > 0"
                         :href="
                             `/games/${existingImportedBggGame.id}`
                         "
