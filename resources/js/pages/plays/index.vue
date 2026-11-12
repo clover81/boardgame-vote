@@ -170,6 +170,9 @@ const players = computed(() => {
 |--------------------------------------------------------------------------
 */
 
+const normalizeHistorySearch = (value: string): string =>
+    value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
 const filteredPlays = computed(() => {
     let result = [...props.plays];
 
@@ -187,53 +190,17 @@ const filteredPlays = computed(() => {
     |
     */
 
-    const text =
-        search.value
-            .trim()
-            .toLowerCase();
+    const text = normalizeHistorySearch(search.value);
 
     if (text) {
-        result = result.filter(
-            (play) => {
-                const gameName =
-                    play.game.name
-                        .toLowerCase();
-
-                const expansionName =
-                    (
-                        play.expansion
-                            ?.name ?? ''
-                    ).toLowerCase();
-
-                const notes =
-                    (
-                        play.notes ?? ''
-                    ).toLowerCase();
-
-                const playerNames =
-                    play.players
-                        .map(
-                            (player) =>
-                                player.name
-                                    .toLowerCase()
-                        )
-                        .join(' ');
-
-                return (
-                    gameName.includes(
-                        text
-                    ) ||
-                    expansionName.includes(
-                        text
-                    ) ||
-                    notes.includes(
-                        text
-                    ) ||
-                    playerNames.includes(
-                        text
-                    )
-                );
-            }
+        result = result.filter((play) =>
+            [
+                play.game.name,
+                play.expansion?.name ?? '',
+                play.notes ?? '',
+                play.poll?.name ?? '',
+                play.players.map((player) => player.name).join(' '),
+            ].some((value) => normalizeHistorySearch(value).includes(text))
         );
     }
 
@@ -542,7 +509,7 @@ const confirmDeletePlay = () => {
                         v-model="search"
                         type="search"
                         class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
-                        placeholder="Juego, expansión, jugador o nota..."
+                        placeholder="Juego, expansión, jugador, votación o nota..."
                     />
                 </div>
 
