@@ -628,6 +628,10 @@ watch(
             previousStatus === 'pending' ||
             previousStatus === 'running';
 
+        if (wasSyncing && currentStatus === 'failed') {
+            bggSyncMessage.value = '';
+        }
+
         // Cuando la sincronización termina correctamente,
         // actualizamos automáticamente la vista previa.
         if (wasSyncing && currentStatus === 'completed') {
