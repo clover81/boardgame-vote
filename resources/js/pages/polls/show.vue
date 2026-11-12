@@ -193,6 +193,26 @@ const changeVotingMode = () => {
     );
 };
 
+const copiedParticipantId = ref<number | null>(null);
+const copyFailedParticipantId = ref<number | null>(null);
+
+const participantVotePath = (voteToken: string) => `/vote/${props.poll.token}/${voteToken}`;
+
+const copyParticipantLink = async (participant: Participant) => {
+    if (!participant.vote_token) return;
+
+    copiedParticipantId.value = null;
+    copyFailedParticipantId.value = null;
+
+    try {
+        const url = new URL(participantVotePath(participant.vote_token), window.location.origin);
+        await navigator.clipboard.writeText(url.href);
+        copiedParticipantId.value = participant.id;
+    } catch {
+        copyFailedParticipantId.value = participant.id;
+    }
+};
+
 const addCandidateOpen = ref(false);
 const candidateQuery = ref('');
 const addingCandidateId = ref<number | null>(null);
@@ -643,15 +663,31 @@ const modeLabel = (
                                         <span :class="['inline-flex items-center gap-1.5', playerNameColor(participant.display_name)]"><MeepleIcon class="h-3.5 w-3.5 shrink-0" />{{ participant.display_name }}</span>
                                     </p>
 
-                                    <a
-                                        v-if="participant.vote_token"
-                                        :href="`/vote/${poll.token}/${participant.vote_token}`"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        class="mt-1 block break-all text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
-                                    >
-                                        /vote/{{ poll.token }}/{{ participant.vote_token }} <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
-                                    </a>
+                                    <div v-if="participant.vote_token" class="mt-2 flex flex-wrap items-center gap-2">
+                                        <button
+                                            type="button"
+                                            class="min-h-11 rounded-xl bg-violet-100 px-3 text-sm font-semibold text-[#5200FF] hover:bg-violet-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:bg-violet-950 dark:text-violet-200"
+                                            :aria-label="copiedParticipantId === participant.id ? `Copiado: enlace de ${participant.display_name}` : `Copiar enlace de ${participant.display_name}`"
+                                            @click="copyParticipantLink(participant)"
+                                        >
+                                            {{ copiedParticipantId === participant.id ? 'Copiado' : 'Copiar enlace' }}
+                                        </button>
+                                        <a
+                                            :href="participantVotePath(participant.vote_token)"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
+                                            :aria-label="`Abrir enlace de ${participant.display_name} (nueva pestaña)`"
+                                        >
+                                            Abrir enlace
+                                        </a>
+                                    </div>
+                                    <p class="text-sm text-zinc-600 dark:text-zinc-400" role="status">
+                                        <span v-if="copiedParticipantId === participant.id" class="sr-only">Enlace copiado.</span>
+                                        <span v-else-if="copyFailedParticipantId === participant.id">
+                                            Abre el enlace y copia la dirección del navegador.
+                                        </span>
+                                    </p>
                                 </div>
                             </div>
                         </div>
