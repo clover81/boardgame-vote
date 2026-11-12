@@ -944,7 +944,7 @@ const submit = () => {
                                 />
 
                                 <div
-                                    class="rounded-xl border border-zinc-200 bg-white p-4 font-semibold transition peer-checked:border-[#5200FF] peer-checked:bg-violet-50 dark:border-zinc-800 dark:bg-zinc-900 dark:peer-checked:bg-violet-950/30"
+                                    class="rounded-xl border border-zinc-200 bg-white p-4 font-semibold transition peer-checked:border-[#5200FF] peer-checked:bg-violet-50 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#5200FF] dark:border-zinc-800 dark:bg-zinc-900 dark:peer-checked:bg-violet-950/30"
                                 >
                                     {{
                                         collection.name
@@ -1146,272 +1146,273 @@ const submit = () => {
                 @submit.prevent="submit"
             >
 
-                <!-- Nombre -->
+                <template v-if="!existingBggGame">
+                    <!-- Nombre -->
 
-                <div>
-                    <label class="mb-2 block font-semibold">
-                        Nombre
-                    </label>
-
-                    <input
-                        v-model="form.name"
-                        type="text"
-                        class="w-full rounded-xl border px-4 py-3"
-                        placeholder="The White Castle"
-                    />
-
-                    <InputError :message="form.errors.name" />
-                </div>
-
-
-                <!-- Jugadores admitidos -->
-
-                <div>
-                    <h2 class="mb-3 font-semibold">
-                        Jugadores admitidos
-                    </h2>
-
-                    <div class="grid grid-cols-2 gap-4">
-
-                        <div>
-                            <label class="mb-1 block text-sm">
-                                Mínimo
-                            </label>
-
-                            <input
-                                v-model.number="form.min_players"
-                                type="number"
-                                min="1"
-                                class="w-full rounded-xl border px-4 py-3"
-                            />
-                        </div>
-
-                        <div>
-                            <label class="mb-1 block text-sm">
-                                Máximo
-                            </label>
-
-                            <input
-                                v-model.number="form.max_players"
-                                type="number"
-                                min="1"
-                                class="w-full rounded-xl border px-4 py-3"
-                            />
-                        </div>
-
-                    </div>
-                </div>
-
-
-                <!-- Jugadores ideales -->
-
-                <div>
-                    <h2 class="font-semibold">
-                        Número ideal de jugadores
-                    </h2>
-
-                    <p class="mt-1 text-sm text-zinc-500">
-                        Puedes seleccionar varios.
-                    </p>
-
-                    <div class="mt-3 flex flex-wrap gap-2">
-
-                        <label
-                            v-for="number in playerNumbers"
-                            :key="number"
-                            class="cursor-pointer"
-                        >
-                            <input
-                                v-model="form.ideal_player_counts"
-                                type="checkbox"
-                                :value="number"
-                                class="peer sr-only"
-                            />
-
-                            <span
-                                class="
-                                    flex h-11 w-11
-                                    items-center justify-center
-                                    rounded-full border
-                                    font-semibold
-                                    peer-checked:border-[#CCFF00]
-                                    peer-checked:bg-[#CCFF00]
-                                    peer-checked:text-black
-                                "
-                            >
-                                {{ number }}
-                            </span>
+                    <div>
+                        <label class="mb-2 block font-semibold">
+                            Nombre
                         </label>
 
-                    </div>
-
-                    <p
-                        v-if="form.bgg_id && form.ideal_player_counts.length"
-                        class="mt-2 text-xs text-zinc-500 dark:text-zinc-400"
-                    >
-                        Sugerido según las votaciones de jugadores
-                        de BoardGameGeek. Puedes modificarlo.
-                    </p>
-
-                    <InputError :message="form.errors.ideal_player_counts" />
-                </div>
-
-
-                <!-- Duración -->
-
-                <div>
-                    <h2 class="mb-3 font-semibold">
-                        Duración aproximada
-                    </h2>
-
-                    <div class="grid grid-cols-2 gap-4">
-
                         <input
-                            v-model.number="form.min_playtime"
-                            type="number"
-                            placeholder="Mín. minutos"
-                            class="rounded-xl border px-4 py-3"
+                            v-model="form.name"
+                            type="text"
+                            class="w-full rounded-xl border px-4 py-3"
+                            placeholder="The White Castle"
                         />
 
-                        <input
-                            v-model.number="form.max_playtime"
-                            type="number"
-                            placeholder="Máx. minutos"
-                            class="rounded-xl border px-4 py-3"
-                        />
-
+                        <InputError :message="form.errors.name" />
                     </div>
-                </div>
 
 
-                <!-- Dificultad -->
+                    <!-- Jugadores admitidos -->
 
-                <div>
-                    <label class="mb-2 block font-semibold">
-                        Dificultad
-                    </label>
+                    <div>
+                        <h2 class="mb-3 font-semibold">
+                            Jugadores admitidos
+                        </h2>
 
-                    <input
-                        v-model.number="form.complexity"
-                        type="number"
-                        min="1"
-                        max="5"
-                        step="0.01"
-                        class="w-full rounded-xl border px-4 py-3"
-                        placeholder="Ej: 2.82"
-                    />
-                </div>
+                        <div class="grid grid-cols-2 gap-4">
 
+                            <div>
+                                <label class="mb-1 block text-sm">
+                                    Mínimo
+                                </label>
 
-                <!-- Modalidades de juego -->
-
-                <div>
-                    <fieldset>
-                        <legend class="mb-3 font-semibold">
-                            Modalidades de juego
-                        </legend>
-
-                        <div class="space-y-3">
-                            <label class="flex cursor-pointer items-center gap-3">
                                 <input
-                                    v-model="form.game_modes"
-                                    type="checkbox"
-                                    value="competitive"
-                                    class="h-5 w-5 accent-[#5200FF]"
+                                    v-model.number="form.min_players"
+                                    type="number"
+                                    min="1"
+                                    class="w-full rounded-xl border px-4 py-3"
                                 />
-                                <span><Swords class="mr-1 inline h-3.5 w-3.5 shrink-0 text-orange-400" /> Competitivo</span>
-                            </label>
+                            </div>
 
-                            <label class="flex cursor-pointer items-center gap-3">
-                                <input
-                                    v-model="form.game_modes"
-                                    type="checkbox"
-                                    value="cooperative"
-                                    class="h-5 w-5 accent-[#5200FF]"
-                                />
-                                <span>Cooperativo</span>
-                            </label>
+                            <div>
+                                <label class="mb-1 block text-sm">
+                                    Máximo
+                                </label>
 
-                            <label class="flex cursor-pointer items-center gap-3">
                                 <input
-                                    v-model="form.game_modes"
-                                    type="checkbox"
-                                    value="semi_cooperative"
-                                    class="h-5 w-5 accent-[#5200FF]"
+                                    v-model.number="form.max_players"
+                                    type="number"
+                                    min="1"
+                                    class="w-full rounded-xl border px-4 py-3"
                                 />
-                                <span>Semicooperativo</span>
-                            </label>
+                            </div>
+
                         </div>
+                    </div>
 
-                        <p class="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
-                            Puedes seleccionar varias modalidades.
-                            Si no las conoces, puedes dejarlas sin marcar.
+
+                    <!-- Jugadores ideales -->
+
+                    <div>
+                        <h2 class="font-semibold">
+                            Número ideal de jugadores
+                        </h2>
+
+                        <p class="mt-1 text-sm text-zinc-500">
+                            Puedes seleccionar varios.
                         </p>
 
-                        <InputError :message="form.errors.game_modes" />
-                    </fieldset>
-                </div>
+                        <div class="mt-3 flex flex-wrap gap-2">
+
+                            <label
+                                v-for="number in playerNumbers"
+                                :key="number"
+                                class="cursor-pointer"
+                            >
+                                <input
+                                    v-model="form.ideal_player_counts"
+                                    type="checkbox"
+                                    :value="number"
+                                    class="peer sr-only"
+                                />
+
+                                <span
+                                    class="
+                                        flex h-11 w-11
+                                        items-center justify-center
+                                        rounded-full border
+                                        font-semibold
+                                        peer-checked:border-[#CCFF00]
+                                        peer-checked:bg-[#CCFF00]
+                                        peer-checked:text-black
+                                    "
+                                >
+                                    {{ number }}
+                                </span>
+                            </label>
+
+                        </div>
+
+                        <p
+                            v-if="form.bgg_id && form.ideal_player_counts.length"
+                            class="mt-2 text-xs text-zinc-500 dark:text-zinc-400"
+                        >
+                            Sugerido según las votaciones de jugadores
+                            de BoardGameGeek. Puedes modificarlo.
+                        </p>
+
+                        <InputError :message="form.errors.ideal_player_counts" />
+                    </div>
 
 
-                <!-- Descripción -->
+                    <!-- Duración -->
 
-                <div>
-                    <label class="mb-2 block font-semibold">
-                        Descripción corta
-                    </label>
+                    <div>
+                        <h2 class="mb-3 font-semibold">
+                            Duración aproximada
+                        </h2>
 
-                    <textarea
-                        v-model="form.short_description"
-                        rows="4"
-                        class="w-full rounded-xl border px-4 py-3"
-                        placeholder="¿De qué va el juego?"
-                    />
-                </div>
+                        <div class="grid grid-cols-2 gap-4">
 
+                            <input
+                                v-model.number="form.min_playtime"
+                                type="number"
+                                placeholder="Mín. minutos"
+                                class="rounded-xl border px-4 py-3"
+                            />
 
-                <!-- Información adicional -->
+                            <input
+                                v-model.number="form.max_playtime"
+                                type="number"
+                                placeholder="Máx. minutos"
+                                class="rounded-xl border px-4 py-3"
+                            />
 
-                <div>
-                    <label class="mb-2 block font-semibold">
-                        Información adicional
-                    </label>
-
-                    <textarea
-                        v-model="form.additional_information"
-                        rows="3"
-                        class="w-full rounded-xl border px-4 py-3"
-                        placeholder="Expansiones, variantes, notas..."
-                    />
-                </div>
+                        </div>
+                    </div>
 
 
-                <!-- URLs -->
+                    <!-- Dificultad -->
 
-                <div class="space-y-4">
+                    <div>
+                        <label class="mb-2 block font-semibold">
+                            Dificultad
+                        </label>
 
-                    <input
-                        v-model="form.image_url"
-                        type="url"
-                        placeholder="URL de la portada"
-                        class="w-full rounded-xl border px-4 py-3"
-                    />
+                        <input
+                            v-model.number="form.complexity"
+                            type="number"
+                            min="1"
+                            max="5"
+                            step="0.01"
+                            class="w-full rounded-xl border px-4 py-3"
+                            placeholder="Ej: 2.82"
+                        />
+                    </div>
 
-                    <input
-                        v-model="form.bgg_url"
-                        type="url"
-                        placeholder="Enlace de BoardGameGeek"
-                        class="w-full rounded-xl border px-4 py-3"
-                    />
 
-                    <input
-                        v-model="form.youtube_url"
-                        type="url"
-                        placeholder="Tutorial de YouTube"
-                        class="w-full rounded-xl border px-4 py-3"
-                    />
+                    <!-- Modalidades de juego -->
 
-                </div>
+                    <div>
+                        <fieldset>
+                            <legend class="mb-3 font-semibold">
+                                Modalidades de juego
+                            </legend>
 
+                            <div class="space-y-3">
+                                <label class="flex cursor-pointer items-center gap-3">
+                                    <input
+                                        v-model="form.game_modes"
+                                        type="checkbox"
+                                        value="competitive"
+                                        class="h-5 w-5 accent-[#5200FF]"
+                                    />
+                                    <span><Swords class="mr-1 inline h-3.5 w-3.5 shrink-0 text-orange-400" /> Competitivo</span>
+                                </label>
+
+                                <label class="flex cursor-pointer items-center gap-3">
+                                    <input
+                                        v-model="form.game_modes"
+                                        type="checkbox"
+                                        value="cooperative"
+                                        class="h-5 w-5 accent-[#5200FF]"
+                                    />
+                                    <span>Cooperativo</span>
+                                </label>
+
+                                <label class="flex cursor-pointer items-center gap-3">
+                                    <input
+                                        v-model="form.game_modes"
+                                        type="checkbox"
+                                        value="semi_cooperative"
+                                        class="h-5 w-5 accent-[#5200FF]"
+                                    />
+                                    <span>Semicooperativo</span>
+                                </label>
+                            </div>
+
+                            <p class="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
+                                Puedes seleccionar varias modalidades.
+                                Si no las conoces, puedes dejarlas sin marcar.
+                            </p>
+
+                            <InputError :message="form.errors.game_modes" />
+                        </fieldset>
+                    </div>
+
+
+                    <!-- Descripción -->
+
+                    <div>
+                        <label class="mb-2 block font-semibold">
+                            Descripción corta
+                        </label>
+
+                        <textarea
+                            v-model="form.short_description"
+                            rows="4"
+                            class="w-full rounded-xl border px-4 py-3"
+                            placeholder="¿De qué va el juego?"
+                        />
+                    </div>
+
+
+                    <!-- Información adicional -->
+
+                    <div>
+                        <label class="mb-2 block font-semibold">
+                            Información adicional
+                        </label>
+
+                        <textarea
+                            v-model="form.additional_information"
+                            rows="3"
+                            class="w-full rounded-xl border px-4 py-3"
+                            placeholder="Expansiones, variantes, notas..."
+                        />
+                    </div>
+
+
+                    <!-- URLs -->
+
+                    <div class="space-y-4">
+
+                        <input
+                            v-model="form.image_url"
+                            type="url"
+                            placeholder="URL de la portada"
+                            class="w-full rounded-xl border px-4 py-3"
+                        />
+
+                        <input
+                            v-model="form.bgg_url"
+                            type="url"
+                            placeholder="Enlace de BoardGameGeek"
+                            class="w-full rounded-xl border px-4 py-3"
+                        />
+
+                        <input
+                            v-model="form.youtube_url"
+                            type="url"
+                            placeholder="Tutorial de YouTube"
+                            class="w-full rounded-xl border px-4 py-3"
+                        />
+
+                    </div>
+                </template>
 
                 <GameCollectionsField
                     v-model="form.collection_ids"

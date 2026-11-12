@@ -75,7 +75,7 @@ const selectedCollections = computed({
                 />
 
                 <div
-                    class="rounded-xl border border-zinc-200 bg-white p-4 transition peer-checked:border-[#5200FF] peer-checked:bg-violet-50 peer-checked:ring-1 peer-checked:ring-[#5200FF] dark:border-zinc-800 dark:bg-zinc-900 dark:peer-checked:bg-violet-950/30"
+                    class="rounded-xl border border-zinc-200 bg-white p-4 transition peer-checked:border-[#5200FF] peer-checked:bg-violet-50 peer-checked:ring-1 peer-checked:ring-[#5200FF] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#5200FF] dark:border-zinc-800 dark:bg-zinc-900 dark:peer-checked:bg-violet-950/30"
                 >
                     <div
                         class="flex items-center justify-between gap-3"
