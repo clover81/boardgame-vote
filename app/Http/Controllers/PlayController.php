@@ -593,45 +593,32 @@ class PlayController extends Controller
                 ? (int) $validated['poll_id']
                 : null;
 
-        if ($pollId) {
-            $poll =
-                Poll::query()
-                    ->whereKey(
-                        $pollId
-                    )
-                    ->where(
-                        'created_by',
-                        $userId
-                    )
-                    ->where(
-                        'status',
-                        'closed'
-                    )
-                    ->first();
-
-            if (!$poll) {
-                throw ValidationException::withMessages([
-                    'poll_id' =>
-                        'La votación seleccionada no está disponible.',
-                ]);
-            }
-        }
-
-        if ($pollId && Play::where('poll_id', $pollId)->exists()) {
-            return redirect()
-                ->route('polls.show', $pollId)
-                ->withErrors([
-                    'play' => 'Las partidas de esta votación ya han sido registradas.',
-                ]);
-        }
-
-        DB::transaction(function () use (
+        $registered = DB::transaction(function () use (
             $userId,
             $gameIds,
             $pollId,
             $validated,
             $playerIds
-        ) {
+        ): bool {
+            if ($pollId) {
+                $poll = Poll::query()
+                    ->whereKey($pollId)
+                    ->where('created_by', $userId)
+                    ->where('status', 'closed')
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$poll) {
+                    throw ValidationException::withMessages([
+                        'poll_id' => 'La votación seleccionada no está disponible.',
+                    ]);
+                }
+
+                if ($poll->plays()->exists()) {
+                    return false;
+                }
+            }
+
             $expansionIds = $validated['expansion_ids'] ?? [];
 
             foreach ($gameIds as $gameId) {
@@ -659,7 +646,17 @@ class PlayController extends Controller
 
                 $play->players()->sync($playerIds->all());
             }
+
+            return true;
         });
+
+        if (!$registered) {
+            return redirect()
+                ->route('polls.show', $pollId)
+                ->withErrors([
+                    'play' => 'Las partidas de esta votación ya han sido registradas.',
+                ]);
+        }
 
         if ($pollId) {
             return redirect()
