@@ -3,6 +3,7 @@ import YoutubeLogoIcon from '@/components/icons/YoutubeLogoIcon.vue';
 import { Link as ChainIcon, BrainCog, Swords } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import { ref } from 'vue';
+import { useResizeObserver } from '@vueuse/core';
 import { Head, Link } from '@inertiajs/vue3';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
@@ -58,6 +59,15 @@ const markExpansionAsBroken = (expansionId: number) => {
 };
 
 const showFullDescription = ref(false);
+const descriptionParagraph = ref<HTMLParagraphElement | null>(null);
+const descriptionIsClipped = ref(false);
+
+useResizeObserver(descriptionParagraph, () => {
+    const paragraph = descriptionParagraph.value;
+    if (paragraph && !showFullDescription.value) {
+        descriptionIsClipped.value = paragraph.scrollHeight > paragraph.clientHeight;
+    }
+});
 
 const openImage = () => {
     imageDialog.value?.showModal();
@@ -70,9 +80,11 @@ const closeImage = () => {
 const catalogUrl = props.catalogBasePath ?? `/catalog/${props.catalogToken}`;
 
 const shareMessage = ref('');
+const manualShareUrl = ref('');
 
 const shareGame = async () => {
     shareMessage.value = '';
+    manualShareUrl.value = '';
 
     const url = window.location.href;
 
@@ -100,7 +112,8 @@ const shareGame = async () => {
         await navigator.clipboard.writeText(url);
         shareMessage.value = '¡Enlace copiado!';
     } catch {
-        shareMessage.value = 'No se pudo copiar el enlace.';
+        manualShareUrl.value = url;
+        shareMessage.value = 'Puedes copiar el enlace manualmente.';
     }
 };
 
@@ -303,6 +316,7 @@ const externalUrl = (url: string | null): string | undefined => {
                     <!-- ENLACES EXTERNOS -->
                     <div class="mt-4 flex flex-wrap gap-2 sm:mt-7 sm:gap-3">
                         <button
+                            v-if="!catalogBasePath"
                             type="button"
                             class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#181424] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#5200FF] sm:w-auto"
                             @click="shareGame"
@@ -339,6 +353,15 @@ const externalUrl = (url: string | null): string | undefined => {
                             <YoutubeLogoIcon class="size-4 shrink-0" aria-hidden="true" /> Ver tutorial <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                         </a>
                     </div>
+
+                    <label v-if="manualShareUrl" class="mt-3 block text-sm font-semibold text-zinc-700">
+                        Enlace del juego
+                        <input
+                            :value="manualShareUrl"
+                            readonly
+                            class="mt-1 block w-full min-w-0 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm"
+                        />
+                    </label>
                 </div>
             </section>
 
@@ -356,21 +379,20 @@ const externalUrl = (url: string | null): string | undefined => {
                     class="mt-3 max-w-3xl sm:mt-5"
                 >
                     <p
+                        id="catalog-game-description"
+                        ref="descriptionParagraph"
                         class="whitespace-pre-line text-base leading-7 text-zinc-700 sm:leading-8"
-                        :class="{
-                            'line-clamp-6':
-                                !showFullDescription &&
-                                (game.full_description || game.short_description || '').length > 420
-                        }"
+                        :class="{ 'line-clamp-6': !showFullDescription }"
                     >
                         {{ game.full_description || game.short_description }}
                     </p>
 
                     <button
-                        v-if="(game.full_description || game.short_description || '').length > 420"
+                        v-if="descriptionIsClipped || showFullDescription"
                         type="button"
                         class="mt-4 rounded-xl bg-violet-50 px-4 py-2 text-sm font-bold text-[#5200FF] transition hover:bg-violet-100"
                         :aria-expanded="showFullDescription"
+                        aria-controls="catalog-game-description"
                         @click="showFullDescription = !showFullDescription"
                     >
                         {{
@@ -398,24 +420,13 @@ const externalUrl = (url: string | null): string | undefined => {
             <!-- EXPANSIONES -->
             <section v-if="game.expansions.length > 0" class="mt-7 sm:mt-12">
                 <div class="mb-4 flex flex-wrap items-center justify-between gap-3 sm:mb-6">
-                    <div>
-                        <p class="text-sm font-bold uppercase tracking-wider text-[#5200FF]">
-                            Amplía la experiencia
-                        </p>
-                        <h2 class="mt-1 text-xl font-black sm:mt-2 sm:text-2xl">
-                            Expansiones
-                        </h2>
-                    </div>
-
+                    <h2 class="text-xl font-black sm:text-2xl">Expansiones</h2>
                     <span class="rounded-full bg-white px-4 py-2 text-sm font-bold text-zinc-600">
                         {{ game.expansions.length }} {{ game.expansions.length === 1 ? 'expansión' : 'expansiones' }}
                     </span>
                 </div>
 
-                <div
-                    v-if="game.expansions.length"
-                    class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-                >
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <article
                         v-for="expansion in game.expansions"
                         :key="expansion.id"
@@ -436,41 +447,30 @@ const externalUrl = (url: string | null): string | undefined => {
 
                             <div
                                 v-else
-                                class="flex flex-col items-center gap-2 text-zinc-400"
+                                class="flex min-h-24 flex-col items-center justify-center gap-1 text-center text-zinc-500"
                             >
                                 <span class="text-5xl"><PlayingCardsFanIcon class="mr-1 inline-block size-12 shrink-0 align-[-0.14em] text-violet-700" aria-hidden="true" /></span>
-                                <span class="text-sm">Sin portada disponible</span>
+                                <span class="text-xs">Sin portada</span>
                             </div>
-
-                            <span
-                                class="absolute left-1.5 top-1.5 rounded-full bg-[#181424] px-2 py-1 text-[10px] font-bold text-white shadow-md sm:left-3 sm:top-3 sm:px-3 sm:py-1.5 sm:text-xs"
-                            >
-                                Expansión
-                            </span>
                         </div>
 
                         <!-- INFORMACIÓN -->
                         <div class="flex min-w-0 flex-1 flex-col p-3 sm:p-5">
-                            <p class="text-[10px] font-semibold uppercase tracking-wider text-[#5200FF] sm:text-xs">
-                                Ampliación del juego base
-                            </p>
-
-                            <h3 class="mt-1 break-words text-base font-black leading-snug sm:mt-2 sm:text-lg">
+                            <h3 class="break-words text-base font-black leading-snug sm:text-lg">
                                 {{ expansion.name }}
                             </h3>
 
-                            <p class="mt-1 text-xs text-zinc-500 sm:mt-2 sm:text-sm">
-                                {{ game.name }}
-                            </p>
-
                             <!-- ENLACES -->
-                            <div class="mt-auto flex flex-wrap gap-2 pt-3 sm:pt-6">
+                            <div
+                                v-if="externalUrl(expansion.bgg_url) || externalUrl(expansion.youtube_url)"
+                                class="mt-auto flex flex-wrap gap-2 pt-3 sm:pt-6"
+                            >
                                 <a
                                     v-if="externalUrl(expansion.bgg_url)"
                                     :href="externalUrl(expansion.bgg_url)"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    class="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-xl bg-[#5200FF] px-2 py-2.5 text-center text-xs font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#4000cc] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:min-w-[125px] sm:px-3 sm:text-sm"
+                                    class="inline-flex min-h-11 min-w-0 flex-1 basis-28 items-center justify-center rounded-xl bg-[#5200FF] px-2 py-2.5 text-center text-xs font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#4000cc] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:min-w-[125px] sm:px-3 sm:text-sm"
                                 >
                                     Ver en BGG <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                                 </a>
@@ -480,7 +480,7 @@ const externalUrl = (url: string | null): string | undefined => {
                                     :href="externalUrl(expansion.youtube_url)"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    class="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-xl border-2 border-[#5200FF] bg-white px-2 py-2 text-center text-xs font-bold text-[#5200FF] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f1ebff] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:min-w-[125px] sm:gap-1.5 sm:px-3 sm:text-sm"
+                                    class="inline-flex min-h-11 min-w-0 flex-1 basis-28 items-center justify-center gap-1 rounded-xl border-2 border-[#5200FF] bg-white px-2 py-2 text-center text-xs font-bold text-[#5200FF] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f1ebff] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:min-w-[125px] sm:gap-1.5 sm:px-3 sm:text-sm"
                                 >
                                     <YoutubeLogoIcon class="size-4 shrink-0" aria-hidden="true" /> Ver tutorial <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                                 </a>
@@ -488,10 +488,6 @@ const externalUrl = (url: string | null): string | undefined => {
                         </div>
                     </article>
                 </div>
-
-                <p v-else class="rounded-2xl bg-white p-6 text-sm text-zinc-500">
-                    Este juego no tiene expansiones registradas.
-                </p>
             </section>
 
             <!-- REGRESAR -->
