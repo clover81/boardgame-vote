@@ -340,21 +340,21 @@ onUnmounted(() => {
 });
 
 const syncBggCollection = () => {
-    if (bggCollectionId.value === '' || bggSyncing.value) {
-        return;
-    }
+    const collectionId = bggCollectionId.value;
+    if (collectionId === '' || bggSyncing.value) return;
 
     bggSyncing.value = true;
     bggSyncMessage.value = '';
     bggSyncError.value = '';
 
     router.post(
-        `/collections/${bggCollectionId.value}/bgg/sync`,
+        `/collections/${collectionId}/bgg/sync`,
         {},
         {
             preserveScroll: true,
 
             onSuccess: () => {
+                if (bggCollectionId.value !== collectionId) return;
                 bggSyncMessage.value =
                     'Sincronización enviada a la cola. ' +
                     'Los juegos y expansiones nuevos se incorporarán ' +
@@ -362,6 +362,7 @@ const syncBggCollection = () => {
             },
 
             onError: (errors) => {
+                if (bggCollectionId.value !== collectionId) return;
                 bggSyncError.value =
                     errors.bgg ||
                     Object.values(errors)[0] ||
@@ -420,8 +421,9 @@ const executeBggRemoval = (game: {
     bgg_id: number;
     name: string;
 }) => {
+    const collectionId = bggCollectionId.value;
     if (
-        bggCollectionId.value === '' ||
+        collectionId === '' ||
         bggRemovingId.value !== null ||
         ['pending', 'running'].includes(
             selectedBggCollection.value?.bgg_sync_status ?? ''
@@ -435,12 +437,13 @@ const executeBggRemoval = (game: {
     bggSyncMessage.value = '';
 
     router.post(
-        `/collections/${bggCollectionId.value}/bgg/remove/${game.id}`,
+        `/collections/${collectionId}/bgg/remove/${game.id}`,
         {},
         {
             preserveScroll: true,
 
             onSuccess: () => {
+                if (bggCollectionId.value !== collectionId) return;
                 bggSyncMessage.value =
                     `"${game.name}" se ha retirado de la colección BGG.`;
 
@@ -454,6 +457,7 @@ const executeBggRemoval = (game: {
             },
 
             onError: (errors) => {
+                if (bggCollectionId.value !== collectionId) return;
                 bggSyncError.value =
                     errors.bgg ||
                     Object.values(errors)[0] ||
@@ -516,8 +520,9 @@ const executeBggExpansionRemoval = (expansion: {
     name: string;
     game_id: number;
 }) => {
+    const collectionId = bggCollectionId.value;
     if (
-        bggCollectionId.value === '' ||
+        collectionId === '' ||
         bggRemovingExpansionId.value !== null ||
         bggRemovingId.value !== null ||
         ['pending', 'running'].includes(
@@ -532,12 +537,13 @@ const executeBggExpansionRemoval = (expansion: {
     bggSyncMessage.value = '';
 
     router.post(
-        `/collections/${bggCollectionId.value}/bgg/remove-expansion/${expansion.id}`,
+        `/collections/${collectionId}/bgg/remove-expansion/${expansion.id}`,
         {},
         {
             preserveScroll: true,
 
             onSuccess: () => {
+                if (bggCollectionId.value !== collectionId) return;
                 bggSyncMessage.value =
                     `"${expansion.name}" se ha retirado de la colección BGG.`;
 
@@ -550,6 +556,7 @@ const executeBggExpansionRemoval = (expansion: {
             },
 
             onError: (errors) => {
+                if (bggCollectionId.value !== collectionId) return;
                 bggSyncError.value =
                     errors.bgg ||
                     Object.values(errors)[0] ||
