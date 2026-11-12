@@ -435,6 +435,14 @@ const modeLabel = (
                             }}
                             juegos
                         </span>
+                        <span
+                            v-if="poll.status !== 'closed'"
+                            class="rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-800 dark:bg-violet-950 dark:text-violet-200"
+                        >
+                            {{ poll.required_vote_count === 1
+                                ? 'Un voto por persona'
+                                : 'Primera y segunda opción' }}
+                        </span>
                     </div>
 
                     <div

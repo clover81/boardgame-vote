@@ -2116,6 +2116,13 @@ const submit = () => {
 
                     <!-- RESUMEN -->
 
+                    <p class="mt-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                        Modo de votación:
+                        {{ form.single_choice || form.candidate_ids.length === 1
+                            ? 'Un voto por persona'
+                            : 'Primera y segunda opción' }}
+                    </p>
+
                     <div
                         class="mt-6 grid gap-5 md:grid-cols-3"
                     >
