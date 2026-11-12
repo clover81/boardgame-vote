@@ -223,6 +223,45 @@ const copyParticipantLink = async (participant: Participant) => {
     }
 };
 
+const resultShareMessage = ref('');
+const showResultText = ref(false);
+const resultText = computed(() => {
+    const winners = props.results.filter(result => result.is_winner || result.is_top_tie);
+    const summary = props.poll.has_clear_winner
+        ? `🏆 Ganador: ${winners[0]?.game.name ?? props.results[0]?.game.name}`
+        : `🤝 Empate: ${winners.map(result => result.game.name).join(', ')}`;
+    const ranking = props.results.map(result => {
+        const unit = props.poll.single_choice
+            ? (result.points === 1 ? 'voto' : 'votos')
+            : (result.points === 1 ? 'punto' : 'puntos');
+        return `${result.rank}. ${result.game.name} · ${result.points} ${unit}`;
+    });
+
+    return [`Resultados · ${props.poll.name}`, summary, '', ...ranking].join('\n');
+});
+
+const shareResults = async () => {
+    resultShareMessage.value = '';
+    showResultText.value = false;
+
+    if (navigator.share) {
+        try {
+            await navigator.share({ text: resultText.value });
+            return;
+        } catch (error) {
+            if (error instanceof DOMException && error.name === 'AbortError') return;
+        }
+    }
+
+    try {
+        await navigator.clipboard.writeText(resultText.value);
+        resultShareMessage.value = 'Resultado copiado.';
+    } catch {
+        showResultText.value = true;
+        resultShareMessage.value = 'Puedes copiar el resultado manualmente.';
+    }
+};
+
 const addCandidateOpen = ref(false);
 const candidateQuery = ref('');
 const addingCandidateId = ref<number | null>(null);
@@ -1125,6 +1164,28 @@ const modeLabel = (
                     </p>
                 </div>
 
+                <div v-if="results.length" class="mb-5">
+                    <button
+                        type="button"
+                        class="min-h-11 w-full rounded-xl bg-[#5200FF] px-4 py-2 text-sm font-bold text-white hover:bg-[#4100cc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 sm:w-auto"
+                        @click="shareResults"
+                    >
+                        Compartir resultado
+                    </button>
+                    <p role="status" class="text-sm text-zinc-600 dark:text-zinc-300">
+                        {{ resultShareMessage }}
+                    </p>
+                    <textarea
+                        v-if="showResultText"
+                        :value="resultText"
+                        aria-label="Resultado para copiar"
+                        class="mt-2 w-full rounded-xl border border-zinc-300 p-3 text-sm dark:border-zinc-700"
+                        rows="5"
+                        readonly
+                        @focus="($event.target as HTMLTextAreaElement).select()"
+                    />
+                </div>
+
                 <div
                     v-if="results.length && poll.status === 'closed'"
                     class="mt-5 mb-5"
@@ -1372,9 +1433,10 @@ const modeLabel = (
                 >
                     <Link
                         :href="`/polls/${poll.id}/register-play`"
-                        class="inline-flex rounded-xl bg-[#5200FF] px-6 py-3 font-bold text-white"
+                        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#5200FF] px-5 py-2.5 font-bold text-white transition hover:bg-[#4100cc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                     >
-                        <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Registrar partida realmente jugada
+                        <PlayingCardsFanIcon class="size-5 shrink-0 text-[#CCFF00]" aria-hidden="true" />
+                        Registrar partida
                     </Link>
                 </div>
             </section>
