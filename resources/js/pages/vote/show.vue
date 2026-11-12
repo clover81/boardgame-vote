@@ -8,6 +8,7 @@ import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 
 import {
     computed,
+    nextTick,
     ref,
     watch,
 } from 'vue';
@@ -177,6 +178,15 @@ const selectedParticipant =
     );
 
 const voteSaved = ref(false);
+const voteError = ref<HTMLElement | null>(null);
+const voteConfirmation = ref<HTMLElement | null>(null);
+const voteEditor = ref<HTMLElement | null>(null);
+
+const editVote = async () => {
+    voteSaved.value = false;
+    await nextTick();
+    voteEditor.value?.focus();
+};
 
 const brokenCoverIds = ref<number[]>([]);
 const markCoverAsBroken = (candidateId: number) => {
@@ -381,6 +391,18 @@ const selectSecond = (
 |--------------------------------------------------------------------------
 */
 
+const cancelVoteEdit = async () => {
+    const savedVotes = selectedParticipant.value?.votes ?? [];
+
+    form.first_candidate_id = savedVotes.find((vote) => vote.position === 1)?.candidate_id ?? null;
+    form.second_candidate_id = savedVotes.find((vote) => vote.position === 2)?.candidate_id ?? null;
+    form.clearErrors();
+    voteSaved.value = true;
+
+    await nextTick();
+    voteConfirmation.value?.focus();
+};
+
 const submit = () => {
     if (!canSubmit.value) {
         return;
@@ -390,14 +412,15 @@ const submit = () => {
         `/vote/${props.poll.token}/${props.voteToken}`,
         {
             preserveScroll: true,
+            onError: async () => {
+                await nextTick();
+                voteError.value?.focus();
+            },
 
-            onSuccess: () => {
+            onSuccess: async () => {
                 voteSaved.value = true;
-
-                window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth',
-                });
+                await nextTick();
+                voteConfirmation.value?.focus();
             },
         }
     );
@@ -504,12 +527,12 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
         <div
             class="mx-auto max-w-5xl px-4 pt-6 pb-24 sm:pt-8"
         >
-            <AlertError
-                v-if="Object.keys(form.errors).length"
-                class="mb-6"
-                title="No hemos podido guardar tu voto"
-                :errors="Object.values(form.errors)"
-            />
+            <div v-if="form.hasErrors" ref="voteError" tabindex="-1" class="mb-6">
+                <AlertError
+                    title="No hemos podido guardar tu voto"
+                    :errors="Object.values(form.errors)"
+                />
+            </div>
 
             <!-- ================================================= -->
             <!-- RESULTADOS                                        -->
@@ -715,6 +738,8 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                 </div>
 
                 <h2
+                    ref="voteConfirmation"
+                    tabindex="-1"
                     class="mt-5 text-2xl font-black"
                 >
                     ¡Voto guardado!
@@ -767,7 +792,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                     <button
                         type="button"
                         class="rounded-xl border border-zinc-300 px-4 py-3 font-bold transition-[border-color,color,box-shadow] duration-200 hover:border-violet-500 hover:text-[#5200FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5200FF] focus-visible:ring-offset-2"
-                        @click="voteSaved = false"
+                        @click="editVote"
                     >
                         {{ needsSecondChoice ? 'Modificar mis votos' : 'Modificar mi voto' }}
                     </button>
@@ -789,6 +814,8 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                 <!-- PARTICIPANTE -->
 
                 <div
+                    ref="voteEditor"
+                    tabindex="-1"
                     class="mb-4 flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm"
                 >
                     <div>
@@ -1012,13 +1039,16 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                 <!-- CONFIRMAR -->
 
                 <div class="mx-auto mt-6 max-w-3xl rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
-                    <div class="mb-3 hidden min-w-0 gap-2 text-xs sm:grid sm:text-sm" :class="needsSecondChoice ? 'grid-cols-2' : 'grid-cols-1'">
-                        <p class="min-w-0 truncate rounded-xl bg-lime-100 px-3 py-2.5 font-medium" :title="selectedFirstGame?.name ?? ''">
+                    <div
+                        class="mb-3 grid min-w-0 gap-2 text-xs sm:text-sm"
+                        :class="needsSecondChoice ? 'sm:grid-cols-2' : 'grid-cols-1'"
+                    >
+                        <p class="min-w-0 wrap-break-word rounded-xl bg-lime-100 px-3 py-2.5 font-medium" :title="selectedFirstGame?.name ?? ''">
                             🥇 {{ selectedFirstGame?.name ?? (needsSecondChoice ? 'Elige primera opción' : 'Elige un juego') }}
                         </p>
                         <p
                             v-if="needsSecondChoice"
-                            class="min-w-0 truncate rounded-xl bg-orange-100 px-3 py-2.5 font-medium"
+                            class="min-w-0 wrap-break-word rounded-xl bg-orange-100 px-3 py-2.5 font-medium"
                             :title="selectedSecondGame?.name ?? ''"
                         >
                             🥈 {{ selectedSecondGame?.name ?? 'Elige segunda opción' }}
@@ -1044,6 +1074,15 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                         <span class="hidden sm:inline">
                             {{ form.processing ? 'Guardando...' : needsSecondChoice ? 'Confirmar mis votos' : 'Confirmar mi voto' }}
                         </span>
+                    </button>
+                    <button
+                        v-if="hasPreviousVote"
+                        type="button"
+                        :disabled="form.processing"
+                        class="mt-2 w-full rounded-xl px-4 py-2 text-sm font-semibold text-[#5200FF] hover:underline disabled:opacity-50"
+                        @click="cancelVoteEdit"
+                    >
+                        Cancelar cambios
                     </button>
                 </div>
             </template>
