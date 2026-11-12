@@ -249,6 +249,7 @@ const bggCollectionId = ref<number | ''>(
 );
 const bggPreview = ref<BggPreview | null>(null);
 const bggLoading = ref(false);
+let bggPreviewRequest: AbortController | null = null;
 const bggError = ref('');
 const bggTab = ref<'games' | 'expansions'>('games');
 const bggPanelOpen = ref(false);
@@ -268,6 +269,10 @@ watch(bggCollections, (linkedCollections) => {
 
 // La vista previa corresponde exclusivamente a la colección seleccionada.
 watch(bggCollectionId, () => {
+    bggPreviewRequest?.abort();
+    bggPreviewRequest = null;
+    bggLoading.value = false;
+
     bggPreview.value = null;
     bggError.value = '';
     bggSyncMessage.value = '';
@@ -328,6 +333,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+    bggPreviewRequest?.abort();
     if (bggPollTimer !== undefined) {
         clearInterval(bggPollTimer);
     }
@@ -560,6 +566,10 @@ const executeBggExpansionRemoval = (expansion: {
 const loadBggPreview = async () => {
     if (bggCollectionId.value === '') return;
 
+    bggPreviewRequest?.abort();
+    const request = new AbortController();
+    bggPreviewRequest = request;
+
     bggLoading.value = true;
     bggError.value = '';
     bggPreview.value = null;
@@ -568,6 +578,7 @@ const loadBggPreview = async () => {
         const response = await fetch(
             `/collections/${bggCollectionId.value}/bgg/preview`,
             {
+                signal: request.signal,
                 credentials: 'same-origin',
                 headers: {
                     Accept: 'application/json',
@@ -576,6 +587,7 @@ const loadBggPreview = async () => {
         );
 
         const result = await response.json();
+        if (request.signal.aborted) return;
 
         if (!response.ok) {
             throw new Error(
@@ -585,16 +597,25 @@ const loadBggPreview = async () => {
 
         bggPreview.value = result as BggPreview;
     } catch (error) {
+        if (request.signal.aborted) return;
         bggError.value = error instanceof Error
             ? error.message
             : 'Error al conectar con BGG.';
     } finally {
-        bggLoading.value = false;
+        if (bggPreviewRequest === request) {
+            bggPreviewRequest = null;
+            bggLoading.value = false;
+        }
     }
 };
 watch(
-    () => selectedBggCollection.value?.bgg_sync_status,
-    (currentStatus, previousStatus) => {
+    [
+        () => selectedBggCollection.value?.id,
+        () => selectedBggCollection.value?.bgg_sync_status,
+    ],
+    ([currentId, currentStatus], [previousId, previousStatus]) => {
+        if (currentId !== previousId) return;
+
         const wasSyncing =
             previousStatus === 'pending' ||
             previousStatus === 'running';
