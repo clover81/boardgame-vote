@@ -406,7 +406,7 @@ const hasFilters = computed(() =>
 
 const formatDuration = (game: Game) => {
     if (game.min_playtime === null) {
-        return 'Sin datos';
+        return game.max_playtime === null ? 'Sin datos' : `${game.max_playtime} min`;
     }
 
     if (
