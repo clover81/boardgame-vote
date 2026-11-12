@@ -80,7 +80,7 @@ const normalizeText = (text: string): string =>
     text
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[‘’]/g, "'")
+        .replace(/['‘’]/g, '')
         .replace(/[-‐‑‒–—−]/g, ' ')
         .replace(/\s+/g, ' ')
         .toLocaleLowerCase()
@@ -878,13 +878,13 @@ const externalUrl = (url: string | null): string | undefined => {
             >
                 <p class="text-4xl"><PlayingCardsFanIcon class="mr-1 inline-block size-10 shrink-0 align-[-0.14em] text-violet-700" aria-hidden="true" /></p>
                 <h3 class="mt-4 text-xl font-black">
-                    No hay juegos que coincidan
+                    {{ games.length ? 'No hay juegos que coincidan' : 'Todavía no hay juegos en este catálogo' }}
                 </h3>
-                <p class="mt-2 text-sm text-zinc-500">
+                <p v-if="games.length" class="mt-2 text-sm text-zinc-500">
                     Prueba con otras palabras o elimina alguno de los filtros aplicados.
                 </p>
                 <button
-                    v-if="hasFilters"
+                    v-if="games.length && hasFilters"
                     class="mt-5 font-bold text-[#5200FF] hover:underline"
                     @click="clearFilters"
                 >
