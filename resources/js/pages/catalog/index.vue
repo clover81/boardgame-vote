@@ -280,6 +280,7 @@ onMounted(() => {
         difficulty.value = filters.difficulty ?? '';
         selectedGameMode.value = filters.selectedGameMode ?? '';
         sortBy.value = filters.sortBy ?? 'name';
+        showAdvancedFilters.value = filters.showAdvancedFilters === true;
     } catch {
         sessionStorage.removeItem(filtersStorageKey);
     }
@@ -295,6 +296,7 @@ watch(
         difficulty,
         selectedGameMode,
         sortBy,
+        showAdvancedFilters,
     ],
     () => {
         sessionStorage.setItem(
@@ -307,6 +309,7 @@ watch(
                 difficulty: difficulty.value,
                 selectedGameMode: selectedGameMode.value,
                 sortBy: sortBy.value,
+                showAdvancedFilters: showAdvancedFilters.value,
             }),
         );
     },
