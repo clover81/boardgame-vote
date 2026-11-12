@@ -185,11 +185,6 @@ const markCoverAsBroken = (candidateId: number) => {
     }
 };
 
-const singleCandidate = computed(
-    () =>
-        props.poll.candidates.length === 1
-);
-
 const selectedFirstGame = computed(() => {
     if (!form.first_candidate_id) {
         return null;
@@ -730,7 +725,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
 
                 <div
                     class="mt-6 grid gap-3 text-left"
-                    :class="{ 'sm:grid-cols-2': !singleCandidate }"
+                    :class="{ 'sm:grid-cols-2': needsSecondChoice }"
                 >
                     <div
                         class="rounded-2xl bg-lime-50 p-4"
@@ -738,7 +733,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                         <p
                             class="text-xs font-black uppercase text-zinc-500"
                         >
-                            🥇 Primera opción
+                            {{ needsSecondChoice ? '🥇 Primera opción' : 'Mi voto' }}
                         </p>
 
                         <p class="mt-1 font-black">
@@ -747,7 +742,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                     </div>
 
                     <div
-                        v-if="!singleCandidate"
+                        v-if="needsSecondChoice"
                         class="rounded-2xl bg-orange-50 p-4"
                     >
                         <p
@@ -770,7 +765,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                         class="rounded-xl border border-zinc-300 px-4 py-3 font-bold transition-[border-color,color,box-shadow] duration-200 hover:border-violet-500 hover:text-[#5200FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5200FF] focus-visible:ring-offset-2"
                         @click="voteSaved = false"
                     >
-                        Modificar mis votos
+                        {{ needsSecondChoice ? 'Modificar mis votos' : 'Modificar mi voto' }}
                     </button>
 
                 </div>
@@ -851,7 +846,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                         v-if="form.first_candidate_id === candidate.id"
                                         class="inline-block rounded-full bg-[#CCFF00] px-2.5 py-1 text-xs font-black text-black"
                                     >
-                                        🥇 Primera opción
+                                        {{ needsSecondChoice ? '🥇 Primera opción' : 'Mi voto' }}
                                     </span>
                                     <span
                                         v-else-if="form.second_candidate_id === candidate.id"
