@@ -459,18 +459,14 @@ const submit = () => {
             <div class="mb-6">
                 <Link
                     href="/games"
-                    class="text-sm font-medium text-[#5200FF]"
+                    class="text-sm font-medium text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                 >
                     ← Volver a la colección
                 </Link>
 
-                <h1 class="mt-3 text-3xl font-bold">
+                <h1 class="mt-4 text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
                     Añadir juego
                 </h1>
-
-                <p class="mt-2 text-zinc-500">
-                    Añade un juego a tu colección.
-                </p>
             </div>
 
             <section

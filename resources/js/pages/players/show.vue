@@ -121,13 +121,13 @@ const formatDate = (
 
     <AppLayout>
         <div
-            class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6"
+            class="mx-auto w-full max-w-6xl px-4 pt-6 pb-24 sm:px-6"
         >
             <!-- VOLVER -->
 
             <Link
                 href="/players"
-                class="text-sm font-semibold text-[#5200FF] hover:underline"
+                class="text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
             >
                 ← Volver a jugadores
             </Link>
@@ -140,8 +140,7 @@ const formatDate = (
                             <MeepleIcon class="h-11 w-11 sm:h-14 sm:w-14" :class="playerNameColor(player.name, player.color)" />
                         </div>
                         <div class="min-w-0">
-                            <p class="text-xs font-extrabold uppercase tracking-wide text-[#5200FF] dark:text-violet-400">JUGADOR</p>
-                            <h1 class="mt-1 break-words text-2xl font-black sm:text-3xl" :class="playerNameColor(player.name, player.color)">{{ player.name }}</h1>
+                            <h1 class="break-words text-2xl font-bold sm:text-3xl" :class="playerNameColor(player.name, player.color)">{{ player.name }}</h1>
                             <span
                                 class="mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold"
                                 :class="player.is_active ? 'bg-lime-200 text-lime-950 dark:bg-[#CCFF00] dark:text-black' : 'bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'"

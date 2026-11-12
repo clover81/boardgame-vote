@@ -364,7 +364,7 @@ const modeLabel = (
 
     <AppLayout>
         <div
-            class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6"
+            class="mx-auto w-full max-w-6xl px-4 pt-6 pb-24 sm:px-6"
         >
             <!-- VOLVER -->
 
@@ -382,15 +382,9 @@ const modeLabel = (
             <div
                 class="mt-5 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between"
             >
-                <div>
-                    <p
-                        class="font-semibold text-[#5200FF]"
-                    >
-                        VOTACIÓN
-                    </p>
-
+                <div class="min-w-0">
                     <h1
-                        class="mt-1 text-3xl font-bold text-zinc-900 dark:text-zinc-100"
+                        class="break-words text-2xl font-bold sm:text-3xl text-zinc-900 dark:text-zinc-100"
                     >
                         {{ poll.name }}
                     </h1>

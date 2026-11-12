@@ -360,7 +360,7 @@ const formatGameMode = (
 
     <AppLayout>
         <div
-            class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6"
+            class="mx-auto w-full max-w-6xl px-4 pt-6 pb-24 sm:px-6"
         >
             <!-- VOLVER -->
 
@@ -376,15 +376,9 @@ const formatGameMode = (
             <div
                 class="mt-6 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between"
             >
-                <div>
-                    <p
-                        class="font-bold uppercase tracking-wide text-[#5200FF]"
-                    >
-                        JUEGO
-                    </p>
-
+                <div class="min-w-0">
                     <h1
-                        class="mt-1 text-3xl font-black text-zinc-900 dark:text-zinc-100 sm:text-4xl"
+                        class="break-words text-2xl font-bold sm:text-3xl text-zinc-900 dark:text-zinc-100"
                     >
                         {{ game.name }}
                     </h1>

@@ -3,6 +3,7 @@ import { BuildingComplexPlus } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import { UsersRound } from '@lucide/vue';
 import { Head, Link } from '@inertiajs/vue3';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 
 interface Summary {
@@ -79,32 +80,13 @@ const formatDate = (
 
     <AppLayout>
         <div
-            class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6"
+            class="mx-auto w-full max-w-7xl px-4 pt-6 pb-24 sm:px-6"
         >
             <!-- CABECERA -->
 
-            <div>
-                <p
-                    class="font-semibold text-[#5200FF] dark:text-[#CCFF00]"
-                >
-                    Juegos de mesa
-                </p>
-
-                <h1
-                    class="mt-1 text-3xl font-black"
-                >
-                    ¿A qué jugamos?
-                </h1>
-
-                <p
-                    class="mt-2 text-zinc-500 dark:text-zinc-400"
-                >
-                    Gestiona tu colección,
-                    organiza una votación y
-                    registra lo que finalmente
-                    habéis jugado.
-                </p>
-            </div>
+            <h1 class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
+                ¿A qué jugamos?
+            </h1>
 
             <!-- ACCIONES PRINCIPALES -->
 
@@ -511,5 +493,6 @@ const formatDate = (
                 </section>
             </div>
         </div>
+        <ScrollToTopProgress :remember-position="false" />
     </AppLayout>
 </template>

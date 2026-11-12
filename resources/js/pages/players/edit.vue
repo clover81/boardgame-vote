@@ -24,8 +24,7 @@ const submit = () => form.patch(`/players/${props.player.id}`);
             <Link href="/players" class="text-sm font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]">
                 ← Volver a jugadores
             </Link>
-            <p class="mt-5 font-bold text-[#5200FF] dark:text-violet-400">JUGADORES</p>
-            <h1 class="text-2xl font-black sm:text-3xl">Editar jugador</h1>
+            <h1 class="mt-4 text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">Editar jugador</h1>
             <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Cambia el nombre o el color sin perder sus partidas ni sus votaciones.</p>
 
             <form class="mt-6 space-y-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7 dark:border-zinc-800 dark:bg-zinc-950" @submit.prevent="submit">

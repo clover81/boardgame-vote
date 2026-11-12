@@ -236,16 +236,10 @@ const submit = () => {
             <!-- CABECERA -->
 
             <div class="mt-4">
-                <p
-                    class="font-semibold text-[#5200FF]"
-                >
-                    REGISTRAR PARTIDA
-                </p>
-
                 <h1
-                    class="mt-1 text-3xl font-bold text-zinc-900 dark:text-zinc-100"
+                    class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl"
                 >
-                    ¿Qué jugasteis finalmente?
+                    Registrar partida
                 </h1>
 
                 <p

@@ -437,37 +437,18 @@ const confirmDeletePlay = () => {
             <!-- CABECERA                                           -->
             <!-- ================================================== -->
 
-            <div
-    class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
->
-    <div>
-        <p
-            class="font-semibold text-[#5200FF]"
-        >
-            HISTORIAL
-        </p>
+            <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <h1 class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
+                    Partidas jugadas
+                </h1>
 
-        <h1
-            class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl"
-        >
-            Partidas jugadas
-        </h1>
-
-        <p
-            class="mt-2 text-zinc-500 dark:text-zinc-400"
-        >
-            Consulta, corrige o elimina las
-            partidas que has registrado.
-        </p>
-    </div>
-
-    <Link
-        href="/plays/create"
-        class="inline-flex w-full items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90 sm:w-auto"
-    >
-        + Registrar partida
-    </Link>
-</div>
+                <Link
+                    href="/plays/create"
+                    class="inline-flex w-full items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90 sm:w-auto"
+                >
+                    + Registrar partida
+                </Link>
+            </div>
 
             <!-- ================================================== -->
             <!-- ESTADÍSTICAS                                       -->

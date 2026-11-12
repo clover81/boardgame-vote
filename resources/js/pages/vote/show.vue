@@ -18,6 +18,7 @@ import {
 } from '@inertiajs/vue3';
 
 import AlertError from '@/components/AlertError.vue';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
 /*
 |--------------------------------------------------------------------------
@@ -478,15 +479,7 @@ const formatDate = (
             <div
                 class="mx-auto max-w-5xl"
             >
-                <p
-                    class="text-sm font-bold uppercase tracking-wider text-[#CCFF00]"
-                >
-                    ¿A qué jugamos?
-                </p>
-
-                <h1
-                    class="mt-2 break-words text-2xl font-black sm:text-3xl"
-                >
+                <h1 class="break-words text-2xl font-bold sm:text-3xl">
                     {{ poll.name }}
                 </h1>
 
@@ -509,7 +502,7 @@ const formatDate = (
         </header>
 
         <div
-            class="mx-auto max-w-5xl px-4 py-6 sm:py-8"
+            class="mx-auto max-w-5xl px-4 pt-6 pb-24 sm:pt-8"
         >
             <AlertError
                 v-if="Object.keys(form.errors).length"
@@ -526,15 +519,7 @@ const formatDate = (
                 v-if="poll.status === 'closed'"
                 class="mx-auto max-w-3xl"
             >
-                <p
-                    class="font-bold uppercase tracking-wide text-[#5200FF]"
-                >
-                    RESULTADOS
-                </p>
-
-                <h2
-                    class="mt-1 text-3xl font-black"
-                >
+                <h2 class="text-2xl font-bold sm:text-3xl">
                     Resultado de la votación
                 </h2>
 
@@ -1061,5 +1046,6 @@ const formatDate = (
                 </div>
             </template>
         </div>
+        <ScrollToTopProgress :remember-position="false" compact-on-mobile />
     </main>
 </template>

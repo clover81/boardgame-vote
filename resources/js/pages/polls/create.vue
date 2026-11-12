@@ -901,16 +901,10 @@ const submit = () => {
             <!-- CABECERA -->
 
             <div class="mt-4">
-                <p
-                    class="font-semibold text-[#5200FF]"
-                >
-                    NUEVA VOTACIÓN
-                </p>
-
                 <h1
                     class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl"
                 >
-                    ¿A qué jugamos?
+                    Nueva votación
                 </h1>
 
                 <p

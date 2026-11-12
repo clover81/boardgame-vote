@@ -234,11 +234,7 @@ const externalUrl = (url: string | null): string | undefined => {
 
                 <!-- INFORMACIÓN -->
                 <div class="flex flex-col justify-center">
-                    <p class="text-xs font-bold uppercase tracking-widest text-[#5200FF] sm:text-sm">
-                        Ficha del juego
-                    </p>
-
-                    <h1 class="mt-2 text-2xl font-black leading-tight tracking-tight sm:mt-3 sm:text-5xl">
+                    <h1 class="break-words text-2xl font-bold leading-tight sm:text-3xl">
                         {{ game.name }}
                     </h1>
 

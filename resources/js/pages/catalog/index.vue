@@ -457,19 +457,11 @@ const externalUrl = (url: string | null): string | undefined => {
 
                 <div class="relative mt-5 grid gap-3 sm:mt-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-6">
                     <div class="min-w-0">
-                        <span class="inline-flex rounded-full border border-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#CCFF00]">
-                            {{ catalogBasePath ? 'Colección de un amigo · Solo consulta' : 'Catálogo compartido' }}
-                        </span>
-                        <h1 class="mt-2 text-3xl font-black leading-tight tracking-tight sm:text-4xl">
-                            ¿A qué jugamos <span class="text-[#CCFF00]">hoy?</span>
+                        <h1 class="break-words text-2xl font-bold leading-tight sm:text-3xl">
+                            {{ catalogOwnerName ? `Colección de ${catalogOwnerName}` : 'Catálogo de juegos' }}
                         </h1>
-                        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-300 sm:text-base">
-                            <template v-if="catalogOwnerName">
-                                Explora los juegos de {{ catalogOwnerName }} y utiliza los filtros, sin modificar su colección.
-                            </template>
-                            <template v-else>
-                                Explora la colección, descubre nuevos juegos y encuentra el perfecto para tu próxima partida.
-                            </template>
+                        <p v-if="catalogBasePath" class="mt-2 text-sm font-semibold text-[#CCFF00]">
+                            Solo consulta
                         </p>
                     </div>
 

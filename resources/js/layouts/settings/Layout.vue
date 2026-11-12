@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import Heading from '@/components/Heading.vue';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
@@ -12,15 +12,15 @@ import type { NavItem } from '@/types';
 
 const sidebarNavItems: NavItem[] = [
     {
-        title: 'Profile',
+        title: 'Perfil',
         href: editProfile(),
     },
     {
-        title: 'Security',
+        title: 'Seguridad',
         href: editSecurity(),
     },
     {
-        title: 'Appearance',
+        title: 'Apariencia',
         href: editAppearance(),
     },
 ];
@@ -29,17 +29,16 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
 </script>
 
 <template>
-    <div class="px-4 py-6">
-        <Heading
-            title="Settings"
-            description="Manage your profile and account settings"
-        />
+    <div class="mx-auto w-full max-w-7xl px-4 pt-6 pb-24 sm:px-6">
+        <h1 class="mb-8 text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
+            Ajustes
+        </h1>
 
         <div class="flex flex-col lg:flex-row lg:space-x-12">
             <aside class="w-full max-w-xl lg:w-48">
                 <nav
                     class="flex flex-col space-y-1 space-x-0"
-                    aria-label="Settings"
+                    aria-label="Ajustes"
                 >
                     <Button
                         v-for="item in sidebarNavItems"
@@ -67,5 +66,6 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
                 </section>
             </div>
         </div>
+        <ScrollToTopProgress :remember-position="false" />
     </div>
 </template>

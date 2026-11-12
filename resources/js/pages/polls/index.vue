@@ -252,30 +252,10 @@ const formatDate = (
             <!-- CABECERA                                           -->
             <!-- ================================================== -->
 
-            <div
-                class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-            >
-                <div>
-                    <p
-                        class="font-semibold text-[#5200FF]"
-                    >
-                        SESIONES
-                    </p>
-
-                    <h1
-                        class="text-2xl font-black text-zinc-900 dark:text-zinc-100 sm:text-3xl"
-                    >
-                        Mis votaciones
-                    </h1>
-
-                    <p
-                        class="mt-2 text-sm text-zinc-500 dark:text-zinc-400"
-                    >
-                        Crea una sesión, comparte la
-                        votación y registra después la
-                        partida jugada.
-                    </p>
-                </div>
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <h1 class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
+                    Mis votaciones
+                </h1>
 
                 <Link
                     href="/polls/create"

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 
 interface GameSummary {
@@ -47,13 +48,10 @@ const counters = [
 <template>
     <Head title="Estadísticas" />
     <AppLayout>
-        <main class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
-            <div>
-                <p class="font-bold uppercase tracking-wider text-[#5200FF] dark:text-[#CCFF00]">Estadísticas</p>
-                <h1 class="mt-1 text-3xl font-black text-zinc-900 dark:text-zinc-100">Tu colección y tus partidas</h1>
-                <p class="mt-2 max-w-2xl text-sm leading-6 text-zinc-600 dark:text-zinc-300">
-                                    </p>
-            </div>
+        <div class="mx-auto w-full max-w-7xl px-4 pt-6 pb-24 sm:px-6">
+            <h1 class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
+                Estadísticas
+            </h1>
 
             <section aria-label="Resumen" class="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <Link
@@ -117,6 +115,7 @@ const counters = [
                     <p v-if="summary.games_without_plays > withoutPlays.length" class="mt-3 text-xs text-zinc-500 dark:text-zinc-400">Mostrando 10 de {{ summary.games_without_plays }}. Puedes consultar el resto en Mi colección.</p>
                 </section>
             </div>
-        </main>
+        </div>
+        <ScrollToTopProgress :remember-position="false" />
     </AppLayout>
 </template>

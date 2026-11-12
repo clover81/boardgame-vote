@@ -23,12 +23,12 @@ const submit = () => {
 
             <Link
                 href="/players"
-                class="text-sm font-semibold text-[#5200FF]"
+                class="text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
             >
                 ← Volver a jugadores
             </Link>
 
-            <h1 class="mt-4 text-3xl font-bold">
+            <h1 class="mt-4 text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
                 Añadir jugador
             </h1>
 

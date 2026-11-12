@@ -17,16 +17,10 @@ defineOptions({
 </script>
 
 <template>
-    <Head title="Appearance settings" />
-
-    <h1 class="sr-only">Appearance settings</h1>
+    <Head title="Apariencia" />
 
     <div class="space-y-6">
-        <Heading
-            variant="small"
-            title="Appearance settings"
-            description="Update the appearance settings for your account"
-        />
+        <Heading variant="small" title="Apariencia" />
         <AppearanceTabs />
     </div>
 </template>

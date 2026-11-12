@@ -35,22 +35,10 @@ const togglePlayer = (player: Player) => {
         <div class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
 
             <!-- Cabecera -->
-            <div
-                class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-            >
-                <div>
-                    <p class="font-semibold text-[#5200FF]">
-                        JUGADORES
-                    </p>
-
-                    <h1 class="text-2xl font-bold sm:text-3xl">
-                        Jugadores habituales
-                    </h1>
-
-                    <p class="mt-2 text-zinc-500">
-                        Personas que suelen participar en tus partidas.
-                    </p>
-                </div>
+            <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <h1 class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
+                    Jugadores habituales
+                </h1>
 
                 <Link
                     href="/players/create"

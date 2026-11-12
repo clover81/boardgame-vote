@@ -190,24 +190,11 @@ const submit = () => {
             <!-- CABECERA -->
 
             <div class="mt-4">
-                <p
-                    class="font-semibold text-[#5200FF]"
-                >
-                    HISTORIAL
-                </p>
-
                 <h1
-                    class="text-3xl font-bold text-zinc-900 dark:text-zinc-100"
+                    class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl"
                 >
                     Editar partida
                 </h1>
-
-                <p
-                    class="mt-2 text-zinc-500 dark:text-zinc-400"
-                >
-                    Corrige el juego, expansión,
-                    fecha, participantes o notas.
-                </p>
             </div>
 
             <form

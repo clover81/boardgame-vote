@@ -240,29 +240,10 @@ const formatDate = (date: string | null): string => {
             <!-- CABECERA                                           -->
             <!-- ================================================== -->
 
-            <div
-                class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-5"
-            >
-                <div>
-                    <p
-                        class="font-bold uppercase tracking-wide text-[#5200FF]"
-                    >
-                        MI COLECCIÓN
-                    </p>
-
-                    <h1
-                        class="mt-1 text-3xl font-black text-zinc-900 dark:text-zinc-100"
-                    >
-                        Mis juegos
-                    </h1>
-
-                    <p
-                        class="mt-2 text-zinc-500 dark:text-zinc-400"
-                    >
-                        Consulta juegos, expansiones
-                        e historial de partidas.
-                    </p>
-                </div>
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <h1 class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
+                    Mis juegos
+                </h1>
 
                 <div class="flex flex-wrap gap-2">
                     <Link
