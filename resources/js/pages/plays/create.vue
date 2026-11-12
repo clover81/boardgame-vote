@@ -48,6 +48,7 @@ interface Poll {
     id: number;
     name: string;
     has_clear_winner: boolean;
+    has_recorded_votes: boolean;
 }
 
 interface Candidate {
@@ -257,10 +258,10 @@ const submit = () => {
                     class="rounded-2xl border border-violet-200 bg-violet-50 p-5 dark:border-violet-900 dark:bg-violet-950/20"
                 >
                     <p
-                        v-if="!poll.has_clear_winner && candidates.length"
+                        v-if="!poll.has_clear_winner"
                         class="mb-2 font-black text-orange-700 dark:text-orange-300"
                     >
-                        Resultado: empate
+                        {{ poll.has_recorded_votes ? 'Resultado: empate' : 'No hay votos registrados' }}
                     </p>
 
                     <p
@@ -273,10 +274,7 @@ const submit = () => {
                         v-if="initialGameId !== null"
                         class="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300"
                     >
-                        Hemos preseleccionado el ganador
-                        de la votación cuando existe uno
-                        claro. Cámbialo si finalmente
-                        jugasteis otro juego.
+                        El ganador está seleccionado. Desmárcalo si no lo jugasteis.
                     </p>
                 </div>
 
@@ -363,7 +361,7 @@ const submit = () => {
                             for="other-game"
                             class="mb-2 block text-sm font-bold text-zinc-700 dark:text-zinc-300"
                         >
-                            ¿Jugasteis otro?
+                            Añadir un juego fuera de la votación
                         </label>
 
                         <select

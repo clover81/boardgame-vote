@@ -325,7 +325,9 @@ class PlayController extends Controller
         $winnerCandidate = null;
         $hasClearWinner = false;
 
-        if ($ranking->isNotEmpty() && $ranking->first()['points'] > 0) {
+        $hasRecordedVotes = $ranking->isNotEmpty() && $ranking->first()['points'] > 0;
+
+        if ($hasRecordedVotes) {
             $first = $ranking->get(0);
             $second = $ranking->get(1);
 
@@ -430,6 +432,7 @@ class PlayController extends Controller
                 'id' => $poll->id,
                 'name' => $poll->name,
                 'has_clear_winner' => $hasClearWinner,
+                'has_recorded_votes' => $hasRecordedVotes,
             ],
             'candidates' => $candidates,
             'players' => $players,
