@@ -252,6 +252,7 @@ const bggLoading = ref(false);
 let bggPreviewRequest: AbortController | null = null;
 const bggError = ref('');
 const bggTab = ref<'games' | 'expansions'>('games');
+const bggPreviewItems = computed(() => bggPreview.value?.[bggTab.value] ?? []);
 const bggPanelOpen = ref(false);
 
 const bggSyncing = ref(false);
@@ -1194,13 +1195,14 @@ watch(
                         </div>
                     </div>
 
-                    <div class="mt-6 flex gap-3">
+                    <div class="mt-6 flex flex-wrap gap-3">
                         <button
                             type="button"
                             class="rounded-lg px-4 py-2 text-sm font-bold"
                             :class="bggTab === 'games'
                                 ? 'bg-[#5200FF] text-white'
                                 : 'bg-zinc-100 text-zinc-700'"
+                            :aria-pressed="bggTab === 'games'"
                             @click="bggTab = 'games'"
                         >
                             Juegos ({{ bggPreview.summary.games }})
@@ -1212,6 +1214,7 @@ watch(
                             :class="bggTab === 'expansions'
                                 ? 'bg-[#5200FF] text-white'
                                 : 'bg-zinc-100 text-zinc-700'"
+                            :aria-pressed="bggTab === 'expansions'"
                             @click="bggTab = 'expansions'"
                         >
                             Expansiones ({{ bggPreview.summary.expansions }})
@@ -1221,10 +1224,13 @@ watch(
                     <div
                         class="mt-4 max-h-96 overflow-y-auto rounded-xl border border-zinc-200 dark:border-zinc-700"
                     >
+                        <p v-if="!bggPreviewItems.length" class="px-4 py-5 text-sm text-zinc-600 dark:text-zinc-400">
+                            {{ bggTab === 'games'
+                                ? 'BGG no ha devuelto juegos para esta colección.'
+                                : 'BGG no ha devuelto expansiones para esta colección.' }}
+                        </p>
                         <div
-                            v-for="item in (bggTab === 'games'
-                                ? bggPreview.games
-                                : bggPreview.expansions)"
+                            v-for="item in bggPreviewItems"
                             :key="item.bgg_id"
                             class="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3 last:border-0 dark:border-zinc-800"
                         >
