@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link as ChainIcon } from '@lucide/vue';
-import { ref, watch } from 'vue';
+import { nextTick, ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 
 interface BggExpansion {
@@ -23,6 +23,7 @@ const expansions = ref<BggExpansion[]>([]);
 const loading = ref(false);
 const loaded = ref(false);
 const error = ref('');
+const errorAlert = ref<HTMLParagraphElement | null>(null);
 const importingId = ref<number | null>(null);
 const brokenImages = ref<number[]>([]);
 
@@ -61,18 +62,25 @@ const search = async () => {
     }
 };
 
-const importExpansion = (expansion: BggExpansion) => {
+const importExpansion = (expansion: BggExpansion, event: MouseEvent) => {
     if (expansion.already_imported || loading.value || importingId.value !== null || props.disabled) return;
+
+    const button = event.currentTarget as HTMLButtonElement;
+    const bggLink = button.closest('article')?.querySelector('a');
 
     importingId.value = expansion.bgg_id;
     error.value = '';
     router.post(`/games/${props.gameId}/bgg-expansions/${expansion.bgg_id}`, {}, {
         preserveScroll: true,
-        onSuccess: () => {
+        onSuccess: async () => {
             expansion.already_imported = true;
+            await nextTick();
+            bggLink?.focus();
         },
-        onError: (errors) => {
+        onError: async (errors) => {
             error.value = String(errors.bgg_expansion ?? 'No se ha podido importar la expansión.');
+            await nextTick();
+            errorAlert.value?.focus();
         },
         onFinish: () => {
             importingId.value = null;
@@ -118,7 +126,7 @@ const markImageBroken = (id: number) => {
             </Link>
         </div>
 
-        <p v-if="error" role="alert" class="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/20 dark:text-red-300">
+        <p v-if="error" ref="errorAlert" role="alert" tabindex="-1" class="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/20 dark:text-red-300">
             {{ error }}
         </p>
 
@@ -172,7 +180,7 @@ const markImageBroken = (id: number) => {
                             type="button"
                             :disabled="loading || importingId !== null || disabled"
                             class="rounded-lg bg-[#CCFF00] px-3 py-2 text-sm font-black text-black transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
-                            @click="importExpansion(expansion)"
+                            @click="importExpansion(expansion, $event)"
                         >
                             {{ importingId === expansion.bgg_id ? 'Importando…' : 'Importar expansión' }}
                         </button>
