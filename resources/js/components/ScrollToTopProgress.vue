@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
-const props = withDefaults(defineProps<{ rememberPosition?: boolean; hideOnMobile?: boolean; compact?: boolean; compactOnMobile?: boolean; hideNearBottom?: boolean }>(), {
+const props = withDefaults(defineProps<{ rememberPosition?: boolean; hideOnMobile?: boolean; compact?: boolean; compactOnMobile?: boolean; hideNearBottom?: boolean; hideNearBottomDistance?: number }>(), {
     rememberPosition: true,
     hideOnMobile: false,
     compact: false,
@@ -34,7 +34,8 @@ const updateScroll = () => {
 
     // Ocultar el botón flotante en el tramo final de formularios largos
     // para evitar que se superponga al botón principal de envío.
-    nearBottom.value = maxScroll - scrollY.value <= window.innerHeight * 0.85;
+    const hideDistance = props.hideNearBottomDistance ?? window.innerHeight * 0.85;
+    nearBottom.value = maxScroll - scrollY.value <= hideDistance;
 
     progress.value = maxScroll > 0
         ? Math.min(100, (scrollY.value / maxScroll) * 100)
