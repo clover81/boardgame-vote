@@ -2,7 +2,7 @@
 import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
 import MeepleIcon from '@/components/icons/MeepleIcon.vue';
 import { playerNameColor } from '@/lib/player-colors';
-import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, CalendarHeart, UsersRound, HourglassCog, Swords, BrainCog } from '@lucide/vue';
+import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, CalendarHeart, UsersRound, HourglassCog, Swords, BrainCog, NotebookPen } from '@lucide/vue';
 
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 
@@ -417,9 +417,9 @@ const formatGameMode = (
                 >
                     <Link
                         :href="`/plays/create?game_id=${game.id}`"
-                        class="rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90"
+                        class="rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90 dark:bg-[#CCFF00] dark:text-[#181424]"
                     >
-                        <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Registrar partida
+                        <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-current" aria-hidden="true" /> Registrar partida
                     </Link>
 
                     <Link
@@ -1235,9 +1235,10 @@ const formatGameMode = (
                                     class="mt-5 rounded-xl bg-zinc-100 p-4 dark:bg-zinc-900"
                                 >
                                     <p
-                                        class="text-sm font-bold"
+                                        class="inline-flex items-center gap-2 text-sm font-bold"
                                     >
-                                        📝 Notas
+                                        <NotebookPen class="h-4 w-4 shrink-0 text-[#5200FF] dark:text-[#CCFF00]" aria-hidden="true" />
+                                        Notas
                                     </p>
 
                                     <p
