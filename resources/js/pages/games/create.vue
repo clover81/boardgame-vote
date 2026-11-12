@@ -90,7 +90,7 @@ const bggUrl = ref('');
 const importingBgg = ref(false);
 const bggImportError = ref('');
 const bggDescription = ref('');
-const availableBggExpansions = ref<BggExpansion[]>([]);
+const availableBggExpansions = ref<BggExpansion[] | null>(null);
 
 const existingImportedBggGame = ref<ExistingBggGame | null>(null);
 
@@ -269,7 +269,7 @@ const loadBggGame = async (result: BggSearchResult) => {
 
         // Limpiamos los datos del importador anterior al cambiar de juego.
         existingImportedBggGame.value = null;
-        availableBggExpansions.value = [];
+        availableBggExpansions.value = null;
         form.bgg_expansion_ids = [];
         bggDescription.value = game.description;
 
@@ -377,7 +377,7 @@ const importFromBgg = async () => {
              * Limpiamos los datos de una importación anterior.
              */
             form.bgg_id = null;
-            availableBggExpansions.value = [];
+            availableBggExpansions.value = null;
             bggDescription.value = '';
 
             return;
@@ -1038,7 +1038,7 @@ const submit = () => {
                 <!-- ================================================== -->
 
                 <div
-                    v-if="availableBggExpansions.length"
+                    v-if="availableBggExpansions?.length"
                     class="mt-6"
                 >
                     <div
@@ -1073,7 +1073,7 @@ const submit = () => {
                                 />
 
                                 <div
-                                    class="rounded-xl border border-zinc-200 bg-white p-4 transition peer-checked:border-[#5200FF] peer-checked:bg-violet-50 peer-checked:ring-1 peer-checked:ring-[#5200FF] dark:border-zinc-800 dark:bg-zinc-900 dark:peer-checked:bg-violet-950/30"
+                                    class="rounded-xl border border-zinc-200 bg-white p-4 transition peer-checked:border-[#5200FF] peer-checked:bg-violet-50 peer-checked:ring-1 peer-checked:ring-[#5200FF] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#5200FF] dark:border-zinc-800 dark:bg-zinc-900 dark:peer-checked:bg-violet-950/30"
                                 >
                                     <div class="flex gap-3">
                                         <div class="text-xl">
@@ -1133,7 +1133,7 @@ const submit = () => {
                 </div>
 
                 <div
-                    v-else-if="form.bgg_id"
+                    v-else-if="availableBggExpansions !== null"
                     class="mt-5 rounded-xl bg-zinc-100 p-4 text-sm text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400"
                 >
                     BGG no ha devuelto expansiones
