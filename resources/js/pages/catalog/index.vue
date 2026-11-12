@@ -280,7 +280,8 @@ onMounted(() => {
         search.value = filters.search ?? '';
         const savedPlayerCount = Number(filters.playerCount);
         playerCount.value = playerOptions.value.includes(savedPlayerCount) ? savedPlayerCount : '';
-        collectionId.value = filters.collectionId ?? '';
+        const savedCollectionId = Number(filters.collectionId);
+        collectionId.value = props.collections.find(collection => collection.id === savedCollectionId)?.id ?? '';
         durationLimit.value = filters.durationLimit ?? '';
         difficulty.value = filters.difficulty ?? '';
         selectedGameMode.value = gameModeOptions.value.some(([mode]) => mode === filters.selectedGameMode)
