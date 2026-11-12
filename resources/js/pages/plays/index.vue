@@ -576,12 +576,14 @@ const confirmDeletePlay = () => {
 
                     <div>
                         <label
+                            for="history-game"
                             class="text-sm font-bold text-zinc-800 dark:text-zinc-200"
                         >
                             Juego
                         </label>
 
                         <select
+                            id="history-game"
                             v-model="
                                 selectedGameId
                             "
@@ -607,12 +609,14 @@ const confirmDeletePlay = () => {
 
                     <div>
                         <label
+                            for="history-player"
                             class="text-sm font-bold text-zinc-800 dark:text-zinc-200"
                         >
                             Jugador
                         </label>
 
                         <select
+                            id="history-player"
                             v-model="
                                 selectedPlayerId
                             "
@@ -629,7 +633,7 @@ const confirmDeletePlay = () => {
                                 :key="player.id"
                                 :value="player.id"
                             >
-                                <span :class="['inline-flex items-center gap-1.5', playerNameColor(player.name)]"><MeepleIcon class="h-3.5 w-3.5 shrink-0" />{{ player.name }}</span>
+                                {{ player.name }}
                             </option>
                         </select>
                     </div>
@@ -638,12 +642,14 @@ const confirmDeletePlay = () => {
 
                     <div>
                         <label
+                            for="history-sort"
                             class="text-sm font-bold text-zinc-800 dark:text-zinc-200"
                         >
                             Orden
                         </label>
 
                         <select
+                            id="history-sort"
                             v-model="sortBy"
                             class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                         >
