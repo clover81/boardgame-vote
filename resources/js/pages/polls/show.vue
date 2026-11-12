@@ -178,6 +178,16 @@ const props = defineProps<{
 
 const page = usePage();
 const changingVotingMode = ref(false);
+const refreshingVotes = ref(false);
+
+const refreshVotes = () => {
+    if (refreshingVotes.value) return;
+    refreshingVotes.value = true;
+
+    router.reload({
+        onFinish: () => { refreshingVotes.value = false; },
+    });
+};
 
 const changeVotingMode = () => {
     if (changingVotingMode.value) return;
@@ -640,6 +650,15 @@ const modeLabel = (
                             han votado
                         </p>
 
+                        <button
+                            type="button"
+                            :disabled="refreshingVotes"
+                            class="mt-2 min-h-11 rounded-xl border border-violet-300 px-3 text-sm font-semibold text-[#5200FF] hover:bg-violet-50 disabled:opacity-50 dark:border-violet-700 dark:text-violet-200 dark:hover:bg-violet-950"
+                            @click="refreshVotes"
+                        >
+                            {{ refreshingVotes ? 'Actualizando…' : 'Actualizar votos' }}
+                        </button>
+
                         <!-- ENLACES INDIVIDUALES -->
 
                         <div
@@ -659,9 +678,17 @@ const modeLabel = (
                                     :key="participant.id"
                                     class="rounded-xl bg-zinc-50 p-3 dark:bg-zinc-900"
                                 >
-                                    <p class="font-semibold">
+                                    <div class="flex flex-wrap items-center justify-between gap-2 font-semibold">
                                         <span :class="['inline-flex items-center gap-1.5', playerNameColor(participant.display_name)]"><MeepleIcon class="h-3.5 w-3.5 shrink-0" />{{ participant.display_name }}</span>
-                                    </p>
+                                        <span
+                                            class="rounded-full px-2 py-1 text-xs font-semibold"
+                                            :class="participant.has_voted
+                                                ? 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300'
+                                                : 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300'"
+                                        >
+                                            {{ participant.has_voted ? 'Votado' : 'Pendiente' }}
+                                        </span>
+                                    </div>
 
                                     <div v-if="participant.vote_token" class="mt-2 flex flex-wrap items-center gap-2">
                                         <button
@@ -749,7 +776,7 @@ const modeLabel = (
             <!-- PARTICIPANTES                                      -->
             <!-- ================================================== -->
 
-            <section class="mt-10">
+            <section v-if="poll.status !== 'open'" class="mt-10">
                 <h2
                     class="text-xl font-bold text-zinc-900 dark:text-zinc-100"
                 >
@@ -769,9 +796,7 @@ const modeLabel = (
                         :class="
                             participant.has_voted
                                 ? 'border-green-300 bg-green-50 text-green-800 dark:border-green-900 dark:bg-green-950/30 dark:text-green-300'
-                                : poll.status === 'open'
-                                  ? 'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900 dark:bg-orange-950/20 dark:text-orange-300'
-                                  : 'border-zinc-200 text-zinc-600 dark:border-zinc-800 dark:text-zinc-300'
+                                : 'border-zinc-200 text-zinc-600 dark:border-zinc-800 dark:text-zinc-300'
                         "
                     >
                         {{
@@ -787,12 +812,6 @@ const modeLabel = (
                             ✓ Votado
                         </span>
 
-                        <span
-                            v-else-if="poll.status === 'open'"
-                            class="ml-2 text-xs font-semibold"
-                        >
-                            pendiente
-                        </span>
                     </span>
                 </div>
             </section>
