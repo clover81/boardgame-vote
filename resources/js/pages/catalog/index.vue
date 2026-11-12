@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import YoutubeLogoIcon from '@/components/icons/YoutubeLogoIcon.vue';
-import { Link as ChainIcon, UsersRound, HourglassCog, Swords, BrainCog } from '@lucide/vue';
+import { ChevronDown, Link as ChainIcon, UsersRound, HourglassCog, Swords, BrainCog } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 
 import { computed, onMounted, ref, watch } from 'vue';
@@ -45,14 +45,6 @@ const durationLimit = ref<number | ''>('');
 const difficulty = ref<'' | 'light' | 'medium' | 'heavy'>('');
 const selectedGameMode = ref('');
 const showAdvancedFilters = ref(false);
-
-const advancedFiltersActive = computed(() =>
-    playerCount.value !== '' ||
-    collectionId.value !== '' ||
-    durationLimit.value !== '' ||
-    difficulty.value !== '' ||
-    selectedGameMode.value !== ''
-);
 
 const brokenCoverIds = ref<number[]>([]);
 
@@ -242,6 +234,10 @@ const activeFilterChips = computed<FilterChip[]>(() => {
 
     return chips;
 });
+
+const advancedFilterCount = computed(() =>
+    activeFilterChips.value.filter(chip => chip.key !== 'search').length,
+);
 
 const removeFilter = (key: FilterKey) => {
     switch (key) {
@@ -487,17 +483,16 @@ const externalUrl = (url: string | null): string | undefined => {
 
                     <button
                         type="button"
-                        class="inline-flex items-center gap-2 rounded-xl border border-[#5200FF]/20 bg-[#f0ebff] px-4 py-2 text-sm font-bold text-[#5200FF] transition hover:bg-[#e5dcff] md:hidden"
+                        class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#5200FF]/20 bg-[#f0ebff] px-3 py-2 text-sm font-bold text-[#5200FF] transition hover:bg-[#e5dcff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] md:hidden"
                         :aria-expanded="showAdvancedFilters"
+                        aria-controls="catalog-filter-fields"
                         @click="showAdvancedFilters = !showAdvancedFilters"
                     >
-                        <span aria-hidden="true">⚙️</span>
-
-                        {{ showAdvancedFilters ? 'Ocultar filtros' : advancedFiltersActive ? 'Filtros activos' : 'Más filtros' }}
-
-                        <span aria-hidden="true">
-                            {{ showAdvancedFilters ? '⌃' : '⌄' }}
+                        {{ showAdvancedFilters ? 'Ocultar filtros' : 'Más filtros' }}
+                        <span v-if="!showAdvancedFilters && advancedFilterCount" class="rounded-full bg-white px-2 py-0.5 text-xs">
+                            {{ advancedFilterCount }} <span class="sr-only">{{ advancedFilterCount === 1 ? 'activo' : 'activos' }}</span>
                         </span>
+                        <ChevronDown class="size-4 shrink-0 transition-transform motion-reduce:transition-none" :class="{ 'rotate-180': showAdvancedFilters }" aria-hidden="true" />
                     </button>
 
                     <button
@@ -511,6 +506,7 @@ const externalUrl = (url: string | null): string | undefined => {
                 </div>
 
                 <div
+                    id="catalog-filter-fields"
                     class="catalog-filters-grid grid gap-3 md:grid-cols-2 xl:grid-cols-3"
                     :class="{ 'catalog-filters-collapsed': !showAdvancedFilters }"
                 >
