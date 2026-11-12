@@ -5,11 +5,12 @@ import MeepleIcon from '@/components/icons/MeepleIcon.vue';
 import { BuildingComplexPlus } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import { CalendarHeart } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import {
     Head,
     Link,
     router,
+    usePage,
 } from '@inertiajs/vue3';
 
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -172,6 +173,37 @@ const players = computed(() => {
 
 const normalizeHistorySearch = (value: string): string =>
     value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+const historyFiltersKey = `play-history-filters:${usePage().props.auth.user?.id}`;
+
+onMounted(() => {
+    try {
+        const saved = JSON.parse(sessionStorage.getItem(historyFiltersKey) ?? 'null');
+        if (!saved) return;
+
+        search.value = typeof saved.search === 'string' ? saved.search : '';
+        selectedGameId.value = games.value.find((game) => game.id === saved.gameId)?.id ?? null;
+        selectedPlayerId.value = players.value.find((player) => player.id === saved.playerId)?.id ?? null;
+        sortBy.value = saved.sort === 'oldest' ? 'oldest' : 'newest';
+        showAdvancedFilters.value = saved.expanded === true;
+    } catch {
+        // Si el almacenamiento no está disponible, se usan los filtros iniciales.
+    }
+});
+
+watch([search, selectedGameId, selectedPlayerId, sortBy, showAdvancedFilters], () => {
+    try {
+        sessionStorage.setItem(historyFiltersKey, JSON.stringify({
+            search: search.value,
+            gameId: selectedGameId.value,
+            playerId: selectedPlayerId.value,
+            sort: sortBy.value,
+            expanded: showAdvancedFilters.value,
+        }));
+    } catch {
+        // El buscador sigue funcionando sin almacenamiento.
+    }
+});
 
 const filteredPlays = computed(() => {
     let result = [...props.plays];
