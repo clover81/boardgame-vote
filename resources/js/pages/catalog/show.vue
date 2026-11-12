@@ -2,7 +2,7 @@
 import YoutubeLogoIcon from '@/components/icons/YoutubeLogoIcon.vue';
 import { Link as ChainIcon, BrainCog, Swords } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
-import { ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import { useResizeObserver } from '@vueuse/core';
 import { Head, Link } from '@inertiajs/vue3';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
@@ -81,6 +81,7 @@ const catalogUrl = props.catalogBasePath ?? `/catalog/${props.catalogToken}`;
 
 const shareMessage = ref('');
 const manualShareUrl = ref('');
+const manualShareInput = ref<HTMLInputElement | null>(null);
 
 const shareGame = async () => {
     shareMessage.value = '';
@@ -114,6 +115,9 @@ const shareGame = async () => {
     } catch {
         manualShareUrl.value = url;
         shareMessage.value = 'Puedes copiar el enlace manualmente.';
+        await nextTick();
+        manualShareInput.value?.focus();
+        manualShareInput.value?.select();
     }
 };
 
@@ -223,13 +227,13 @@ const externalUrl = (url: string | null): string | undefined => {
                 >
                     <div class="flex flex-col gap-4">
                         <div class="flex items-center justify-between gap-4">
-                            <h2 class="text-lg font-black text-zinc-900">
+                            <h2 class="min-w-0 break-words text-lg font-black text-zinc-900">
                                 {{ game.name }}
                             </h2>
 
                             <button
                                 type="button"
-                                class="rounded-xl bg-zinc-100 px-4 py-2 text-sm font-bold text-zinc-800 hover:bg-zinc-200"
+                                class="min-h-11 shrink-0 whitespace-nowrap rounded-xl bg-zinc-100 px-4 py-2 text-sm font-bold text-zinc-800 hover:bg-zinc-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                                 @click="closeImage"
                             >
                                 ✕ Cerrar
@@ -357,6 +361,7 @@ const externalUrl = (url: string | null): string | undefined => {
                     <label v-if="manualShareUrl" class="mt-3 block text-sm font-semibold text-zinc-700">
                         Enlace del juego
                         <input
+                            ref="manualShareInput"
                             :value="manualShareUrl"
                             readonly
                             class="mt-1 block w-full min-w-0 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm"
