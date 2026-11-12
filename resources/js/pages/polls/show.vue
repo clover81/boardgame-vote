@@ -1072,9 +1072,9 @@ const modeLabel = (
                         </p>
 
                         <p class="mt-1 text-sm">
-                            Hay varios juegos con los
-                            mismos puntos y el mismo número
-                            de primeras opciones.
+                            {{ poll.single_choice
+                                ? 'Hay varios juegos con el mismo número de votos.'
+                                : 'Hay varios juegos con los mismos puntos y el mismo número de primeras opciones.' }}
                         </p>
                     </div>
                 </div>
