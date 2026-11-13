@@ -770,7 +770,7 @@ const externalUrl = (url: string | null): string | undefined => {
 
                     <div class="flex flex-1 flex-col p-4 sm:p-5">
                         <div class="sm:min-h-14">
-                            <h3 class="line-clamp-2 text-lg font-black leading-snug tracking-tight sm:text-xl" :title="game.name">
+                            <h3 class="line-clamp-3 break-words text-lg font-black leading-snug tracking-tight sm:line-clamp-2 sm:text-xl" :title="game.name">
                                 {{ game.name }}
                             </h3>
                         </div>
