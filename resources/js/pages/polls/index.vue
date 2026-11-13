@@ -5,7 +5,7 @@ import { UsersRound } from '@lucide/vue';
 import {
     computed,
     ref,
-    watch,
+    onBeforeUnmount,
 } from 'vue';
 
 import {
@@ -126,78 +126,44 @@ const pollDetailsUrl = (pollId: number) => {
     return `/polls/${pollId}?back=${encodeURIComponent(`/polls?${filters}`)}`;
 };
 
-const applyFilters = () => {
-    router.get(
-        '/polls',
-        currentFilters.value,
-        {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        }
-    );
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+const cancelSearch = () => {
+    if (searchTimer !== null) {
+        clearTimeout(searchTimer);
+        searchTimer = null;
+    }
 };
 
-/*
- * Colección: actualización inmediata.
- */
-watch(
-    collectionId,
-    () => {
-        applyFilters();
-    }
-);
+onBeforeUnmount(cancelSearch);
 
-/*
- * Buscador:
- * no enviamos una petición por cada tecla.
- */
-let searchTimer:
-    ReturnType<
-        typeof setTimeout
-    > | null = null;
+const applyFilters = () => {
+    cancelSearch();
 
-watch(
-    search,
-    () => {
-        if (searchTimer) {
-            clearTimeout(
-                searchTimer
-            );
-        }
+    router.get('/polls', currentFilters.value, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
+};
 
-        searchTimer =
-            setTimeout(
-                () => {
-                    applyFilters();
-                },
-                350
-            );
-    }
-);
+const selectStatus = (status: StatusFilter) => {
+    if (statusFilter.value === status) return;
 
-/*
-|--------------------------------------------------------------------------
-| Limpiar
-|--------------------------------------------------------------------------
-*/
+    statusFilter.value = status;
+    applyFilters();
+};
+
+const scheduleSearch = () => {
+    cancelSearch();
+    searchTimer = setTimeout(applyFilters, 350);
+};
 
 const clearFilters = () => {
     search.value = '';
-
-    collectionId.value =
-        null;
-
+    collectionId.value = null;
     statusFilter.value = 'all';
-
-    router.get(
-        '/polls',
-        {},
-        {
-            preserveScroll: true,
-            replace: true,
-        }
-    );
+    applyFilters();
 };
 
 /*
@@ -285,9 +251,7 @@ const formatDate = (
                             ? 'bg-[#5200FF] text-white'
                             : 'bg-zinc-100 dark:bg-zinc-900'
                     "
-                    @click="
-                        statusFilter = 'all'
-                    "
+                    @click="selectStatus('all')"
                 >
                     Todas
                     {{ polls.length }}
@@ -302,9 +266,7 @@ const formatDate = (
                             ? 'bg-[#5200FF] text-white'
                             : 'bg-zinc-100 dark:bg-zinc-900'
                     "
-                    @click="
-                        statusFilter = 'draft'
-                    "
+                    @click="selectStatus('draft')"
                 >
                     Borradores
                     {{ countByStatus('draft') }}
@@ -319,9 +281,7 @@ const formatDate = (
                             ? 'bg-[#CCFF00] text-black'
                             : 'bg-zinc-100 dark:bg-zinc-900'
                     "
-                    @click="
-                        statusFilter = 'open'
-                    "
+                    @click="selectStatus('open')"
                 >
                     Abiertas
                     {{ countByStatus('open') }}
@@ -336,9 +296,7 @@ const formatDate = (
                             ? 'bg-[#5200FF] text-white'
                             : 'bg-zinc-100 dark:bg-zinc-900'
                     "
-                    @click="
-                        statusFilter = 'closed'
-                    "
+                    @click="selectStatus('closed')"
                 >
                     Cerradas
                     {{ countByStatus('closed') }}
@@ -369,6 +327,7 @@ const formatDate = (
                             type="search"
                             class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-[#5200FF] focus:ring-2 focus:ring-violet-500/15 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                             placeholder="Nombre de la votación..."
+                            @input="scheduleSearch"
                         />
                     </div>
 
@@ -382,6 +341,7 @@ const formatDate = (
                         </label>
 
                         <select
+                            @change="applyFilters"
                             v-model="
                                 collectionId
                             "
