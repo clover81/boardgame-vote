@@ -317,6 +317,8 @@ const candidateError = computed(() => {
     return errors.game_id ?? null;
 });
 
+const candidateErrorAlert = ref<HTMLParagraphElement | null>(null);
+
 const addCandidate = (gameId: number) => {
     if (!props.canAddCandidates || addingCandidateId.value !== null) return;
 
@@ -329,6 +331,12 @@ const addCandidate = (gameId: number) => {
 
             await nextTick();
             (addCandidateButton.value ?? candidatesHeading.value)?.focus();
+        },
+        onError: async () => {
+            if (!props.canAddCandidates) addCandidateOpen.value = false;
+
+            await nextTick();
+            candidateErrorAlert.value?.focus();
         },
         onFinish: () => { addingCandidateId.value = null; },
     });
@@ -919,6 +927,10 @@ const modeLabel = (
                     </button>
                 </div>
 
+                <p v-if="candidateError" ref="candidateErrorAlert" tabindex="-1" class="mt-2 text-sm font-semibold text-red-600 dark:text-red-300" role="alert">
+                    {{ candidateError }}
+                </p>
+
                 <div
                     v-if="canAddCandidates && addCandidateOpen"
                     class="mt-4 rounded-2xl border border-violet-300 bg-violet-50/60 p-4 dark:border-violet-900 dark:bg-violet-950/20"
@@ -934,9 +946,6 @@ const modeLabel = (
                         placeholder="Escribe el nombre del juego…"
                         class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-3 py-3 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                     />
-                    <p v-if="candidateError" class="mt-2 text-sm font-semibold text-red-600 dark:text-red-300" role="alert">
-                        {{ candidateError }}
-                    </p>
                     <div class="mt-3 max-h-56 space-y-2 overflow-y-auto sm:max-h-80">
                         <p v-if="candidateQuery.trim().length < 2" class="text-sm text-zinc-500 dark:text-zinc-400">
                             Escribe al menos 2 letras para buscar un juego.
