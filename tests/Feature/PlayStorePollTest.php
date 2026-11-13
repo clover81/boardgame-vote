@@ -189,8 +189,10 @@ test('resubmitting a registered poll does not create another play', function () 
     $this->actingAs($this->user)->post(route('plays.store'), $this->payload)
         ->assertSessionHasNoErrors();
 
-    $this->post(route('plays.store'), $this->payload)
-        ->assertRedirect(route('polls.show', $this->poll))
+    $back = '/polls?search=domingo&status=closed';
+
+    $this->post(route('plays.store', ['back' => $back]), $this->payload)
+        ->assertRedirect(route('polls.show', ['poll' => $this->poll, 'back' => $back]))
         ->assertSessionHasErrors([
             'play' => 'Las partidas de esta votación ya han sido registradas.',
         ]);
