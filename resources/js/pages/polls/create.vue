@@ -6,7 +6,7 @@ import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 
 
 import { computed, onUnmounted, ref, watch } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import InputError from '@/components/InputError.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
@@ -65,6 +65,13 @@ interface GroupRecommendation {
     last_group_played_at: string | null;
     last_selected_played_at: string | null;
 }
+
+const page = usePage();
+const backToGames = computed(() => {
+    const back = new URLSearchParams(page.url.split('?')[1]).get('back');
+
+    return back === '/games' || back?.startsWith('/games?') ? back : null;
+});
 
 const props = defineProps<{
     players: Player[];
@@ -893,10 +900,10 @@ const submit = () => {
             class="mx-auto box-border w-full min-w-0 max-w-7xl px-4 py-6 sm:px-6"
         >
             <Link
-                href="/polls"
+                :href="backToGames ?? '/polls'"
                 class="text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
             >
-                ← Volver a votaciones
+                {{ backToGames ? '← Volver a la colección' : '← Volver a votaciones' }}
             </Link>
 
             <!-- CABECERA -->

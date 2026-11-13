@@ -262,7 +262,7 @@ const formatDate = (date: string | null): string => {
 
                 <div class="flex flex-wrap gap-2">
                     <Link
-                        href="/polls/create"
+                        :href="`/polls/create?back=${encodeURIComponent($page.url)}`"
                         class="inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-[#5200FF]/35 bg-[#5200FF]/5 px-4 py-2 font-bold text-[#5200FF] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#5200FF] hover:bg-[#5200FF]/10 hover:shadow-[0_8px_22px_rgba(82,0,255,0.16)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none dark:border-[#CCFF00]/45 dark:bg-[#5200FF]/10 dark:text-[#CCFF00] dark:hover:bg-[#5200FF]/20"
                     >
                         <RollingDicesIcon class="size-7 shrink-0 text-[#5200FF] dark:text-[#CCFF00]" aria-hidden="true" />
