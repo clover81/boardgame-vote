@@ -5,7 +5,7 @@ import MeepleIcon from '@/components/icons/MeepleIcon.vue';
 import { BuildingComplexPlus } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import { CalendarHeart } from '@lucide/vue';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import {
     Head,
     Link,
@@ -359,17 +359,16 @@ const hasActiveFilters =
 |--------------------------------------------------------------------------
 */
 
-const clearFilters = () => {
+const historyHeading = ref<HTMLHeadingElement | null>(null);
+
+const clearFilters = async () => {
     search.value = '';
+    selectedGameId.value = null;
+    selectedPlayerId.value = null;
+    sortBy.value = 'newest';
 
-    selectedGameId.value =
-        null;
-
-    selectedPlayerId.value =
-        null;
-
-    sortBy.value =
-        'newest';
+    await nextTick();
+    historyHeading.value?.focus();
 };
 
 /*
@@ -404,9 +403,22 @@ const formatDate = (
 const playToDelete = ref<Play | null>(null);
 const deletePlayDialogOpen = ref(false);
 const deletingPlay = ref(false);
+let deleteTrigger: HTMLButtonElement | null = null;
 
-const deletePlay = (play: Play) => {
+const restoreDeleteFocus = (event: Event) => {
+    event.preventDefault();
+
+    const target = deleteTrigger?.isConnected
+        ? deleteTrigger
+        : historyHeading.value;
+
+    target?.focus();
+    deleteTrigger = null;
+};
+
+const deletePlay = (play: Play, event: MouseEvent) => {
     if (deletingPlay.value) return;
+    deleteTrigger = event.currentTarget as HTMLButtonElement;
 
     playToDelete.value = play;
     deletePlayDialogOpen.value = true;
@@ -448,7 +460,7 @@ const confirmDeletePlay = () => {
             <!-- ================================================== -->
 
             <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <h1 class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
+                <h1 ref="historyHeading" tabindex="-1" class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
                     Partidas jugadas
                 </h1>
 
@@ -821,7 +833,7 @@ const confirmDeletePlay = () => {
                             type="button"
                             class="ml-auto font-semibold text-red-600 hover:underline dark:text-red-400"
                             :aria-label="`Eliminar partida de ${play.game.name} del ${formatDate(play.played_at)}`"
-                            @click="deletePlay(play)"
+                            @click="deletePlay(play, $event)"
                         >
                             Eliminar
                         </button>
@@ -896,7 +908,7 @@ const confirmDeletePlay = () => {
             <ScrollToTopProgress />
         </div>
         <Dialog v-model:open="deletePlayDialogOpen">
-            <DialogContent class="sm:max-w-md">
+            <DialogContent class="sm:max-w-md" @close-auto-focus="restoreDeleteFocus">
                 <DialogHeader>
                     <div
                         class="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100 text-2xl dark:bg-red-950"
