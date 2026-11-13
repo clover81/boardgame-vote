@@ -3,7 +3,7 @@ import { BuildingComplexPlus, Swords } from '@lucide/vue';
 import { Link as ChainIcon } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import { computed, ref } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import GameCollectionsField from '@/components/GameCollectionsField.vue';
 import InputError from '@/components/InputError.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
@@ -85,6 +85,13 @@ interface BggImportedGame {
     bgg_url: string;
     expansions: BggExpansion[];
 }
+
+const page = usePage();
+const backToGames = computed(() => {
+    const back = new URLSearchParams(page.url.split('?')[1]).get('back');
+
+    return back?.startsWith('/games?') ? back : '/games';
+});
 
 const bggUrl = ref('');
 const importingBgg = ref(false);
@@ -462,7 +469,7 @@ const submit = () => {
 
             <div class="mb-6">
                 <Link
-                    href="/games"
+                    :href="backToGames"
                     class="text-sm font-medium text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                 >
                     ← Volver a la colección

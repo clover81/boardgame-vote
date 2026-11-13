@@ -270,7 +270,7 @@ const formatDate = (date: string | null): string => {
                     </Link>
 
                     <Link
-                        href="/games/create"
+                        :href="`/games/create?back=${encodeURIComponent($page.url)}`"
                         class="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#5200FF] px-5 py-2.5 font-bold text-white transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                     >
                         + Añadir juego
