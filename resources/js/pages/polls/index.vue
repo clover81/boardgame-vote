@@ -317,12 +317,14 @@ const formatDate = (
 
                     <div>
                         <label
+                            for="poll-search"
                             class="text-sm font-bold text-zinc-800 dark:text-zinc-200"
                         >
                             Buscar
                         </label>
 
                         <input
+                            id="poll-search"
                             v-model="search"
                             type="search"
                             class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-[#5200FF] focus:ring-2 focus:ring-violet-500/15 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
@@ -335,12 +337,14 @@ const formatDate = (
 
                     <div>
                         <label
+                            for="poll-collection"
                             class="text-sm font-bold text-zinc-800 dark:text-zinc-200"
                         >
                             Colección
                         </label>
 
                         <select
+                            id="poll-collection"
                             @change="applyFilters"
                             v-model="
                                 collectionId
@@ -374,6 +378,7 @@ const formatDate = (
                     class="mt-4 flex items-center justify-between border-t border-zinc-200 pt-4 dark:border-zinc-800"
                 >
                     <p
+                        role="status"
                         class="text-sm text-zinc-500 dark:text-zinc-400"
                     >
                         {{
