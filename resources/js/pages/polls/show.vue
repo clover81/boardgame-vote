@@ -206,7 +206,7 @@ const changeVotingMode = () => {
     if (changingVotingMode.value) return;
 
     router.patch(
-        `/polls/${props.poll.id}/voting-mode`,
+        withPollReturn(`/polls/${props.poll.id}/voting-mode`),
         { single_choice: !props.poll.single_choice },
         {
             preserveScroll: true,

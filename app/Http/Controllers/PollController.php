@@ -1215,7 +1215,7 @@ class PollController extends Controller
 
             $current->update(['single_choice' => $validated['single_choice']]);
 
-            return redirect()->route('polls.show', $current)
+            return redirect()->route('polls.show', $this->pollReturnParameters($current))
                 ->with('success', 'Modo de votación actualizado.');
         });
     }
