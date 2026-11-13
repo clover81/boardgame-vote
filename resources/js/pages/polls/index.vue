@@ -533,9 +533,7 @@ const formatDate = (
                                         'closed' &&
                                     !poll.has_registered_play
                                 "
-                                :href="
-                                    `/polls/${poll.id}/register-play`
-                                "
+                                :href="withPollListReturn(`/polls/${poll.id}/register-play`)"
                                 class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#CCFF00] px-4 py-2.5 text-center text-sm font-black text-black transition-all duration-200 hover:bg-lime-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                             >
                                 <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Registrar partida

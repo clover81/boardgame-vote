@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { today } from '@/lib/local-date';
 import MeepleIcon from '@/components/icons/MeepleIcon.vue';
 import { playerNameColor } from '@/lib/player-colors';
 import { BuildingComplexPlus } from '@lucide/vue';
@@ -13,11 +14,19 @@ import {
     Head,
     Link,
     useForm,
+    usePage,
 } from '@inertiajs/vue3';
 
 import AppLayout from '@/layouts/AppLayout.vue';
 import InputError from '@/components/InputError.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
+
+const page = usePage();
+const pollReturnQuery = computed(() => {
+    const back = new URLSearchParams(page.url.split('?')[1]).get('back');
+
+    return back?.startsWith('/polls?') ? `?back=${encodeURIComponent(back)}` : '';
+});
 
 interface Player {
     id: number;
@@ -106,8 +115,7 @@ const form = useForm({
 
     expansion_ids: {} as Record<number, number | null>,
 
-    played_at:
-        props.initial_played_at ?? props.defaults.played_at,
+    played_at: props.initial_played_at ?? today(),
 
     player_ids:
         [...(props.initial_player_ids ?? props.defaults.player_ids)],
@@ -219,7 +227,7 @@ const submit = () => {
         expansion_ids: Object.fromEntries(
             data.game_ids.map((gameId) => [gameId, data.expansion_ids[gameId] ?? null])
         ),
-    })).post('/plays');
+    })).post(`/plays${pollReturnQuery.value}`);
 };
 </script>
 
@@ -233,7 +241,7 @@ const submit = () => {
             <!-- VOLVER -->
 
             <Link
-                :href="`/polls/${poll.id}`"
+                :href="`/polls/${poll.id}${pollReturnQuery}`"
                 class="text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
             >
                 ← Volver a la votación

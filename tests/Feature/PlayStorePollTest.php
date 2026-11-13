@@ -100,9 +100,15 @@ test('poll defaults can be changed to the game expansion and players actually pl
         'is_active' => true,
     ]);
     foreach ([$this->player, $absentPlayer] as $player) {
-        $this->poll->participants()->create([
+        $participant = $this->poll->participants()->create([
             'player_id' => $player->id,
             'display_name' => $player->name,
+        ]);
+
+        $participant->votes()->create([
+            'poll_id' => $this->poll->id,
+            'poll_candidate_id' => $candidate->id,
+            'position' => 1,
         ]);
     }
 

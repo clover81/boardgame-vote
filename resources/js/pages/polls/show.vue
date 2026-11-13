@@ -1460,7 +1460,9 @@ const modeLabel = (
                     class="mt-8"
                 >
                     <Link
-                        :href="`/polls/${poll.id}/register-play`"
+                        :href="backToPolls === '/polls'
+                            ? `/polls/${poll.id}/register-play`
+                            : `/polls/${poll.id}/register-play?back=${encodeURIComponent(backToPolls)}`"
                         class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#5200FF] px-5 py-2.5 font-bold text-white transition hover:bg-[#4100cc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                     >
                         <PlayingCardsFanIcon class="size-5 shrink-0 text-[#CCFF00]" aria-hidden="true" />

@@ -285,7 +285,7 @@ class PlayController extends Controller
 
         if (Play::where('poll_id', $poll->id)->exists()) {
             return redirect()
-                ->route('polls.show', $poll)
+                ->route('polls.show', [$poll, ...$this->pollReturnQuery($request)])
                 ->withErrors([
                     'play' => 'Las partidas de esta votación ya han sido registradas.',
                 ]);
@@ -460,6 +460,15 @@ class PlayController extends Controller
     | GUARDAR PARTIDA
     |--------------------------------------------------------------------------
     */
+
+    private function pollReturnQuery(Request $request): array
+    {
+        $back = $request->query('back');
+
+        return is_string($back) && str_starts_with($back, '/polls?')
+            ? ['back' => $back]
+            : [];
+    }
 
     public function store(
         Request $request
@@ -657,7 +666,7 @@ class PlayController extends Controller
 
         if (!$registered) {
             return redirect()
-                ->route('polls.show', $pollId)
+                ->route('polls.show', [$pollId, ...$this->pollReturnQuery($request)])
                 ->withErrors([
                     'play' => 'Las partidas de esta votación ya han sido registradas.',
                 ]);
@@ -665,7 +674,7 @@ class PlayController extends Controller
 
         if ($pollId) {
             return redirect()
-                ->route('polls.show', $pollId)
+                ->route('polls.show', [$pollId, ...$this->pollReturnQuery($request)])
                 ->with(
                     'success',
                     $gameIds->count() > 1
