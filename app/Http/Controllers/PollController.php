@@ -1274,7 +1274,14 @@ class PollController extends Controller
 
         $poll->candidates()->create(['game_id' => $game->id]);
 
-        return redirect()->route('polls.show', $poll)
+        $back = $request->query('back');
+        $parameters = ['poll' => $poll];
+
+        if (is_string($back) && str_starts_with($back, '/polls?')) {
+            $parameters['back'] = $back;
+        }
+
+        return redirect()->route('polls.show', $parameters)
             ->with('success', 'Juego añadido a la votación.');
     }
 

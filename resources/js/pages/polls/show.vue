@@ -322,7 +322,12 @@ const candidateErrorAlert = ref<HTMLParagraphElement | null>(null);
 const addCandidate = (gameId: number) => {
     if (!props.canAddCandidates || addingCandidateId.value !== null) return;
 
-    router.post(`/polls/${props.poll.id}/candidates`, { game_id: gameId }, {
+    const path = `/polls/${props.poll.id}/candidates`;
+    const url = backToPolls.value === '/polls'
+        ? path
+        : `${path}?back=${encodeURIComponent(backToPolls.value)}`;
+
+    router.post(url, { game_id: gameId }, {
         preserveScroll: true,
         onStart: () => { addingCandidateId.value = gameId; },
         onSuccess: async () => {
