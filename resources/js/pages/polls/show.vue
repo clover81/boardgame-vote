@@ -177,6 +177,13 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
+const backToPolls = computed(() => {
+    const query = page.url.split('?')[1] ?? '';
+    const back = new URLSearchParams(query).get('back');
+
+    return back?.startsWith('/polls?') ? back : '/polls';
+});
+
 const changingVotingMode = ref(false);
 const refreshingVotes = ref(false);
 
@@ -475,7 +482,7 @@ const modeLabel = (
             <!-- VOLVER -->
 
             <Link
-                href="/polls"
+                :href="backToPolls"
                 class="text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
             >
                 ← Volver a votaciones
