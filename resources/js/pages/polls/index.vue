@@ -4,6 +4,7 @@ import { CalendarHeart } from '@lucide/vue';
 import { UsersRound } from '@lucide/vue';
 import {
     computed,
+    nextTick,
     ref,
     onBeforeUnmount,
 } from 'vue';
@@ -159,11 +160,16 @@ const scheduleSearch = () => {
     searchTimer = setTimeout(applyFilters, 350);
 };
 
-const clearFilters = () => {
+const pollListHeading = ref<HTMLHeadingElement | null>(null);
+
+const clearFilters = async () => {
     search.value = '';
     collectionId.value = null;
     statusFilter.value = 'all';
     applyFilters();
+
+    await nextTick();
+    pollListHeading.value?.focus({ preventScroll: true });
 };
 
 /*
@@ -224,7 +230,7 @@ const formatDate = (
             <!-- ================================================== -->
 
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <h1 class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
+                <h1 ref="pollListHeading" tabindex="-1" class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
                     Mis votaciones
                 </h1>
 
