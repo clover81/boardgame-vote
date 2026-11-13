@@ -2,7 +2,7 @@
 import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import { HourglassCog, Swords, UsersRound, BrainCog } from '@lucide/vue';
-import { computed, onBeforeUnmount, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
 import {
     Head,
     Link,
@@ -140,7 +140,9 @@ const scheduleSearch = () => {
     searchTimer = setTimeout(applyFilters, 220);
 };
 
-const clearFilters = () => {
+const gamesHeading = ref<HTMLHeadingElement | null>(null);
+
+const clearFilters = async () => {
     search.value = '';
     gameMode.value = '';
     durationLimit.value = '';
@@ -149,6 +151,8 @@ const clearFilters = () => {
     selectedCollectionId.value = null;
     showMobileFilters.value = false;
     applyFilters();
+    await nextTick();
+    gamesHeading.value?.focus();
 };
 
 const advancedFilterCount = computed(() =>
@@ -204,7 +208,10 @@ const activeFilterChips = computed<FilterChip[]>(() => {
     return chips;
 });
 
-const removeFilter = (key: FilterKey) => {
+const removeFilter = async (key: FilterKey, event: MouseEvent) => {
+    const button = event.currentTarget as HTMLButtonElement;
+    const adjacentChip = button.nextElementSibling ?? button.previousElementSibling;
+
     switch (key) {
         case 'search': search.value = ''; break;
         case 'players': playerCount.value = ''; break;
@@ -214,6 +221,14 @@ const removeFilter = (key: FilterKey) => {
         case 'mode': gameMode.value = ''; break;
     }
     applyFilters();
+
+    await nextTick();
+
+    if (adjacentChip instanceof HTMLButtonElement) {
+        adjacentChip.focus();
+    } else {
+        document.getElementById('game-search')?.focus();
+    }
 };
 
 const formatDate = (date: string | null): string => {
@@ -241,7 +256,7 @@ const formatDate = (date: string | null): string => {
             <!-- ================================================== -->
 
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <h1 class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
+                <h1 ref="gamesHeading" tabindex="-1" class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
                     Mis juegos
                 </h1>
 
@@ -372,7 +387,7 @@ const formatDate = (date: string | null): string => {
                 <button v-for="chip in activeFilterChips" :key="chip.key" type="button"
                     :aria-label="`Quitar filtro ${chip.label}`"
                     class="inline-flex max-w-full items-center gap-2 rounded-full border border-violet-200 bg-violet-100 px-3 py-2 text-xs font-bold text-violet-800 transition hover:bg-violet-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-violet-700/50 dark:bg-violet-950/60 dark:text-violet-200 dark:hover:bg-violet-900/80"
-                    @click="removeFilter(chip.key)">
+                    @click="removeFilter(chip.key, $event)">
                     <span class="max-w-[190px] truncate sm:max-w-xs">{{ chip.label }}</span>
                     <span aria-hidden="true">×</span>
                 </button>
