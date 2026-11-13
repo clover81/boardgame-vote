@@ -109,6 +109,18 @@ const isGamePickerOpen = ref(
     !props.games.some((game) => game.id === props.play.game_id)
 );
 const gameSearch = ref('');
+const gameSearchInput = ref<HTMLInputElement | null>(null);
+const gamePickerButton = ref<HTMLButtonElement | null>(null);
+
+const toggleGamePicker = async (event: MouseEvent) => {
+    isGamePickerOpen.value = !isGamePickerOpen.value;
+
+    if (isGamePickerOpen.value && event.detail === 0) {
+        await nextTick();
+        gameSearchInput.value?.focus();
+    }
+};
+
 const visibleGameLimit = ref(12);
 const failedGameImages = ref<Record<number, boolean>>({});
 
@@ -133,10 +145,12 @@ const displayedGames = computed(() =>
 );
 watch(gameSearch, () => { visibleGameLimit.value = 12; });
 
-const finishGameSelection = () => {
+const finishGameSelection = async () => {
     isGamePickerOpen.value = false;
     gameSearch.value = '';
     visibleGameLimit.value = 12;
+    await nextTick();
+    gamePickerButton.value?.focus();
 };
 
 /*
@@ -230,11 +244,12 @@ const submit = () => {
                             </p>
                         </div>
                         <button
+                            ref="gamePickerButton"
                             type="button"
                             :aria-expanded="isGamePickerOpen"
                             aria-controls="edit-play-game-picker"
                             class="rounded-xl border border-[#5200FF] px-4 py-2 text-sm font-bold text-[#5200FF] transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5200FF] dark:text-[#CCFF00] dark:hover:bg-violet-950/30"
-                            @click="isGamePickerOpen = !isGamePickerOpen"
+                            @click="toggleGamePicker"
                         >
                             {{ isGamePickerOpen ? 'Ocultar buscador' : 'Cambiar juego' }}
                         </button>
@@ -276,6 +291,7 @@ const submit = () => {
                         </label>
                         <input
                             id="edit-play-game-search"
+                            ref="gameSearchInput"
                             v-model="gameSearch"
                             type="search"
                             autocomplete="off"
