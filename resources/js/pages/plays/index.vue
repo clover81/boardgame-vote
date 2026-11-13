@@ -893,17 +893,23 @@ const confirmDeletePlay = () => {
                 <p
                     class="mt-2 text-zinc-500 dark:text-zinc-400"
                 >
-                    Cuando cierres una votación
-                    podrás registrar qué juego
-                    jugasteis finalmente.
+                    Registra tu primera partida o abre una votación cerrada para registrar lo que jugasteis.
                 </p>
 
-                <Link
-                    href="/polls"
-                    class="mt-5 inline-flex rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90"
-                >
-                    Ir a votaciones
-                </Link>
+                <div class="mt-5 flex flex-wrap justify-center gap-3">
+                    <Link
+                        href="/plays/create"
+                        class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90"
+                    >
+                        Registrar partida
+                    </Link>
+                    <Link
+                        href="/polls?status=closed"
+                        class="inline-flex min-h-11 items-center justify-center rounded-xl border border-zinc-300 px-5 py-3 font-bold text-[#5200FF] transition hover:bg-violet-50 dark:border-zinc-700 dark:text-[#CCFF00] dark:hover:bg-violet-950/30"
+                    >
+                        Ver votaciones cerradas
+                    </Link>
+                </div>
             </div>
             <ScrollToTopProgress />
         </div>
