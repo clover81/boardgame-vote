@@ -87,7 +87,7 @@ const shareGame = async () => {
     shareMessage.value = '';
     manualShareUrl.value = '';
 
-    const url = window.location.href;
+    const url = window.location.origin + window.location.pathname;
 
     // Compartir con las aplicaciones del dispositivo.
     if (navigator.share) {
