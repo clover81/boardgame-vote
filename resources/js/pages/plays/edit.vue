@@ -112,10 +112,16 @@ const gameSearch = ref('');
 const visibleGameLimit = ref(12);
 const failedGameImages = ref<Record<number, boolean>>({});
 
+const normalizeGameSearch = (value: string) =>
+    value.normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLocaleLowerCase('es')
+        .trim();
+
 const matchingGames = computed(() => {
-    const query = gameSearch.value.trim().toLocaleLowerCase('es');
+    const query = normalizeGameSearch(gameSearch.value);
     const matches = props.games.filter((game) =>
-        game.name.toLocaleLowerCase('es').includes(query)
+        normalizeGameSearch(game.name).includes(query)
     );
     // El juego de la partida permanece visible al abrir el selector.
     return matches.sort((a, b) =>
@@ -277,7 +283,7 @@ const submit = () => {
                             class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none transition focus:border-[#5200FF] focus:ring-2 focus:ring-violet-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:ring-violet-700"
                         />
                         <p class="mt-2 text-xs text-zinc-500 dark:text-zinc-400" aria-live="polite">
-                            {{ matchingGames.length }} juegos encontrados. Elige uno para cambiarlo.
+                            {{ matchingGames.length }} {{ matchingGames.length === 1 ? 'juego encontrado' : 'juegos encontrados' }}
                         </p>
 
                         <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -313,7 +319,9 @@ const submit = () => {
                         </div>
 
                         <p v-if="matchingGames.length === 0" class="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
-                            No se han encontrado juegos con ese nombre.
+                            {{ selectedGame
+                                ? 'No hay coincidencias. El juego seleccionado se mantiene.'
+                                : 'No hay coincidencias.' }}
                         </p>
                         <button
                             v-if="matchingGames.length > displayedGames.length"

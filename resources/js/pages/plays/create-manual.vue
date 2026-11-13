@@ -335,7 +335,9 @@ const submit = () => {
                         v-if="gameSearch.trim() && matchingGamesCount === 0"
                         class="mt-4 text-sm text-zinc-500 dark:text-zinc-400"
                     >
-                        No se encontraron juegos con esa búsqueda.
+                        {{ form.game_id === null
+                            ? 'No se encontraron juegos con esa búsqueda.'
+                            : 'No se encontraron juegos con esa búsqueda. Tu selección se mantiene.' }}
                     </p>
 
                     <button
