@@ -54,13 +54,22 @@ const updateScroll = () => {
     savePosition(scrollY.value);
 };
 
-const scrollToTop = () => {
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const scrollToTop = (event: MouseEvent) => {
+    if (event.detail === 0) {
+        const content = document.querySelector<HTMLElement>('main');
 
-    window.scrollTo({
-        top: 0,
-        behavior: reduceMotion ? 'instant' : 'smooth',
-    });
+        if (content) {
+            if (!content.hasAttribute('tabindex')) {
+                content.setAttribute('tabindex', '-1');
+                content.addEventListener('blur', () => content.removeAttribute('tabindex'), { once: true });
+            }
+
+            content.focus({ preventScroll: true });
+        }
+    }
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: reduceMotion ? 'instant' : 'smooth' });
 };
 
 onMounted(async () => {
