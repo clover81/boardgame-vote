@@ -292,13 +292,24 @@ const shareResults = async () => {
 };
 
 const addCandidateOpen = ref(false);
+const addCandidateButton = ref<HTMLButtonElement | null>(null);
+const candidatesHeading = ref<HTMLHeadingElement | null>(null);
 const candidateQuery = ref('');
 const addingCandidateId = ref<number | null>(null);
+const normalizeCandidateSearch = (value: string) =>
+    value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es').trim();
+
 const matchingCandidateGames = computed(() => {
-    const query = candidateQuery.value.trim().toLocaleLowerCase();
+    const query = normalizeCandidateSearch(candidateQuery.value);
     if (query.length < 2) return [];
+
+    const terms = query.split(/\s+/);
+
     return props.availableGames
-        .filter((game) => game.name.toLocaleLowerCase().includes(query))
+        .filter((game) => {
+            const name = normalizeCandidateSearch(game.name);
+            return terms.every(term => name.includes(term));
+        })
         .slice(0, 12);
 });
 const candidateError = computed(() => {
@@ -312,9 +323,12 @@ const addCandidate = (gameId: number) => {
     router.post(`/polls/${props.poll.id}/candidates`, { game_id: gameId }, {
         preserveScroll: true,
         onStart: () => { addingCandidateId.value = gameId; },
-        onSuccess: () => {
+        onSuccess: async () => {
             candidateQuery.value = '';
             addCandidateOpen.value = false;
+
+            await nextTick();
+            (addCandidateButton.value ?? candidatesHeading.value)?.focus();
         },
         onFinish: () => { addingCandidateId.value = null; },
     });
@@ -890,11 +904,12 @@ const modeLabel = (
 
             <section class="mt-10">
                 <div class="flex flex-wrap items-center justify-between gap-3">
-                    <h2 class="text-xl font-bold text-zinc-900 dark:text-zinc-100">
+                    <h2 ref="candidatesHeading" tabindex="-1" class="text-xl font-bold text-zinc-900 dark:text-zinc-100">
                         Juegos candidatos
                     </h2>
                     <button
                         v-if="canAddCandidates"
+                        ref="addCandidateButton"
                         type="button"
                         class="rounded-xl border border-[#5200FF] px-4 py-2 text-sm font-bold text-[#5200FF] transition hover:bg-violet-50 dark:border-[#CCFF00] dark:text-[#CCFF00] dark:hover:bg-zinc-900"
                         :aria-expanded="addCandidateOpen"
