@@ -767,7 +767,7 @@ const confirmDeletePlay = () => {
 
                             <Link
                                 v-if="play.poll"
-                                :href="`/polls/${play.poll.id}`"
+                                :href="`/polls/${play.poll.id}?from=history`"
                                 class="mt-2 inline-block max-w-full break-words text-sm font-semibold text-[#5200FF] hover:underline dark:text-violet-300"
                             >
                                 Votación: {{ play.poll.name }}

@@ -177,9 +177,11 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
+const pollQuery = computed(() => new URLSearchParams(page.url.split('?')[1]));
+const fromHistory = computed(() => pollQuery.value.get('from') === 'history');
+
 const backToPolls = computed(() => {
-    const query = page.url.split('?')[1] ?? '';
-    const back = new URLSearchParams(query).get('back');
+    const back = pollQuery.value.get('back');
 
     return back?.startsWith('/polls?') ? back : '/polls';
 });
@@ -482,10 +484,10 @@ const modeLabel = (
             <!-- VOLVER -->
 
             <Link
-                :href="backToPolls"
+                :href="fromHistory ? '/plays' : backToPolls"
                 class="text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
             >
-                ← Volver a votaciones
+                {{ fromHistory ? '← Volver a mis partidas' : '← Volver a votaciones' }}
             </Link>
 
             <!-- ================================================== -->
