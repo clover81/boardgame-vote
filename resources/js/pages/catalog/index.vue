@@ -286,11 +286,10 @@ const filtersStorageKey = `catalog-filters:${props.catalogToken}`;
 
 // Recuperar los filtros al regresar al catálogo.
 onMounted(() => {
-    const saved = sessionStorage.getItem(filtersStorageKey);
-
-    if (!saved) return;
-
     try {
+        const saved = sessionStorage.getItem(filtersStorageKey);
+        if (!saved) return;
+
         const filters = JSON.parse(saved);
 
         search.value = filters.search ?? '';
@@ -306,7 +305,7 @@ onMounted(() => {
         sortBy.value = filters.sortBy ?? 'name';
         showAdvancedFilters.value = filters.showAdvancedFilters === true;
     } catch {
-        sessionStorage.removeItem(filtersStorageKey);
+        // Los filtros siguen disponibles aunque no se puedan restaurar.
     }
 });
 
@@ -323,19 +322,23 @@ watch(
         showAdvancedFilters,
     ],
     () => {
-        sessionStorage.setItem(
-            filtersStorageKey,
-            JSON.stringify({
-                search: search.value,
-                playerCount: playerCount.value,
-                collectionId: collectionId.value,
-                durationLimit: durationLimit.value,
-                difficulty: difficulty.value,
-                selectedGameMode: selectedGameMode.value,
-                sortBy: sortBy.value,
-                showAdvancedFilters: showAdvancedFilters.value,
-            }),
-        );
+        try {
+            sessionStorage.setItem(
+                filtersStorageKey,
+                JSON.stringify({
+                    search: search.value,
+                    playerCount: playerCount.value,
+                    collectionId: collectionId.value,
+                    durationLimit: durationLimit.value,
+                    difficulty: difficulty.value,
+                    selectedGameMode: selectedGameMode.value,
+                    sortBy: sortBy.value,
+                    showAdvancedFilters: showAdvancedFilters.value,
+                }),
+            );
+        } catch {
+            // El filtrado sigue funcionando sin almacenamiento.
+        }
     },
 );
 

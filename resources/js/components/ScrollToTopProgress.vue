@@ -25,6 +25,16 @@ const visible = computed(
 
 let storageKey = '';
 
+const savePosition = (position: number) => {
+    if (!props.rememberPosition) return;
+
+    try {
+        sessionStorage.setItem(storageKey, String(position));
+    } catch {
+        // El botón sigue funcionando aunque no se pueda guardar la posición.
+    }
+};
+
 const updateScroll = () => {
     scrollY.value = window.scrollY;
 
@@ -41,9 +51,7 @@ const updateScroll = () => {
         ? Math.min(100, (scrollY.value / maxScroll) * 100)
         : 0;
 
-    if (props.rememberPosition) {
-        sessionStorage.setItem(storageKey, String(scrollY.value));
-    }
+    savePosition(scrollY.value);
 };
 
 const scrollToTop = () => {
@@ -58,9 +66,14 @@ onMounted(async () => {
     // regresar a una posición antigua con su selección vacía.
     storageKey = `catalog-scroll:${window.location.pathname}`;
 
-    const savedPosition = props.rememberPosition
-        ? Number(sessionStorage.getItem(storageKey) ?? 0)
-        : 0;
+    let savedPosition = 0;
+    if (props.rememberPosition) {
+        try {
+            savedPosition = Number(sessionStorage.getItem(storageKey) ?? 0);
+        } catch {
+            // Sin una posición guardada se usa el desplazamiento actual.
+        }
+    }
 
     await nextTick();
 
@@ -83,9 +96,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-    if (props.rememberPosition) {
-        sessionStorage.setItem(storageKey, String(window.scrollY));
-    }
+    savePosition(window.scrollY);
 
     window.removeEventListener('scroll', updateScroll);
     window.removeEventListener('resize', updateScroll);
