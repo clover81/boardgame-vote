@@ -114,16 +114,16 @@ const currentFilters = computed(() => ({
     status: statusFilter.value === 'all' ? undefined : statusFilter.value,
 }));
 
-const pollDetailsUrl = (pollId: number) => {
+const withPollListReturn = (path: string) => {
     const filters = new URLSearchParams();
 
     for (const [key, value] of Object.entries(currentFilters.value)) {
         if (value !== undefined) filters.set(key, String(value));
     }
 
-    if (!filters.size) return `/polls/${pollId}`;
+    if (!filters.size) return path;
 
-    return `/polls/${pollId}?back=${encodeURIComponent(`/polls?${filters}`)}`;
+    return `${path}?back=${encodeURIComponent(`/polls?${filters}`)}`;
 };
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -229,7 +229,7 @@ const formatDate = (
                 </h1>
 
                 <Link
-                    href="/polls/create"
+                    :href="withPollListReturn('/polls/create')"
                     class="inline-flex min-h-11 w-full items-center justify-center gap-2.5 rounded-xl bg-[#5200FF] px-4 py-2.5 text-center font-bold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#4000cc] hover:shadow-[0_8px_22px_rgba(82,0,255,0.22)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:w-auto"
                 >
                     <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#3C00BB]" aria-hidden="true">
@@ -427,7 +427,7 @@ const formatDate = (
                             >
                                 <h2 class="min-w-0 text-xl font-black">
                                     <Link
-                                        :href="pollDetailsUrl(poll.id)"
+                                        :href="withPollListReturn(`/polls/${poll.id}`)"
                                         class="inline-block max-w-full break-words rounded text-zinc-900 transition-colors duration-200 hover:text-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-zinc-100 dark:hover:text-violet-300"
                                     >
                                         {{ poll.name }}
@@ -508,7 +508,7 @@ const formatDate = (
                             class="flex flex-wrap gap-2"
                         >
                             <Link
-                                :href="pollDetailsUrl(poll.id)"
+                                :href="withPollListReturn(`/polls/${poll.id}`)"
                                 class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#5200FF] px-4 py-2.5 text-center text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#4000cc] hover:shadow-md hover:shadow-violet-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                             >
                                 {{
@@ -521,7 +521,7 @@ const formatDate = (
 
                             <Link
                                 v-if="poll.status === 'open'"
-                                :href="pollDetailsUrl(poll.id)"
+                                :href="withPollListReturn(`/polls/${poll.id}`)"
                                 class="inline-flex min-h-11 items-center justify-center rounded-xl border border-zinc-300 px-4 py-2.5 text-center text-sm font-bold transition-colors hover:border-violet-400 hover:bg-violet-50 hover:text-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-zinc-700 dark:hover:bg-violet-950/30 dark:hover:text-violet-300"
                             >
                                 Ver enlaces personales

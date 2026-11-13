@@ -67,10 +67,14 @@ interface GroupRecommendation {
 }
 
 const page = usePage();
-const backToGames = computed(() => {
+const returnUrl = computed(() => {
     const back = new URLSearchParams(page.url.split('?')[1]).get('back');
 
-    return back === '/games' || back?.startsWith('/games?') ? back : null;
+    if (back === '/games' || back?.startsWith('/games?') || back?.startsWith('/polls?')) {
+        return back;
+    }
+
+    return '/polls';
 });
 
 const props = defineProps<{
@@ -900,10 +904,10 @@ const submit = () => {
             class="mx-auto box-border w-full min-w-0 max-w-7xl px-4 py-6 sm:px-6"
         >
             <Link
-                :href="backToGames ?? '/polls'"
+                :href="returnUrl"
                 class="text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
             >
-                {{ backToGames ? '← Volver a la colección' : '← Volver a votaciones' }}
+                {{ returnUrl.startsWith('/games') ? '← Volver a la colección' : '← Volver a votaciones' }}
             </Link>
 
             <!-- CABECERA -->
