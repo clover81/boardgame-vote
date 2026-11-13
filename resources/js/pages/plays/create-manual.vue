@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { today } from '@/lib/local-date';
 import { playerNameColor } from '@/lib/player-colors';
 import MeepleIcon from '@/components/icons/MeepleIcon.vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import {
     computed,
+    nextTick,
     ref,
     watch,
 } from 'vue';
@@ -15,6 +17,7 @@ import {
 } from '@inertiajs/vue3';
 
 import AppLayout from '@/layouts/AppLayout.vue';
+import AlertError from '@/components/AlertError.vue';
 import InputError from '@/components/InputError.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
@@ -50,37 +53,6 @@ const props = defineProps<{
         number | null;
     selected_player_id: number | null;
 }>();
-
-/*
-|--------------------------------------------------------------------------
-| Fecha local de hoy
-|--------------------------------------------------------------------------
-*/
-
-const today = (): string => {
-    const date = new Date();
-
-    const year =
-        date.getFullYear();
-
-    const month =
-        String(
-            date.getMonth() + 1
-        ).padStart(
-            2,
-            '0'
-        );
-
-    const day =
-        String(
-            date.getDate()
-        ).padStart(
-            2,
-            '0'
-        );
-
-    return `${year}-${month}-${day}`;
-};
 
 /*
 |--------------------------------------------------------------------------
@@ -218,13 +190,15 @@ watch(
 |--------------------------------------------------------------------------
 */
 
+const saveError = ref<HTMLDivElement | null>(null);
+
 const submit = () => {
     form.transform(({ game_id, expansion_id, ...data }) => ({
         ...data,
         game_ids: game_id === null ? [] : [game_id],
         expansion_ids: game_id === null ? {} : { [game_id]: expansion_id },
     })).post('/plays', {
-        onError: (errors) => {
+        onError: async (errors) => {
             const gameError = errors.game_ids ?? errors['game_ids.0'];
             if (gameError) {
                 form.setError('game_id', gameError);
@@ -234,6 +208,9 @@ const submit = () => {
             if (expansionError) {
                 form.setError('expansion_id', expansionError);
             }
+
+            await nextTick();
+            saveError.value?.focus();
         },
     });
 };
@@ -527,6 +504,13 @@ const submit = () => {
                 <!-- ================================================== -->
                 <!-- GUARDAR                                            -->
                 <!-- ================================================== -->
+
+                <div v-if="form.hasErrors" ref="saveError" tabindex="-1">
+                    <AlertError
+                        title="No se ha podido registrar la partida"
+                        :errors="Object.values(form.errors)"
+                    />
+                </div>
 
                 <button
                     type="submit"

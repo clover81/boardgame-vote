@@ -6,6 +6,7 @@ import { BuildingComplexPlus } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import {
     computed,
+    nextTick,
     ref,
     watch,
 } from 'vue';
@@ -18,6 +19,7 @@ import {
 } from '@inertiajs/vue3';
 
 import AppLayout from '@/layouts/AppLayout.vue';
+import AlertError from '@/components/AlertError.vue';
 import InputError from '@/components/InputError.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
@@ -221,13 +223,20 @@ watch(
 |--------------------------------------------------------------------------
 */
 
+const saveError = ref<HTMLDivElement | null>(null);
+
 const submit = () => {
     form.transform((data) => ({
         ...data,
         expansion_ids: Object.fromEntries(
             data.game_ids.map((gameId) => [gameId, data.expansion_ids[gameId] ?? null])
         ),
-    })).post(`/plays${pollReturnQuery.value}`);
+    })).post(`/plays${pollReturnQuery.value}`, {
+        onError: async () => {
+            await nextTick();
+            saveError.value?.focus();
+        },
+    });
 };
 </script>
 
@@ -579,6 +588,13 @@ const submit = () => {
                         {{ game.name }}
                     </li>
                 </ul>
+
+                <div v-if="form.hasErrors" ref="saveError" tabindex="-1">
+                    <AlertError
+                        title="No se ha podido registrar la partida"
+                        :errors="Object.values(form.errors)"
+                    />
+                </div>
 
                 <button
                     type="submit"

@@ -5,6 +5,7 @@ import { BuildingComplexPlus } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import {
     computed,
+    nextTick,
     watch,
     ref,
 } from 'vue';
@@ -16,6 +17,7 @@ import {
 } from '@inertiajs/vue3';
 
 import AppLayout from '@/layouts/AppLayout.vue';
+import AlertError from '@/components/AlertError.vue';
 import InputError from '@/components/InputError.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
@@ -166,10 +168,15 @@ watch(
 |--------------------------------------------------------------------------
 */
 
+const saveError = ref<HTMLDivElement | null>(null);
+
 const submit = () => {
-    form.put(
-        `/plays/${props.play.id}`
-    );
+    form.put(`/plays/${props.play.id}`, {
+        onError: async () => {
+            await nextTick();
+            saveError.value?.focus();
+        },
+    });
 };
 </script>
 
@@ -498,6 +505,13 @@ const submit = () => {
                 </section>
 
                 <!-- GUARDAR -->
+
+                <div v-if="form.hasErrors" ref="saveError" tabindex="-1">
+                    <AlertError
+                        title="No se han podido guardar los cambios"
+                        :errors="Object.values(form.errors)"
+                    />
+                </div>
 
                 <button
                     type="submit"
