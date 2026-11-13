@@ -5,7 +5,7 @@ import { BuildingComplexPlus, CalendarHeart, UsersRound, HourglassCog, BrainCog 
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 
 
-import { computed, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import InputError from '@/components/InputError.vue';
@@ -643,6 +643,18 @@ const gameDifficultyFilter = ref('all');
 const gameDurationFilter = ref('all');
 const gameModeFilter = ref('all');
 
+const gameFiltersHeading = ref<HTMLElement | null>(null);
+
+const clearGameFilters = async () => {
+    gameSearch.value = '';
+    gameDifficultyFilter.value = 'all';
+    gameDurationFilter.value = 'all';
+    gameModeFilter.value = 'all';
+
+    await nextTick();
+    gameFiltersHeading.value?.focus();
+};
+
 const hasActiveGameFilters = computed(() =>
     gameSearch.value.trim().length > 0 ||
     gameDifficultyFilter.value !== 'all' ||
@@ -1206,6 +1218,8 @@ const submit = () => {
 
                         <div>
                             <p
+                                ref="gameFiltersHeading"
+                                tabindex="-1"
                                 class="font-bold text-zinc-900 dark:text-zinc-100"
                             >
                                 Elige los juegos
@@ -1338,12 +1352,7 @@ const submit = () => {
                         v-if="hasActiveGameFilters"
                         type="button"
                         class="mt-3 text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
-                        @click="
-                            gameSearch = '';
-                            gameDifficultyFilter = 'all';
-                            gameDurationFilter = 'all';
-                            gameModeFilter = 'all'
-                        "
+                        @click="clearGameFilters"
                     >
                         Limpiar filtros
                     </button>
@@ -1477,7 +1486,7 @@ const submit = () => {
                     >
                         <p class="font-bold text-zinc-800 dark:text-zinc-100">No hay juegos que coincidan con los filtros.</p>
                         <button type="button" class="mt-2 text-sm font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
-                            @click="gameSearch = ''; gameDifficultyFilter = 'all'; gameDurationFilter = 'all'; gameModeFilter = 'all'">
+                            @click="clearGameFilters">
                             Limpiar filtros
                         </button>
                     </div>
