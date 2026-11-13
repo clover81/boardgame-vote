@@ -911,7 +911,7 @@ const confirmDeletePlay = () => {
                     </Link>
                 </div>
             </div>
-            <ScrollToTopProgress />
+            <ScrollToTopProgress compact-on-mobile />
         </div>
         <Dialog v-model:open="deletePlayDialogOpen">
             <DialogContent class="sm:max-w-md" @close-auto-focus="restoreDeleteFocus">
