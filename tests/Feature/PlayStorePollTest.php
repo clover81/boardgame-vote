@@ -44,6 +44,17 @@ beforeEach(function () {
     ];
 });
 
+test('registering a play preserves the poll list filters', function () {
+    $back = '/polls?search=A%26B&collection_id='.$this->collection->id.'&status=closed';
+
+    $this->actingAs($this->user)
+        ->post(route('plays.store', ['back' => $back]), $this->payload)
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('polls.show', ['poll' => $this->poll, 'back' => $back]));
+
+    expect(Play::sole()->poll_id)->toBe($this->poll->id);
+});
+
 test('a closed poll can be linked to a play of a game outside its candidates', function () {
     $candidateGame = Game::create([
         'name' => 'Juego que se votó',
