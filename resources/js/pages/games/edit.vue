@@ -264,10 +264,16 @@ const submit = () => {
         return;
     }
 
-    form.put(`/games/${props.game.id}`);
+    form.put(`/games/${props.game.id}?back=${encodeURIComponent(backToGames.value)}`);
 };
 
 const page = usePage();
+const backToGames = computed(() => {
+    const back = new URLSearchParams(page.url.split('?')[1]).get('back');
+
+    return back?.startsWith('/games?') ? back : '/games';
+});
+
 const deleting = ref(false);
 const removingCollectionId = ref<number | null>(null);
 const currentCollections = computed(() => props.collections.filter(
@@ -343,7 +349,7 @@ const confirmDeleteGame = () => {
         <div class="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 2xl:max-w-7xl">
             <div class="mb-6">
                 <Link
-                    href="/games"
+                    :href="backToGames"
                     class="text-sm font-medium text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                 >
                     ← Volver a la colección

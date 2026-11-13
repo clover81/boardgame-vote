@@ -539,15 +539,26 @@ class GameController extends Controller
             }
         });
 
+        $filters = [];
+        $back = $request->query('back');
+        if (is_string($back) && str_starts_with($back, '/games?')) {
+            parse_str(substr($back, strlen('/games?')), $query);
+            foreach (['collection_id', 'q', 'players', 'mode', 'duration', 'difficulty', 'sort'] as $key) {
+                if (isset($query[$key]) && is_string($query[$key])) {
+                    $filters[$key] = $query[$key];
+                }
+            }
+        }
+
         if ($usedByAnotherUser) {
-            return redirect()->route('games.index')->with(
+            return redirect()->route('games.index', $filters)->with(
                 'success',
                 'Se han actualizado tus colecciones. La ficha compartida no se ha modificado.'
             );
         }
 
         return redirect()
-            ->route('games.index')
+            ->route('games.index', $filters)
             ->with('success', 'Juego actualizado correctamente.');
     }
 
