@@ -24,6 +24,8 @@ const visible = computed(
 );
 
 let storageKey = '';
+let mounted = false;
+let restoreFrame = 0;
 
 const savePosition = (position: number) => {
     if (!props.rememberPosition) return;
@@ -73,6 +75,7 @@ const scrollToTop = (event: MouseEvent) => {
 };
 
 onMounted(async () => {
+    mounted = true;
     // El catálogo recuerda la posición; un formulario nuevo no debe
     // regresar a una posición antigua con su selección vacía.
     storageKey = `catalog-scroll:${window.location.pathname}`;
@@ -87,10 +90,11 @@ onMounted(async () => {
     }
 
     await nextTick();
+    if (!mounted) return;
 
     // Restaurar después de que Vue haya montado la página.
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
+    restoreFrame = requestAnimationFrame(() => {
+        restoreFrame = requestAnimationFrame(() => {
             if (Number.isFinite(savedPosition) && savedPosition > 0) {
                 window.scrollTo(0, savedPosition);
             }
@@ -107,6 +111,9 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+    mounted = false;
+    cancelAnimationFrame(restoreFrame);
+
     savePosition(window.scrollY);
 
     window.removeEventListener('scroll', updateScroll);
