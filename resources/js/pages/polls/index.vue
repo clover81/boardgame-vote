@@ -109,6 +109,10 @@ const collectionId =
 |--------------------------------------------------------------------------
 */
 
+const hasActiveFilters = computed(() =>
+    Boolean(search.value.trim() || collectionId.value || statusFilter.value !== 'all'),
+);
+
 const currentFilters = computed(() => ({
     search: search.value || undefined,
     collection_id: collectionId.value || undefined,
@@ -400,11 +404,7 @@ const formatDate = (
                     </p>
 
                     <button
-                        v-if="
-                            search ||
-                            collectionId ||
-                            statusFilter !== 'all'
-                        "
+                        v-if="hasActiveFilters"
                         type="button"
                         class="text-sm font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                         @click="
@@ -563,14 +563,17 @@ const formatDate = (
                 <p
                     class="text-lg font-black"
                 >
-                    No hay votaciones aquí
+                    {{ hasActiveFilters
+                        ? 'No hay votaciones que coincidan'
+                        : 'Todavía no hay votaciones' }}
                 </p>
 
                 <p
                     class="mt-2 text-sm text-zinc-500"
                 >
-                    Cambia el filtro o crea una
-                    nueva sesión.
+                    {{ hasActiveFilters
+                        ? 'Prueba con otras palabras o elimina alguno de los filtros aplicados.'
+                        : 'Crea tu primera votación para elegir a qué jugar.' }}
                 </p>
             </div>
             <ScrollToTopProgress />
