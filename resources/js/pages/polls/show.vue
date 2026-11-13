@@ -226,18 +226,35 @@ const copyParticipantLink = async (participant: Participant) => {
 const resultShareMessage = ref('');
 const showResultText = ref(false);
 const resultText = computed(() => {
-    const winners = props.results.filter(result => result.is_winner || result.is_top_tie);
-    const summary = props.poll.has_clear_winner
-        ? `🏆 Ganador: ${winners[0]?.game.name ?? props.results[0]?.game.name}`
-        : `🤝 Empate: ${winners.map(result => result.game.name).join(', ')}`;
-    const ranking = props.results.map(result => {
-        const unit = props.poll.single_choice
-            ? (result.points === 1 ? 'voto' : 'votos')
-            : (result.points === 1 ? 'punto' : 'puntos');
-        return `${result.rank}. ${result.game.name} · ${result.points} ${unit}`;
-    });
+    const results = props.results.filter(result => result.points > 0);
+    const winner = results.find(result => result.is_winner);
+    const tied = results.filter(result => result.is_top_tie);
 
-    return [`Resultados · ${props.poll.name}`, summary, '', ...ranking].join('\n');
+    const score = (points: number) => {
+        const unit = props.poll.single_choice
+            ? (points === 1 ? 'voto' : 'votos')
+            : (points === 1 ? 'punto' : 'puntos');
+
+        return `${points} ${unit}`;
+    };
+
+    if (!results.length) return 'La votación terminó sin votos.';
+
+    const lines: string[] = [];
+
+    if (winner) {
+        lines.push(`🏆 ${winner.game.name} gana con ${score(winner.points)}`);
+    } else if (tied.length > 1) {
+        const names = tied.map(result => result.game.name).join(' y ');
+        lines.push(`🤝 Empate con ${score(tied[0].points)}: ${names}`);
+    }
+
+    for (const result of results) {
+        if (result === winner || result.is_top_tie) continue;
+        lines.push(`${result.rank}. ${result.game.name} · ${score(result.points)}`);
+    }
+
+    return lines.join('\n');
 });
 
 const shareResults = async () => {
