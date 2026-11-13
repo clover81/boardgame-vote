@@ -55,9 +55,11 @@ const updateScroll = () => {
 };
 
 const scrollToTop = () => {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     window.scrollTo({
         top: 0,
-        behavior: 'smooth',
+        behavior: reduceMotion ? 'instant' : 'smooth',
     });
 };
 
@@ -105,10 +107,10 @@ onBeforeUnmount(() => {
 
 <template>
     <Transition
-        enter-active-class="transition duration-300 ease-out"
+        enter-active-class="transition duration-300 ease-out motion-reduce:transition-none"
         enter-from-class="translate-y-4 opacity-0"
         enter-to-class="translate-y-0 opacity-100"
-        leave-active-class="transition duration-200"
+        leave-active-class="transition duration-200 motion-reduce:transition-none"
         leave-from-class="opacity-100"
         leave-to-class="opacity-0"
     >
@@ -117,7 +119,7 @@ onBeforeUnmount(() => {
             type="button"
             aria-label="Volver al inicio"
             title="Volver arriba"
-            class="fixed z-50 items-center justify-center rounded-full bg-[#181424] text-white shadow-xl transition hover:scale-110 hover:shadow-2xl"
+            class="fixed z-50 items-center justify-center rounded-full bg-[#181424] text-white shadow-xl transition motion-safe:hover:scale-110 hover:shadow-2xl motion-reduce:transition-none"
             :class="[
                 props.hideOnMobile ? 'hidden sm:flex' : 'flex',
                 props.compact
