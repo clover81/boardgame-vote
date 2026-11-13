@@ -7,7 +7,7 @@ import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, CalendarHeart, User
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 
 
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import {
     Head,
     Link,
@@ -225,6 +225,7 @@ const copyParticipantLink = async (participant: Participant) => {
 
 const resultShareMessage = ref('');
 const showResultText = ref(false);
+const resultTextArea = ref<HTMLTextAreaElement | null>(null);
 const resultText = computed(() => {
     const results = props.results.filter(result => result.points > 0);
     const winner = results.find(result => result.is_winner);
@@ -276,6 +277,8 @@ const shareResults = async () => {
     } catch {
         showResultText.value = true;
         resultShareMessage.value = 'Puedes copiar el resultado manualmente.';
+        await nextTick();
+        resultTextArea.value?.focus();
     }
 };
 
@@ -1194,6 +1197,7 @@ const modeLabel = (
                     </p>
                     <textarea
                         v-if="showResultText"
+                        ref="resultTextArea"
                         :value="resultText"
                         aria-label="Resultado para copiar"
                         class="mt-2 w-full rounded-xl border border-zinc-300 p-3 text-sm dark:border-zinc-700"
