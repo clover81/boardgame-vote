@@ -135,7 +135,7 @@ onBeforeUnmount(() => {
             type="button"
             aria-label="Volver al inicio"
             title="Volver arriba"
-            class="fixed z-50 items-center justify-center rounded-full bg-[#181424] text-white shadow-xl transition motion-safe:hover:scale-110 hover:shadow-2xl motion-reduce:transition-none"
+            class="fixed z-50 items-center justify-center rounded-full bg-[#181424] text-white shadow-xl transition motion-safe:hover:scale-110 hover:shadow-2xl motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:focus-visible:outline-[#CCFF00]"
             :class="[
                 props.hideOnMobile ? 'hidden sm:flex' : 'flex',
                 props.compact
