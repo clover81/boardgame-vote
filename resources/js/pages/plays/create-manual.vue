@@ -133,6 +133,21 @@ const visibleGames = computed(() => {
         : firstGames;
 });
 
+const gameResults = ref<HTMLDivElement | null>(null);
+
+const showMoreGames = async () => {
+    const visibleIds = new Set(visibleGames.value.map(game => game.id));
+    visibleGameLimit.value += 24;
+
+    const firstNewGame = visibleGames.value.find(game => !visibleIds.has(game.id));
+    if (!firstNewGame) return;
+
+    await nextTick();
+    gameResults.value?.querySelector<HTMLInputElement>(
+        `input[data-game-id="${firstNewGame.id}"]`,
+    )?.focus();
+};
+
 const brokenCoverIds = ref<number[]>([]);
 const markCoverAsBroken = (id: number) => {
     if (!brokenCoverIds.value.includes(id)) {
@@ -285,7 +300,7 @@ const submit = () => {
                         </p>
                     </div>
 
-                    <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <div ref="gameResults" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         <label
                             v-for="game in visibleGames"
                             :key="game.id"
@@ -295,6 +310,7 @@ const submit = () => {
                                 :checked="Number(form.game_id) === game.id"
                                 type="checkbox"
                                 :value="game.id"
+                                :data-game-id="game.id"
                                 @change="toggleGame(game.id)"
                                 class="peer sr-only"
                             />
@@ -344,7 +360,7 @@ const submit = () => {
                         v-if="searchableGames.length > visibleGameLimit"
                         type="button"
                         class="mt-4 w-full rounded-xl border border-violet-300 px-4 py-3 text-sm font-bold text-[#5200FF] transition hover:border-[#5200FF] hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-400/30 dark:border-violet-600 dark:text-violet-300 dark:hover:bg-violet-950/30"
-                        @click="visibleGameLimit += 24"
+                        @click="showMoreGames"
                     >
                         Mostrar más juegos ({{ Math.min(visibleGameLimit, searchableGames.length) }} de {{ searchableGames.length }})
                     </button>

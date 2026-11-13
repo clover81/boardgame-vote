@@ -143,6 +143,21 @@ const matchingGames = computed(() => {
 const displayedGames = computed(() =>
     matchingGames.value.slice(0, visibleGameLimit.value)
 );
+const gameResults = ref<HTMLDivElement | null>(null);
+
+const showMoreGames = async () => {
+    const visibleIds = new Set(displayedGames.value.map(game => game.id));
+    visibleGameLimit.value += 12;
+
+    const firstNewGame = displayedGames.value.find(game => !visibleIds.has(game.id));
+    if (!firstNewGame) return;
+
+    await nextTick();
+    gameResults.value?.querySelector<HTMLInputElement>(
+        `input[data-game-id="${firstNewGame.id}"]`,
+    )?.focus();
+};
+
 watch(gameSearch, () => { visibleGameLimit.value = 12; });
 
 const finishGameSelection = async () => {
@@ -302,7 +317,7 @@ const submit = () => {
                             {{ matchingGames.length }} {{ matchingGames.length === 1 ? 'juego encontrado' : 'juegos encontrados' }}
                         </p>
 
-                        <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <div ref="gameResults" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                             <label
                                 v-for="game in displayedGames"
                                 :key="game.id"
@@ -312,6 +327,7 @@ const submit = () => {
                                     v-model="form.game_id"
                                     type="radio"
                                     :value="game.id"
+                                    :data-game-id="game.id"
                                     class="peer sr-only"
                                     @change="finishGameSelection"
                                 />
@@ -343,7 +359,7 @@ const submit = () => {
                             v-if="matchingGames.length > displayedGames.length"
                             type="button"
                             class="mt-4 w-full rounded-xl border border-violet-500 px-4 py-3 text-sm font-bold text-violet-700 transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5200FF] dark:text-violet-300 dark:hover:bg-violet-950/30"
-                            @click="visibleGameLimit += 12"
+                            @click="showMoreGames"
                         >
                             Mostrar más juegos ({{ matchingGames.length - displayedGames.length }} restantes)
                         </button>
