@@ -8,6 +8,7 @@ import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
+import AlertError from '@/components/AlertError.vue';
 import InputError from '@/components/InputError.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
@@ -919,12 +920,19 @@ const formatDate = (
     );
 };
 
+const saveError = ref<HTMLDivElement | null>(null);
+
 const submit = () => {
     if (!canCreatePoll.value) {
         return;
     }
 
-    form.post('/polls');
+    form.post('/polls', {
+        onError: async () => {
+            await nextTick();
+            saveError.value?.focus();
+        },
+    });
 };
 </script>
 
@@ -2341,6 +2349,13 @@ const submit = () => {
                 </section>
 
                 <!-- CREAR -->
+
+                <div v-if="form.hasErrors" ref="saveError" tabindex="-1">
+                    <AlertError
+                        title="No se ha podido crear la votación"
+                        :errors="Object.values(form.errors)"
+                    />
+                </div>
 
                 <button
                     type="submit"
