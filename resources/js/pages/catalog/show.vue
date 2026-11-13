@@ -473,6 +473,7 @@ const externalUrl = (url: string | null): string | undefined => {
                                 <a
                                     v-if="externalUrl(expansion.bgg_url)"
                                     :href="externalUrl(expansion.bgg_url)"
+                                    :aria-label="`Ver en BGG: ${expansion.name}`"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     class="inline-flex min-h-11 min-w-0 flex-1 basis-28 items-center justify-center rounded-xl bg-[#5200FF] px-2 py-2.5 text-center text-xs font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#4000cc] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:min-w-[125px] sm:px-3 sm:text-sm"
@@ -483,6 +484,7 @@ const externalUrl = (url: string | null): string | undefined => {
                                 <a
                                     v-if="externalUrl(expansion.youtube_url)"
                                     :href="externalUrl(expansion.youtube_url)"
+                                    :aria-label="`Ver tutorial: ${expansion.name}`"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     class="inline-flex min-h-11 min-w-0 flex-1 basis-28 items-center justify-center gap-1 rounded-xl border-2 border-[#5200FF] bg-white px-2 py-2 text-center text-xs font-bold text-[#5200FF] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f1ebff] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:min-w-[125px] sm:gap-1.5 sm:px-3 sm:text-sm"
