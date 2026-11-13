@@ -186,6 +186,10 @@ const backToPolls = computed(() => {
     return back?.startsWith('/polls?') ? back : '/polls';
 });
 
+const withPollReturn = (path: string) => backToPolls.value === '/polls'
+    ? path
+    : `${path}?back=${encodeURIComponent(backToPolls.value)}`;
+
 const changingVotingMode = ref(false);
 const refreshingVotes = ref(false);
 
@@ -322,12 +326,7 @@ const candidateErrorAlert = ref<HTMLParagraphElement | null>(null);
 const addCandidate = (gameId: number) => {
     if (!props.canAddCandidates || addingCandidateId.value !== null) return;
 
-    const path = `/polls/${props.poll.id}/candidates`;
-    const url = backToPolls.value === '/polls'
-        ? path
-        : `${path}?back=${encodeURIComponent(backToPolls.value)}`;
-
-    router.post(url, { game_id: gameId }, {
+    router.post(withPollReturn(`/polls/${props.poll.id}/candidates`), { game_id: gameId }, {
         preserveScroll: true,
         onStart: () => { addingCandidateId.value = gameId; },
         onSuccess: async () => {
@@ -402,7 +401,7 @@ const openPoll = () => {
     }
 
     router.patch(
-        `/polls/${props.poll.id}/open`,
+        withPollReturn(`/polls/${props.poll.id}/open`),
         {},
         {
             preserveScroll: true,
@@ -433,7 +432,7 @@ const confirmClosePoll = () => {
     }
 
     router.patch(
-        `/polls/${props.poll.id}/close`,
+        withPollReturn(`/polls/${props.poll.id}/close`),
         {},
         {
             preserveScroll: true,

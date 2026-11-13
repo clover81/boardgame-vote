@@ -1274,14 +1274,7 @@ class PollController extends Controller
 
         $poll->candidates()->create(['game_id' => $game->id]);
 
-        $back = $request->query('back');
-        $parameters = ['poll' => $poll];
-
-        if (is_string($back) && str_starts_with($back, '/polls?')) {
-            $parameters['back'] = $back;
-        }
-
-        return redirect()->route('polls.show', $parameters)
+        return redirect()->route('polls.show', $this->pollReturnParameters($poll))
             ->with('success', 'Juego añadido a la votación.');
     }
 
@@ -1339,7 +1332,7 @@ class PollController extends Controller
         return redirect()
             ->route(
                 'polls.show',
-                $poll
+                $this->pollReturnParameters($poll)
             )
             ->with(
                 'success',
@@ -1853,11 +1846,20 @@ class PollController extends Controller
         return redirect()
             ->route(
                 'polls.show',
-                $poll
+                $this->pollReturnParameters($poll)
             )
             ->with(
                 'success',
                 'Votación cerrada. Ya puedes ver los resultados.'
             );
+    }
+
+    private function pollReturnParameters(Poll $poll): array
+    {
+        $back = request()->query('back');
+
+        return is_string($back) && str_starts_with($back, '/polls?')
+            ? ['poll' => $poll, 'back' => $back]
+            : ['poll' => $poll];
     }
 }
