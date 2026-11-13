@@ -655,6 +655,27 @@ const clearGameFilters = async () => {
     gameFiltersHeading.value?.focus();
 };
 
+const removeCandidate = async (gameId: number, event: MouseEvent) => {
+    const button = event.currentTarget as HTMLButtonElement;
+    const adjacent = button.nextElementSibling ?? button.previousElementSibling;
+
+    form.candidate_ids = form.candidate_ids.filter(id => id !== gameId);
+    await nextTick();
+
+    if (adjacent instanceof HTMLButtonElement && adjacent.isConnected) {
+        adjacent.focus();
+        return;
+    }
+
+    gameFiltersHeading.value?.focus();
+};
+
+const clearCandidates = async () => {
+    form.candidate_ids = [];
+    await nextTick();
+    gameFiltersHeading.value?.focus();
+};
+
 const hasActiveGameFilters = computed(() =>
     gameSearch.value.trim().length > 0 ||
     gameDifficultyFilter.value !== 'all' ||
@@ -1441,7 +1462,7 @@ const submit = () => {
                                 v-if="form.candidate_ids.length"
                                 type="button"
                                 class="text-sm font-semibold text-zinc-500 hover:text-red-500"
-                                @click="form.candidate_ids = []"
+                                @click="clearCandidates"
                             >
                                 Limpiar
                             </button>
@@ -1470,7 +1491,7 @@ const submit = () => {
                                 type="button"
                                 :aria-label="`Quitar ${game.name} de los candidatos`"
                                 class="inline-flex max-w-full items-center gap-2 rounded-full border border-violet-200 bg-white px-3 py-2 text-xs font-bold text-violet-800 transition hover:border-red-300 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 dark:border-violet-800 dark:bg-zinc-900 dark:text-violet-200"
-                                @click="form.candidate_ids = form.candidate_ids.filter(id => id !== game.id)"
+                                @click="removeCandidate(game.id, $event)"
                             >
                                 <span class="max-w-[220px] truncate">
                                     {{ game.name }}
