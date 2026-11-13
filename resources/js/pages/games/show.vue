@@ -127,6 +127,9 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
+const fromHistory = computed(() =>
+    new URLSearchParams(page.url.split('?')[1]).get('from') === 'history',
+);
 
 const backToGames = computed(() => {
     const query = page.url.split('?')[1] ?? '';
@@ -365,10 +368,10 @@ const formatGameMode = (
             <!-- VOLVER -->
 
             <Link
-                :href="backToGames"
+                :href="fromHistory ? '/plays' : backToGames"
                 class="text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
             >
-                ← Mi colección
+                {{ fromHistory ? '← Volver a mis partidas' : '← Mi colección' }}
             </Link>
 
             <!-- CABECERA -->

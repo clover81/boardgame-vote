@@ -756,7 +756,7 @@ const confirmDeletePlay = () => {
 
                         <div class="min-w-0 flex-1">
                             <Link
-                                :href="`/games/${play.game.id}`"
+                                :href="`/games/${play.game.id}?from=history`"
                                 class="block break-words text-lg font-bold leading-snug text-zinc-900 transition hover:text-[#5200FF] sm:text-xl dark:text-zinc-100 dark:hover:text-[#CCFF00]"
                             >
                                 {{ play.game.name }}
@@ -818,7 +818,7 @@ const confirmDeletePlay = () => {
 
                     <div class="mx-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-zinc-200 py-3 text-sm sm:mx-4 dark:border-zinc-800">
                         <Link
-                            :href="`/games/${play.game.id}`"
+                            :href="`/games/${play.game.id}?from=history`"
                             class="font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                         >
                             Ver ficha →
