@@ -1055,7 +1055,13 @@ watch(
                         {{ bggLoading ? 'Consultando BGG...' : 'Consultar BGG' }}
                     </button>
                     <span role="status" class="sr-only">
-                        {{ bggLoading ? 'Consultando la colección en BoardGameGeek…' : '' }}
+                        <template v-if="bggLoading">
+                            Consultando la colección en BoardGameGeek…
+                        </template>
+                        <template v-else-if="bggPreview">
+                            Vista previa lista. Juegos: {{ bggPreview.summary.games }}.
+                            Expansiones: {{ bggPreview.summary.expansions }}.
+                        </template>
                     </span>
 
                     <button
