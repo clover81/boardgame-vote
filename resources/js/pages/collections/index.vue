@@ -357,6 +357,11 @@ const syncBggCollection = () => {
             onSuccess: () => {
                 if (bggCollectionId.value !== collectionId) return;
                 const status = selectedBggCollection.value?.bgg_sync_status;
+                if (status === 'failed') {
+                    bggSyncError.value = selectedBggCollection.value?.bgg_sync_error
+                        || 'No se ha podido completar la sincronización con BGG.';
+                    return;
+                }
                 if (status !== 'pending' && status !== 'running') return;
                 bggSyncMessage.value =
                     'Sincronización enviada a la cola. ' +
