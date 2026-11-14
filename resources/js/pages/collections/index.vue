@@ -357,6 +357,10 @@ const syncBggCollection = () => {
             onSuccess: () => {
                 if (bggCollectionId.value !== collectionId) return;
                 const status = selectedBggCollection.value?.bgg_sync_status;
+                if (status === 'completed') {
+                    showCompletedBggSync();
+                    return;
+                }
                 if (status === 'failed') {
                     bggSyncError.value = selectedBggCollection.value?.bgg_sync_error
                         || 'No se ha podido completar la sincronización con BGG.';
@@ -623,6 +627,15 @@ const loadBggPreview = async () => {
         }
     }
 };
+
+const showCompletedBggSync = () => {
+    const message = 'Sincronización completada correctamente.';
+    if (bggSyncMessage.value === message) return;
+
+    bggSyncMessage.value = message;
+    void loadBggPreview();
+};
+
 watch(
     [
         () => selectedBggCollection.value?.id,
@@ -644,10 +657,7 @@ watch(
         // Cuando la sincronización termina correctamente,
         // actualizamos automáticamente la vista previa.
         if (wasSyncing && currentStatus === 'completed') {
-            bggSyncMessage.value =
-                'Sincronización completada correctamente.';
-
-            void loadBggPreview();
+            showCompletedBggSync();
         }
     }
 );
