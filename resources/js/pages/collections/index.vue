@@ -1207,6 +1207,7 @@ watch(
 
                 <p
                     v-if="bggError"
+                    role="alert"
                     class="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-700"
                 >
                     {{ bggError }}
