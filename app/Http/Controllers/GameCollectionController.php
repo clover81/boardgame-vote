@@ -523,7 +523,7 @@ class GameCollectionController extends Controller
 
         return back()->with(
             'success',
-            "El juego {$game->name} se ha retirado de la colección BGG. Su ficha e historial se conservan."
+            "El juego {$game->name} se ha retirado de tu colección en esta aplicación. Su ficha e historial se conservan."
         );
     }
 
@@ -665,7 +665,7 @@ class GameCollectionController extends Controller
 
         return back()->with(
             'success',
-            "La expansión {$expansion->name} se ha retirado de la colección BGG. Su ficha se conserva."
+            "La expansión {$expansion->name} se ha retirado de tu colección en esta aplicación. Su ficha se conserva."
         );
     }
 }

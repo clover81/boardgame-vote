@@ -466,7 +466,7 @@ const executeBggRemoval = (game: {
             onSuccess: () => {
                 if (bggCollectionId.value !== collectionId) return;
                 bggSyncMessage.value =
-                    `"${game.name}" se ha retirado de la colección BGG.`;
+                    `"${game.name}" se ha retirado de tu colección en esta aplicación.`;
 
                 // Actualizar la lista visible.
                 if (bggPreview.value) {
@@ -578,7 +578,7 @@ const executeBggExpansionRemoval = (expansion: {
             onSuccess: () => {
                 if (bggCollectionId.value !== collectionId) return;
                 bggSyncMessage.value =
-                    `"${expansion.name}" se ha retirado de la colección BGG.`;
+                    `"${expansion.name}" se ha retirado de tu colección en esta aplicación.`;
 
                 if (bggPreview.value) {
                     bggPreview.value.expansion_removal_candidates =
@@ -1540,7 +1540,7 @@ watch(
                     </div>
 
                     <DialogTitle class="text-xl font-black">
-                        ¿Retirar este juego de BGG?
+                        ¿Quitar este juego de tu colección?
                     </DialogTitle>
 
                     <DialogDescription class="pt-2 text-sm leading-6">
@@ -1548,7 +1548,7 @@ watch(
                         <strong class="font-bold text-foreground">
                             {{ bggGameToRemove?.name }}
                         </strong>
-                        de la colección sincronizada con BGG.
+                        de tu colección en esta aplicación.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -1580,7 +1580,7 @@ watch(
                         class="rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:bg-[#4000cc] disabled:cursor-not-allowed disabled:opacity-50"
                         @click="removeSelectedBggGame"
                     >
-                        Sí, retirar de BGG
+                        Sí, quitar juego
                     </button>
                 </DialogFooter>
             </DialogContent>
@@ -1596,7 +1596,7 @@ watch(
                     </div>
 
                     <DialogTitle class="text-xl font-black">
-                        ¿Retirar esta expansión de BGG?
+                        ¿Quitar esta expansión de tu colección?
                     </DialogTitle>
 
                     <DialogDescription class="pt-2 text-sm leading-6">
@@ -1604,7 +1604,7 @@ watch(
                         <strong class="font-bold text-foreground">
                             {{ bggExpansionToRemove?.name }}
                         </strong>
-                        de la colección sincronizada con BGG.
+                        de tu colección en esta aplicación.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -1636,7 +1636,7 @@ watch(
                         class="rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:bg-[#4000cc] disabled:cursor-not-allowed disabled:opacity-50"
                         @click="removeSelectedBggExpansion"
                     >
-                        Sí, retirar expansión
+                        Sí, quitar expansión
                     </button>
                 </DialogFooter>
             </DialogContent>
