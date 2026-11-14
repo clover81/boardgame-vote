@@ -1302,10 +1302,10 @@ watch(
                         <div
                             v-for="item in bggPreviewItems"
                             :key="item.bgg_id"
-                            class="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3 last:border-0 dark:border-zinc-800"
+                            class="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 border-b border-zinc-100 px-4 py-3 last:border-0 dark:border-zinc-800"
                         >
-                            <div>
-                                <p class="text-sm font-semibold">
+                            <div class="min-w-0">
+                                <p class="text-sm font-semibold wrap-break-word">
                                     {{ item.name }}
                                 </p>
                                 <p class="text-xs text-zinc-500">
