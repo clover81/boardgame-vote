@@ -1257,6 +1257,10 @@ watch(
                         </div>
                     </div>
 
+                    <p class="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+                        Las fichas existentes se reutilizan al importar a esta colección.
+                    </p>
+
                     <div class="mt-6 flex flex-wrap gap-3">
                         <button
                             type="button"
@@ -1315,7 +1319,7 @@ watch(
                                     ? 'bg-emerald-100 text-emerald-800'
                                     : 'bg-violet-100 text-violet-800'"
                             >
-                                {{ item.status === 'existing' ? 'Existente' : 'Nuevo' }}
+                                {{ item.status === 'existing' ? 'Ficha existente' : 'Ficha nueva' }}
                             </span>
                         </div>
                     </div>
