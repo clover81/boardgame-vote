@@ -630,6 +630,8 @@ watch(
 
         if (wasSyncing && currentStatus === 'failed') {
             bggSyncMessage.value = '';
+            bggSyncError.value = selectedBggCollection.value?.bgg_sync_error
+                || 'No se ha podido completar la sincronización con BGG.';
         }
 
         // Cuando la sincronización termina correctamente,
