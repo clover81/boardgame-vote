@@ -295,7 +295,7 @@ const selectedBggCollection = computed(() => {
 watch(
     () => selectedBggCollection.value?.bgg_sync_status,
     status => {
-        if (status === 'pending' || status === 'running' || status === 'failed') {
+        if (status === 'pending' || status === 'running') {
             bggPanelOpen.value = true;
         }
     },
@@ -307,7 +307,7 @@ const bggStatusLabels: Record<string, string> = {
     pending: 'Pendiente',
     running: 'Sincronizando...',
     completed: 'Sincronización completada',
-    failed: 'Error de sincronización',
+    failed: 'Falló el último intento',
 };
 
 let bggPollTimer: ReturnType<typeof setInterval> | undefined;
@@ -1149,12 +1149,18 @@ watch(
                         </p>
                     </template>
 
-                    <p
-                        v-if="selectedBggCollection.bgg_sync_status === 'failed'"
-                        class="mt-3 text-sm text-red-700 dark:text-red-400"
+                    <details
+                        v-if="selectedBggCollection.bgg_sync_status === 'failed' && selectedBggCollection.bgg_sync_error"
+                        :key="selectedBggCollection.id"
+                        class="mt-3 text-sm text-zinc-600 dark:text-zinc-400"
                     >
-                        {{ selectedBggCollection.bgg_sync_error }}
-                    </p>
+                        <summary class="cursor-pointer font-semibold">
+                            Ver detalle del último intento
+                        </summary>
+                        <p class="mt-2">
+                            {{ selectedBggCollection.bgg_sync_error }}
+                        </p>
+                    </details>
                 </div>
 
                 <p
@@ -1627,6 +1633,6 @@ watch(
                 </DialogFooter>
             </DialogContent>
         </Dialog>
-        <ScrollToTopProgress :remember-position="false" />
+        <ScrollToTopProgress :remember-position="false" compact-on-mobile />
     </AppLayout>
 </template>

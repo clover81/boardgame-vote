@@ -4,7 +4,7 @@ import { playerNameColor } from '@/lib/player-colors';
 import MeepleIcon from '@/components/icons/MeepleIcon.vue';
 import { BuildingComplexPlus } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
-import { CalendarHeart } from '@lucide/vue';
+import { CalendarHeart, NotebookPen, SlidersHorizontal } from '@lucide/vue';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import {
     Head,
@@ -482,7 +482,7 @@ const confirmDeletePlay = () => {
                 <!-- PARTIDAS -->
 
                 <div
-                    class="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-5 dark:border-zinc-800 dark:bg-zinc-950"
+                    class="flex flex-col rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-5 dark:border-zinc-800 dark:bg-zinc-950"
                 >
                     <p
                         class="text-xs font-semibold leading-snug text-zinc-500 sm:text-sm dark:text-zinc-400"
@@ -491,7 +491,7 @@ const confirmDeletePlay = () => {
                     </p>
 
                     <p
-                        class="mt-2 text-2xl font-black text-[#5200FF] sm:text-3xl"
+                        class="mt-auto pt-2 text-2xl font-black text-[#5200FF] sm:text-3xl"
                     >
                         {{
                             stats.total_plays
@@ -502,7 +502,7 @@ const confirmDeletePlay = () => {
                 <!-- JUEGOS -->
 
                 <div
-                    class="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-5 dark:border-zinc-800 dark:bg-zinc-950"
+                    class="flex flex-col rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-5 dark:border-zinc-800 dark:bg-zinc-950"
                 >
                     <p
                         class="text-xs font-semibold leading-snug text-zinc-500 sm:text-sm dark:text-zinc-400"
@@ -511,7 +511,7 @@ const confirmDeletePlay = () => {
                     </p>
 
                     <p
-                        class="mt-2 text-2xl font-black text-zinc-900 sm:text-3xl dark:text-zinc-100"
+                        class="mt-auto pt-2 text-2xl font-black text-zinc-900 sm:text-3xl dark:text-zinc-100"
                     >
                         {{
                             stats.unique_games
@@ -522,7 +522,7 @@ const confirmDeletePlay = () => {
                 <!-- JUGADORES -->
 
                 <div
-                    class="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-5 dark:border-zinc-800 dark:bg-zinc-950"
+                    class="flex flex-col rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-5 dark:border-zinc-800 dark:bg-zinc-950"
                 >
                     <p
                         class="text-xs font-semibold leading-snug text-zinc-500 sm:text-sm dark:text-zinc-400"
@@ -531,7 +531,7 @@ const confirmDeletePlay = () => {
                     </p>
 
                     <p
-                        class="mt-2 text-2xl font-black text-zinc-900 sm:text-3xl dark:text-zinc-100"
+                        class="mt-auto pt-2 text-2xl font-black text-zinc-900 sm:text-3xl dark:text-zinc-100"
                     >
                         {{
                             stats.unique_players
@@ -575,7 +575,7 @@ const confirmDeletePlay = () => {
                     aria-controls="history-advanced-filters"
                     @click="showAdvancedFilters = !showAdvancedFilters"
                 >
-                    ⚙️ {{ showAdvancedFilters ? 'Ocultar filtros' : 'Más filtros' }}
+                    <SlidersHorizontal class="size-4 shrink-0" aria-hidden="true" /> {{ showAdvancedFilters ? 'Ocultar filtros' : 'Más filtros' }}
                     <span v-if="hasSecondaryFilters" class="text-xs">(activos)</span>
                 </button>
 
@@ -809,7 +809,7 @@ const confirmDeletePlay = () => {
                         class="mx-3 border-t border-zinc-200 sm:mx-4 dark:border-zinc-800"
                     >
                         <summary class="cursor-pointer py-3 text-sm font-semibold text-zinc-600 hover:text-[#5200FF] dark:text-zinc-300 dark:hover:text-[#CCFF00]">
-                            📝 Ver notas de la partida
+                            <NotebookPen class="mr-1 inline-block size-4 align-[-0.14em] text-[#5200FF] dark:text-[#CCFF00]" aria-hidden="true" /> Ver notas de la partida
                         </summary>
                         <p class="whitespace-pre-line break-words pb-3 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
                             {{ play.notes }}
