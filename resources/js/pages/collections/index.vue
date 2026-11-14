@@ -1054,6 +1054,9 @@ watch(
                     >
                         {{ bggLoading ? 'Consultando BGG...' : 'Consultar BGG' }}
                     </button>
+                    <span role="status" class="sr-only">
+                        {{ bggLoading ? 'Consultando la colección en BoardGameGeek…' : '' }}
+                    </span>
 
                     <button
                         type="button"
