@@ -342,7 +342,12 @@ onUnmounted(() => {
 
 const syncBggCollection = () => {
     const collectionId = bggCollectionId.value;
-    if (collectionId === '' || bggSyncing.value) return;
+    if (
+        collectionId === '' ||
+        bggSyncing.value ||
+        bggRemovingId.value !== null ||
+        bggRemovingExpansionId.value !== null
+    ) return;
 
     bggSyncing.value = true;
     bggSyncMessage.value = '';
@@ -405,7 +410,9 @@ const confirmBggRemoval = (game: {
 }) => {
     if (
         bggCollectionId.value === '' ||
+        bggSyncing.value ||
         bggRemovingId.value !== null ||
+        bggSyncing.value ||
         ['pending', 'running'].includes(
             selectedBggCollection.value?.bgg_sync_status ?? ''
         )
@@ -436,7 +443,9 @@ const executeBggRemoval = (game: {
     const collectionId = bggCollectionId.value;
     if (
         collectionId === '' ||
+        bggSyncing.value ||
         bggRemovingId.value !== null ||
+        bggSyncing.value ||
         ['pending', 'running'].includes(
             selectedBggCollection.value?.bgg_sync_status ?? ''
         )
@@ -502,8 +511,10 @@ const confirmBggExpansionRemoval = (expansion: {
 }) => {
     if (
         bggCollectionId.value === '' ||
+        bggSyncing.value ||
         bggRemovingExpansionId.value !== null ||
         bggRemovingId.value !== null ||
+        bggSyncing.value ||
         ['pending', 'running'].includes(
             selectedBggCollection.value?.bgg_sync_status ?? ''
         )
@@ -535,8 +546,10 @@ const executeBggExpansionRemoval = (expansion: {
     const collectionId = bggCollectionId.value;
     if (
         collectionId === '' ||
+        bggSyncing.value ||
         bggRemovingExpansionId.value !== null ||
         bggRemovingId.value !== null ||
+        bggSyncing.value ||
         ['pending', 'running'].includes(
             selectedBggCollection.value?.bgg_sync_status ?? ''
         )
@@ -1038,6 +1051,8 @@ watch(
                         type="button"
                         :disabled="
                             bggSyncing ||
+                            bggRemovingId !== null ||
+                            bggRemovingExpansionId !== null ||
                             bggLoading ||
                             bggCollectionId === '' ||
                             ['pending', 'running'].includes(
@@ -1328,7 +1343,9 @@ watch(
                                 <button
                                     type="button"
                                     :disabled="
+                                        bggSyncing ||
                                         bggRemovingId !== null ||
+                                        bggSyncing ||
                                         ['pending', 'running'].includes(
                                             selectedBggCollection?.bgg_sync_status ?? ''
                                         )
@@ -1399,8 +1416,10 @@ watch(
                                 <button
                                     type="button"
                                     :disabled="
+                                        bggSyncing ||
                                         bggRemovingExpansionId !== null ||
                                         bggRemovingId !== null ||
+                                        bggSyncing ||
                                         ['pending', 'running'].includes(
                                             selectedBggCollection?.bgg_sync_status ?? ''
                                         )
