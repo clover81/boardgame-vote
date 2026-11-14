@@ -356,6 +356,8 @@ const syncBggCollection = () => {
 
             onSuccess: () => {
                 if (bggCollectionId.value !== collectionId) return;
+                const status = selectedBggCollection.value?.bgg_sync_status;
+                if (status !== 'pending' && status !== 'running') return;
                 bggSyncMessage.value =
                     'Sincronización enviada a la cola. ' +
                     'Los juegos y expansiones nuevos se incorporarán ' +
