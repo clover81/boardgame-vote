@@ -494,6 +494,14 @@ const executeBggRemoval = (game: {
 
 const bggRemovingExpansionId = ref<number | null>(null);
 
+const bggRemovalBlocked = computed(() =>
+    bggCollectionId.value === '' ||
+    bggSyncing.value ||
+    bggRemovingId.value !== null ||
+    bggRemovingExpansionId.value !== null ||
+    ['pending', 'running'].includes(selectedBggCollection.value?.bgg_sync_status ?? '')
+);
+
 const bggExpansionToRemove = ref<{
     id: number;
     bgg_id: number;
@@ -1554,7 +1562,8 @@ watch(
 
                     <button
                         type="button"
-                        class="rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:bg-[#4000cc]"
+                        :disabled="bggRemovalBlocked"
+                        class="rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:bg-[#4000cc] disabled:cursor-not-allowed disabled:opacity-50"
                         @click="removeSelectedBggGame"
                     >
                         Sí, retirar de BGG
@@ -1609,7 +1618,8 @@ watch(
 
                     <button
                         type="button"
-                        class="rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:bg-[#4000cc]"
+                        :disabled="bggRemovalBlocked"
+                        class="rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:bg-[#4000cc] disabled:cursor-not-allowed disabled:opacity-50"
                         @click="removeSelectedBggExpansion"
                     >
                         Sí, retirar expansión
