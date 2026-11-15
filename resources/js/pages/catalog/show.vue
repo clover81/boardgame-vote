@@ -401,7 +401,7 @@ const externalUrl = (url: string | null): string | undefined => {
                     <button
                         v-if="descriptionIsClipped || showFullDescription"
                         type="button"
-                        class="mt-4 rounded-xl bg-violet-50 px-4 py-2 text-sm font-bold text-[#5200FF] transition hover:bg-violet-100"
+                        class="mt-4 rounded-xl bg-violet-50 px-4 py-2 text-sm font-bold text-[#5200FF] transition hover:bg-violet-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                         :aria-expanded="showFullDescription"
                         aria-controls="catalog-game-description"
                         @click="showFullDescription = !showFullDescription"
