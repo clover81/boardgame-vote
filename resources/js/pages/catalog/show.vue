@@ -49,6 +49,7 @@ const props = defineProps<{
 
 const imageDialog = ref<HTMLDialogElement | null>(null);
 const coverHasError = ref(false);
+const enlargedCoverHasError = ref(false);
 
 const brokenExpansionIds = ref<number[]>([]);
 
@@ -70,6 +71,7 @@ useResizeObserver(descriptionParagraph, () => {
 });
 
 const openImage = () => {
+    enlargedCoverHasError.value = false;
     imageDialog.value?.showModal();
 };
 
@@ -241,11 +243,15 @@ const externalUrl = (url: string | null): string | undefined => {
                         </div>
 
                         <img
-                            v-if="game.image_url && !coverHasError"
+                            v-if="game.image_url && !enlargedCoverHasError"
                             :src="game.image_url"
                             :alt="`Portada ampliada de ${game.name}`"
+                            @error="enlargedCoverHasError = true"
                             class="max-h-[78vh] w-full object-contain"
                         />
+                        <p v-else role="status" class="py-8 text-center text-sm text-zinc-600">
+                            No se ha podido cargar la portada ampliada.
+                        </p>
                     </div>
                 </dialog>
 
