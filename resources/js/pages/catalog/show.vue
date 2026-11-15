@@ -211,7 +211,7 @@ const externalUrl = (url: string | null): string | undefined => {
                             :src="game.image_url"
                             :alt="`Portada de ${game.name}`"
                             @error="coverHasError = true"
-                            class="max-h-[220px] w-full object-contain transition-transform duration-300 group-hover:scale-105 sm:max-h-[440px]"
+                            class="max-h-[220px] w-full object-contain transition-transform duration-300 motion-safe:group-hover:scale-105 motion-reduce:transition-none sm:max-h-[440px]"
                         />
                     </button>
 
@@ -453,7 +453,7 @@ const externalUrl = (url: string | null): string | undefined => {
                                 @error="markExpansionAsBroken(expansion.id)"
                                 :alt="`Portada de ${expansion.name}`"
                                 loading="lazy"
-                                class="max-h-44 w-full object-contain drop-shadow-xl transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none sm:h-full sm:max-h-none"
+                                class="max-h-44 w-full object-contain drop-shadow-xl transition-transform duration-500 motion-safe:group-hover:scale-105 motion-reduce:transition-none motion-reduce:transform-none sm:h-full sm:max-h-none"
                             />
 
                             <div
