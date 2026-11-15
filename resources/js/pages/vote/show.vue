@@ -189,6 +189,14 @@ const editVote = async () => {
 };
 
 const candidateSearch = ref('');
+const candidateSearchInput = ref<HTMLInputElement | null>(null);
+
+const clearCandidateSearch = (event: MouseEvent) => {
+    candidateSearch.value = '';
+
+    if (event.detail === 0) candidateSearchInput.value?.focus();
+};
+
 const normalizeCandidateName = (name: string) =>
     name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
 
@@ -859,14 +867,25 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                     <label for="vote-candidate-search" class="text-sm font-bold">Buscar juego</label>
                     <input
                         id="vote-candidate-search"
+                        ref="candidateSearchInput"
                         v-model="candidateSearch"
                         type="search"
                         class="mt-2 w-full rounded-xl border border-zinc-300 px-3 py-2.5 focus-visible:outline-2 focus-visible:outline-[#5200FF]"
                         placeholder="Nombre del juego…"
                     />
                     <p role="status" class="mt-2 text-sm text-zinc-600">
-                        {{ visibleCandidates.length === 1 ? '1 juego encontrado' : `${visibleCandidates.length} juegos encontrados` }}
+                        {{ !visibleCandidates.length
+                            ? 'No hay juegos que coincidan con la búsqueda'
+                            : visibleCandidates.length === 1 ? '1 juego encontrado' : `${visibleCandidates.length} juegos encontrados` }}
                     </p>
+                    <button
+                        v-if="!visibleCandidates.length"
+                        type="button"
+                        class="mt-2 min-h-11 rounded-lg px-2 text-sm font-bold text-[#5200FF] hover:underline focus-visible:outline-2 focus-visible:outline-[#5200FF]"
+                        @click="clearCandidateSearch"
+                    >
+                        Mostrar todos los juegos
+                    </button>
                 </div>
 
                 <div class="grid items-stretch gap-4 lg:grid-cols-2">
