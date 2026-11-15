@@ -188,6 +188,19 @@ const editVote = async () => {
     voteEditor.value?.focus();
 };
 
+const candidateSearch = ref('');
+const normalizeCandidateName = (name: string) =>
+    name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
+
+const visibleCandidates = computed(() => {
+    const terms = normalizeCandidateName(candidateSearch.value).trim().split(/\s+/).filter(Boolean);
+
+    return props.poll.candidates.filter(({ game }) => {
+        const name = normalizeCandidateName(game.name);
+        return terms.every(term => name.includes(term));
+    });
+});
+
 const brokenCoverIds = ref<number[]>([]);
 const markCoverAsBroken = (candidateId: number) => {
     if (!brokenCoverIds.value.includes(candidateId)) {
@@ -842,9 +855,23 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
 
                 <!-- JUEGOS -->
 
+                <div v-if="poll.candidates.length >= 8" class="mb-4 rounded-xl bg-white p-3 sm:p-4">
+                    <label for="vote-candidate-search" class="text-sm font-bold">Buscar juego</label>
+                    <input
+                        id="vote-candidate-search"
+                        v-model="candidateSearch"
+                        type="search"
+                        class="mt-2 w-full rounded-xl border border-zinc-300 px-3 py-2.5 focus-visible:outline-2 focus-visible:outline-[#5200FF]"
+                        placeholder="Nombre del juego…"
+                    />
+                    <p role="status" class="mt-2 text-sm text-zinc-600">
+                        {{ visibleCandidates.length === 1 ? '1 juego encontrado' : `${visibleCandidates.length} juegos encontrados` }}
+                    </p>
+                </div>
+
                 <div class="grid items-stretch gap-4 lg:grid-cols-2">
                     <article
-                        v-for="candidate in poll.candidates"
+                        v-for="candidate in visibleCandidates"
                         :key="candidate.id"
                         class="group flex min-w-0 flex-col overflow-hidden rounded-2xl border-2 bg-white shadow-sm transition-[border-color,box-shadow,transform] duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(82,0,255,0.12)]"
                         :class="{
