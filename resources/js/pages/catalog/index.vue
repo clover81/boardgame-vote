@@ -282,15 +282,59 @@ const removeFilter = async (key: FilterKey, event: MouseEvent) => {
     }
 };
 
+const currentCatalogFilters = () => ({
+    search: search.value,
+    playerCount: playerCount.value,
+    collectionId: collectionId.value,
+    durationLimit: durationLimit.value,
+    difficulty: difficulty.value,
+    selectedGameMode: selectedGameMode.value,
+    sortBy: sortBy.value,
+});
+
+const catalogLinkMessage = ref('');
+const manualCatalogLink = ref('');
+let catalogCopyRequest = 0;
+
+watch(currentCatalogFilters, () => {
+    catalogCopyRequest++;
+    catalogLinkMessage.value = '';
+    manualCatalogLink.value = '';
+}, { flush: 'sync' });
+
+const copyFilteredCatalog = async () => {
+    const request = ++catalogCopyRequest;
+    const url = new URL(window.location.pathname, window.location.origin);
+    url.searchParams.set('view', 'filtered');
+
+    for (const [key, value] of Object.entries(currentCatalogFilters())) {
+        if (value !== '') url.searchParams.set(key, String(value));
+    }
+
+    manualCatalogLink.value = '';
+    try {
+        await navigator.clipboard.writeText(url.href);
+        if (request !== catalogCopyRequest) return;
+        catalogLinkMessage.value = 'Enlace con filtros copiado.';
+    } catch {
+        if (request !== catalogCopyRequest) return;
+        manualCatalogLink.value = url.href;
+        catalogLinkMessage.value = 'Puedes copiar el enlace manualmente.';
+    }
+};
+
 const filtersStorageKey = `catalog-filters:${props.catalogToken}`;
 
 // Recuperar los filtros al regresar al catálogo.
 onMounted(() => {
     try {
-        const saved = sessionStorage.getItem(filtersStorageKey);
-        if (!saved) return;
+        const params = new URLSearchParams(window.location.search);
+        const hasSharedFilters = !props.catalogBasePath && params.get('view') === 'filtered';
+        const filters = hasSharedFilters
+            ? Object.fromEntries(params)
+            : JSON.parse(sessionStorage.getItem(filtersStorageKey) ?? 'null');
 
-        const filters = JSON.parse(saved);
+        if (!filters) return;
 
         search.value = typeof filters.search === 'string' ? filters.search : '';
         const savedPlayerCount = Number(filters.playerCount);
@@ -329,13 +373,7 @@ watch(
             sessionStorage.setItem(
                 filtersStorageKey,
                 JSON.stringify({
-                    search: search.value,
-                    playerCount: playerCount.value,
-                    collectionId: collectionId.value,
-                    durationLimit: durationLimit.value,
-                    difficulty: difficulty.value,
-                    selectedGameMode: selectedGameMode.value,
-                    sortBy: sortBy.value,
+                    ...currentCatalogFilters(),
                     showAdvancedFilters: showAdvancedFilters.value,
                 }),
             );
@@ -539,6 +577,26 @@ const externalUrl = (url: string | null): string | undefined => {
                     >
                         Limpiar filtros
                     </button>
+                </div>
+
+                <div v-if="!catalogBasePath && (hasFilters || sortBy !== 'name' || catalogLinkMessage)" class="mb-4">
+                    <button
+                        v-if="hasFilters || sortBy !== 'name'"
+                        type="button"
+                        class="min-h-11 text-sm font-bold text-[#5200FF] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+                        @click="copyFilteredCatalog"
+                    >
+                        Copiar enlace con filtros
+                    </button>
+                    <p role="status" class="text-sm text-zinc-600">{{ catalogLinkMessage }}</p>
+                    <input
+                        v-if="manualCatalogLink"
+                        :value="manualCatalogLink"
+                        aria-label="Enlace del catálogo con filtros"
+                        class="mt-2 w-full rounded-xl border border-zinc-300 p-2 text-sm"
+                        readonly
+                        @focus="($event.target as HTMLInputElement).select()"
+                    />
                 </div>
 
                 <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
