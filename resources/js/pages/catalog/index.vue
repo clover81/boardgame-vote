@@ -292,17 +292,20 @@ onMounted(() => {
 
         const filters = JSON.parse(saved);
 
-        search.value = filters.search ?? '';
+        search.value = typeof filters.search === 'string' ? filters.search : '';
         const savedPlayerCount = Number(filters.playerCount);
         playerCount.value = playerOptions.value.includes(savedPlayerCount) ? savedPlayerCount : '';
         const savedCollectionId = Number(filters.collectionId);
         collectionId.value = props.collections.find(collection => collection.id === savedCollectionId)?.id ?? '';
-        durationLimit.value = filters.durationLimit ?? '';
-        difficulty.value = filters.difficulty ?? '';
+        const savedDuration = Number(filters.durationLimit);
+        durationLimit.value = [30, 60, 90, 120, 180].includes(savedDuration) ? savedDuration : '';
+        difficulty.value = ['light', 'medium', 'heavy'].includes(filters.difficulty) ? filters.difficulty : '';
         selectedGameMode.value = gameModeOptions.value.some(([mode]) => mode === filters.selectedGameMode)
             ? filters.selectedGameMode
             : '';
-        sortBy.value = filters.sortBy ?? 'name';
+        sortBy.value = ['name_desc', 'duration_asc', 'duration_desc', 'difficulty_asc', 'difficulty_desc'].includes(filters.sortBy)
+            ? filters.sortBy
+            : 'name';
         showAdvancedFilters.value = filters.showAdvancedFilters === true;
     } catch {
         // Los filtros siguen disponibles aunque no se puedan restaurar.
