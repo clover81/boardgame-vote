@@ -538,11 +538,7 @@ const externalUrl = (url: string | null): string | undefined => {
                     </button>
                 </div>
 
-                <div
-                    id="catalog-filter-fields"
-                    class="catalog-filters-grid grid gap-3 md:grid-cols-2 xl:grid-cols-3"
-                    :class="{ 'catalog-filters-collapsed': !showAdvancedFilters }"
-                >
+                <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                     <div>
                         <label for="catalog-search" class="text-sm font-bold">
                             Buscar juego
@@ -557,109 +553,114 @@ const externalUrl = (url: string | null): string | undefined => {
                         />
                     </div>
 
-                    <div>
-                        <label for="catalog-players" class="text-sm font-bold">
-                            Jugadores ideales
-                        </label>
+                    <div
+                        id="catalog-filter-fields"
+                        :class="showAdvancedFilters ? 'contents' : 'hidden md:contents'"
+                    >
+                        <div>
+                            <label for="catalog-players" class="text-sm font-bold">
+                                Jugadores ideales
+                            </label>
 
-                        <select
-                            id="catalog-players"
-                            v-model.number="playerCount"
-                            class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
-                        >
-                            <option value="">Cualquier número</option>
-                            <option
-                                v-for="number in playerOptions"
-                                :key="number"
-                                :value="number"
+                            <select
+                                id="catalog-players"
+                                v-model.number="playerCount"
+                                class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
                             >
-                                {{ number }} {{ number === 1 ? 'jugador' : 'jugadores' }}
-                            </option>
-                        </select>
-                        <p class="mt-2 text-xs text-zinc-500">Solo juegos recomendados para ese número de jugadores.</p>
-                    </div>
+                                <option value="">Cualquier número</option>
+                                <option
+                                    v-for="number in playerOptions"
+                                    :key="number"
+                                    :value="number"
+                                >
+                                    {{ number }} {{ number === 1 ? 'jugador' : 'jugadores' }}
+                                </option>
+                            </select>
+                            <p class="mt-2 text-xs text-zinc-500">Solo juegos recomendados para ese número de jugadores.</p>
+                        </div>
 
-                    <div>
-                        <label for="catalog-collection" class="text-sm font-bold">
-                            Colección
-                        </label>
+                        <div>
+                            <label for="catalog-collection" class="text-sm font-bold">
+                                Colección
+                            </label>
 
-                        <select
-                            id="catalog-collection"
-                            v-model.number="collectionId"
-                            class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
-                        >
-                            <option value="">Todas las colecciones</option>
-                            <option
-                                v-for="collection in collections"
-                                :key="collection.id"
-                                :value="collection.id"
+                            <select
+                                id="catalog-collection"
+                                v-model.number="collectionId"
+                                class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
                             >
-                                {{ collection.name }}
-                            </option>
-                        </select>
-                    </div>
+                                <option value="">Todas las colecciones</option>
+                                <option
+                                    v-for="collection in collections"
+                                    :key="collection.id"
+                                    :value="collection.id"
+                                >
+                                    {{ collection.name }}
+                                </option>
+                            </select>
+                        </div>
 
-                    <div>
-                        <label
-                            for="catalog-duration"
-                            class="text-sm font-bold"
-                        >
-                            Tiempo disponible
-                        </label>
+                        <div>
+                            <label
+                                for="catalog-duration"
+                                class="text-sm font-bold"
+                            >
+                                Tiempo disponible
+                            </label>
 
-                        <select
-                            id="catalog-duration"
-                            v-model.number="durationLimit"
-                            class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
-                        >
-                            <option value="">Cualquier duración</option>
-                            <option :value="30">Hasta 30 minutos</option>
-                            <option :value="60">Hasta 1 hora</option>
-                            <option :value="90">Hasta 1 h 30 min</option>
-                            <option :value="120">Hasta 2 horas</option>
-                            <option :value="180">Hasta 3 horas</option>
-                        </select>
-                    </div>
+                            <select
+                                id="catalog-duration"
+                                v-model.number="durationLimit"
+                                class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
+                            >
+                                <option value="">Cualquier duración</option>
+                                <option :value="30">Hasta 30 minutos</option>
+                                <option :value="60">Hasta 1 hora</option>
+                                <option :value="90">Hasta 1 h 30 min</option>
+                                <option :value="120">Hasta 2 horas</option>
+                                <option :value="180">Hasta 3 horas</option>
+                            </select>
+                        </div>
 
-                    <div>
-                        <label
-                            for="catalog-difficulty"
-                            class="text-sm font-bold"
-                        >
-                            Dificultad
-                        </label>
+                        <div>
+                            <label
+                                for="catalog-difficulty"
+                                class="text-sm font-bold"
+                            >
+                                Dificultad
+                            </label>
 
-                        <select
-                            id="catalog-difficulty"
-                            v-model="difficulty"
-                            class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
-                        >
-                            <option value="">Cualquier dificultad</option>
-                            <option value="light">🟢 Ligero (hasta 2)</option>
-                            <option value="medium">🟡 Medio (2–3)</option>
-                            <option value="heavy">🔴 Exigente (más de 3)</option>
-                        </select>
-                    </div>
+                            <select
+                                id="catalog-difficulty"
+                                v-model="difficulty"
+                                class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
+                            >
+                                <option value="">Cualquier dificultad</option>
+                                <option value="light">🟢 Ligero (hasta 2)</option>
+                                <option value="medium">🟡 Medio (2–3)</option>
+                                <option value="heavy">🔴 Exigente (más de 3)</option>
+                            </select>
+                        </div>
 
-                    <div>
-                        <label
-                            for="catalog-game-mode"
-                            class="text-sm font-bold"
-                        >
-                            Tipo de juego
-                        </label>
+                        <div>
+                            <label
+                                for="catalog-game-mode"
+                                class="text-sm font-bold"
+                            >
+                                Tipo de juego
+                            </label>
 
-                        <select
-                            id="catalog-game-mode"
-                            v-model="selectedGameMode"
-                            class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
-                        >
-                            <option value="">Todos los tipos</option>
-                            <option v-for="[mode, label] in gameModeOptions" :key="mode" :value="mode">
-                                {{ label }}
-                            </option>
-                        </select>
+                            <select
+                                id="catalog-game-mode"
+                                v-model="selectedGameMode"
+                                class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 outline-none focus:border-[#5200FF]"
+                            >
+                                <option value="">Todos los tipos</option>
+                                <option v-for="[mode, label] in gameModeOptions" :key="mode" :value="mode">
+                                    {{ label }}
+                                </option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -922,11 +923,3 @@ const externalUrl = (url: string | null): string | undefined => {
         <ScrollToTopProgress compact-on-mobile />
     </div>
 </template>
-
-<style scoped>
-@media (max-width: 767px) {
-    .catalog-filters-collapsed > div:not(:first-child) {
-        display: none;
-    }
-}
-</style>
