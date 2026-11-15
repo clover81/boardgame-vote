@@ -182,13 +182,15 @@ const voteError = ref<HTMLElement | null>(null);
 const voteConfirmation = ref<HTMLElement | null>(null);
 const voteEditor = ref<HTMLElement | null>(null);
 
+const candidateSearch = ref('');
+
 const editVote = async () => {
+    candidateSearch.value = '';
     voteSaved.value = false;
     await nextTick();
     voteEditor.value?.focus();
 };
 
-const candidateSearch = ref('');
 const candidateSearchInput = ref<HTMLInputElement | null>(null);
 
 const clearCandidateSearch = (event: MouseEvent) => {
