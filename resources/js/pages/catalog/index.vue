@@ -680,13 +680,13 @@ const externalUrl = (url: string | null): string | undefined => {
                     :key="chip.key"
                     type="button"
                     :aria-label="`Quitar filtro ${chip.label}`"
-                    class="inline-flex max-w-full items-center gap-2 rounded-full bg-violet-100 px-3 py-2 text-xs font-bold text-violet-800 transition hover:bg-violet-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+                    class="inline-flex min-w-0 max-w-full items-center gap-2 rounded-full bg-violet-100 px-3 py-2 text-xs font-bold text-violet-800 transition hover:bg-violet-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
                     @click="removeFilter(chip.key, $event)"
                 >
-                    <span class="max-w-[180px] truncate sm:max-w-xs">
+                    <span class="min-w-0 max-w-xs wrap-break-word text-left">
                         {{ chip.label }}
                     </span>
-                    <span aria-hidden="true">×</span>
+                    <span aria-hidden="true" class="shrink-0">×</span>
                 </button>
             </div>
 
