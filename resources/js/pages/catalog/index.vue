@@ -294,6 +294,7 @@ const currentCatalogFilters = () => ({
 
 const catalogLinkMessage = ref('');
 const manualCatalogLink = ref('');
+const manualCatalogLinkInput = ref<HTMLInputElement | null>(null);
 let catalogCopyRequest = 0;
 
 watch(currentCatalogFilters, () => {
@@ -320,6 +321,8 @@ const copyFilteredCatalog = async () => {
         if (request !== catalogCopyRequest) return;
         manualCatalogLink.value = url.href;
         catalogLinkMessage.value = 'Puedes copiar el enlace manualmente.';
+        await nextTick();
+        if (request === catalogCopyRequest) manualCatalogLinkInput.value?.focus();
     }
 };
 
@@ -591,6 +594,7 @@ const externalUrl = (url: string | null): string | undefined => {
                     <p role="status" class="text-sm text-zinc-600">{{ catalogLinkMessage }}</p>
                     <input
                         v-if="manualCatalogLink"
+                        ref="manualCatalogLinkInput"
                         :value="manualCatalogLink"
                         aria-label="Enlace del catálogo con filtros"
                         class="mt-2 w-full rounded-xl border border-zinc-300 p-2 text-sm"
