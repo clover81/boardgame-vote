@@ -224,11 +224,11 @@ const externalUrl = (url: string | null): string | undefined => {
                 <dialog
                     ref="imageDialog"
                     :aria-label="`Portada ampliada de ${game.name}`"
-                    class="fixed inset-0 m-auto max-h-[95vh] w-[94vw] max-w-[900px] rounded-3xl border-0 bg-white p-5 shadow-2xl backdrop:bg-black/85"
+                    class="fixed inset-0 m-auto max-h-[95dvh] overflow-y-auto w-[94vw] max-w-[900px] rounded-3xl border-0 bg-white p-5 shadow-2xl backdrop:bg-black/85"
                     @click.self="closeImage"
                 >
-                    <div class="flex flex-col gap-4">
-                        <div class="flex items-center justify-between gap-4">
+                    <div class="flex flex-col gap-4 max-h-[calc(95dvh-2.5rem)]">
+                        <div class="flex items-center justify-between gap-4 shrink-0">
                             <h2 class="min-w-0 break-words text-lg font-black text-zinc-900">
                                 {{ game.name }}
                             </h2>
@@ -247,7 +247,7 @@ const externalUrl = (url: string | null): string | undefined => {
                             :src="game.image_url"
                             :alt="`Portada ampliada de ${game.name}`"
                             @error="enlargedCoverHasError = true"
-                            class="max-h-[78vh] w-full object-contain"
+                            class="min-h-0 w-full object-contain"
                         />
                         <p v-else role="status" class="py-8 text-center text-sm text-zinc-600">
                             No se ha podido cargar la portada ampliada.
