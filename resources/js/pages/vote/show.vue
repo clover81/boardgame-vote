@@ -1011,10 +1011,10 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                 type="button"
                                 :disabled="form.processing"
                                 :aria-pressed="form.first_candidate_id === candidate.id"
-                                class="min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-bold transition-[background-color,border-color,box-shadow,transform] duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5200FF] focus-visible:ring-offset-2 motion-safe:active:scale-[0.98] sm:text-base"
+                                class="min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-bold transition-[background-color,border-color,box-shadow,transform] duration-200 motion-safe:enabled:hover:-translate-y-0.5 enabled:hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5200FF] focus-visible:ring-offset-2 motion-safe:enabled:active:scale-[0.98] disabled:opacity-75 disabled:cursor-wait sm:text-base"
                                 :class="form.first_candidate_id === candidate.id
                                     ? 'border-[#9bcb00] bg-[#CCFF00] text-black'
-                                    : 'border-zinc-200 bg-white text-zinc-900 hover:border-[#9bcb00] hover:bg-lime-50'"
+                                    : 'border-zinc-200 bg-white text-zinc-900 enabled:hover:border-[#9bcb00] enabled:hover:bg-lime-50'"
                                 @click="selectFirst(candidate.id)"
                             >
                                 {{ needsSecondChoice ? '🥇 1.ª opción' : '✓ Mi voto' }}
@@ -1024,10 +1024,10 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                 type="button"
                                 :disabled="form.processing"
                                 :aria-pressed="form.second_candidate_id === candidate.id"
-                                class="min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-bold transition-[background-color,border-color,box-shadow,transform] duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5200FF] focus-visible:ring-offset-2 motion-safe:active:scale-[0.98] sm:text-base"
+                                class="min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-bold transition-[background-color,border-color,box-shadow,transform] duration-200 motion-safe:enabled:hover:-translate-y-0.5 enabled:hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5200FF] focus-visible:ring-offset-2 motion-safe:enabled:active:scale-[0.98] disabled:opacity-75 disabled:cursor-wait sm:text-base"
                                 :class="form.second_candidate_id === candidate.id
                                     ? 'border-[#FF6B00] bg-orange-100 text-orange-950'
-                                    : 'border-zinc-200 bg-white text-zinc-900 hover:border-orange-400 hover:bg-orange-50'"
+                                    : 'border-zinc-200 bg-white text-zinc-900 enabled:hover:border-orange-400 enabled:hover:bg-orange-50'"
                                 @click="selectSecond(candidate.id)"
                             >
                                 🥈 2.ª opción
