@@ -1113,6 +1113,10 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                         Revisa los datos antes de confirmar tu voto.
                     </p>
 
+                    <p role="status" class="sr-only">
+                        {{ form.processing ? 'Guardando el voto…' : '' }}
+                    </p>
+
                     <button
                         type="button"
                         :disabled="!canSubmit || form.processing"
