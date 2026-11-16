@@ -6,6 +6,7 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { toUrl } from '@/lib/utils';
@@ -16,6 +17,11 @@ defineProps<{
 }>();
 
 const { isCurrentUrl } = useCurrentUrl();
+const { isMobile, setOpenMobile } = useSidebar();
+
+const closeMobileSidebar = () => {
+    if (isMobile.value) setOpenMobile(false);
+};
 
 // Mantener marcada la sección también al abrir sus páginas interiores.
 const isSectionActive = (item: NavItem): boolean => {
@@ -41,7 +47,7 @@ const isSectionActive = (item: NavItem): boolean => {
                     :tooltip="item.title"
                     class="h-10 rounded-xl px-3 font-medium transition-colors hover:bg-[#5200FF]/10 hover:text-[#5200FF] data-[active=true]:bg-[#5200FF] data-[active=true]:font-bold data-[active=true]:text-white dark:hover:bg-[#CCFF00]/10 dark:hover:text-[#CCFF00] dark:data-[active=true]:bg-[#CCFF00] dark:data-[active=true]:text-black"
                 >
-                    <Link :href="item.href">
+                    <Link :href="item.href" @click="closeMobileSidebar">
                         <component :is="item.icon" />
                         <span>{{ item.title }}</span>
                     </Link>

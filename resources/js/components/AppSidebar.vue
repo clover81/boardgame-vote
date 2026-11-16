@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
+import { watch } from 'vue';
 import {
     BarChart3,
     Dices,
@@ -22,9 +23,20 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 
 import type { NavItem } from '@/types';
+
+const page = usePage();
+const { isMobile, setOpenMobile } = useSidebar();
+
+const closeMobileSidebar = () => {
+    if (isMobile.value) setOpenMobile(false);
+};
+
+// Cerrar también cuando se navega desde el menú de usuario u otra ruta Inertia.
+watch(() => page.url, closeMobileSidebar);
 
 const mainNavItems: NavItem[] = [
     { title: 'Mi colección', href: '/games', icon: Gamepad2 },
@@ -50,7 +62,7 @@ const mainNavItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link href="/games">
+                        <Link href="/games" @click="closeMobileSidebar">
                             <div
                                 class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#5200FF]"
                             >
@@ -77,7 +89,7 @@ const mainNavItems: NavItem[] = [
                         tooltip="Crear votación"
                         class="h-11 rounded-xl bg-[#5200FF] px-3 font-bold text-white hover:bg-[#4200D0] hover:text-white active:bg-[#4200D0] active:text-white"
                     >
-                        <Link href="/polls/create">
+                        <Link href="/polls/create" @click="closeMobileSidebar">
                             <Vote class="size-4 text-[#CCFF00] palette-sidebar-primary-icon" />
                             <span>Crear votación</span>
                         </Link>
