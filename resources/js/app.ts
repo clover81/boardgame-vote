@@ -5,7 +5,7 @@ import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = 'Juegos de mesa · Clover';
 
 void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
@@ -14,6 +14,7 @@ void createInertiaApp({
             case name === 'Welcome':
             case name.startsWith('catalog/'):
             case name === 'vote/show':
+            case name === 'auth/Login':
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
