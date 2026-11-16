@@ -303,15 +303,20 @@ watch(currentCatalogFilters, () => {
     manualCatalogLink.value = '';
 }, { flush: 'sync' });
 
+const filteredCatalogQuery = computed(() => {
+    const query = new URLSearchParams({ view: 'filtered' });
+    for (const [key, value] of Object.entries(currentCatalogFilters())) {
+        if (value !== '') query.set(key, String(value));
+    }
+    return query.toString();
+});
+
 const copyFilteredCatalog = async () => {
     const request = ++catalogCopyRequest;
     const url = new URL(window.location.pathname, window.location.origin);
-    url.searchParams.set('view', 'filtered');
+    url.search = filteredCatalogQuery.value;
 
-    for (const [key, value] of Object.entries(currentCatalogFilters())) {
-        if (value !== '') url.searchParams.set(key, String(value));
-    }
-
+    catalogLinkMessage.value = '';
     manualCatalogLink.value = '';
     try {
         await navigator.clipboard.writeText(url.href);
@@ -332,7 +337,7 @@ const filtersStorageKey = `catalog-filters:${props.catalogToken}`;
 onMounted(() => {
     try {
         const params = new URLSearchParams(window.location.search);
-        const hasSharedFilters = !props.catalogBasePath && params.get('view') === 'filtered';
+        const hasSharedFilters = params.get('view') === 'filtered';
         const filters = hasSharedFilters
             ? Object.fromEntries(params)
             : JSON.parse(sessionStorage.getItem(filtersStorageKey) ?? 'null');
@@ -353,7 +358,10 @@ onMounted(() => {
         sortBy.value = ['name_desc', 'duration_asc', 'duration_desc', 'difficulty_asc', 'difficulty_desc'].includes(filters.sortBy)
             ? filters.sortBy
             : 'name';
-        showAdvancedFilters.value = filters.showAdvancedFilters === true;
+        const panel = hasSharedFilters ? params.get('panel') : null;
+        showAdvancedFilters.value = hasSharedFilters
+            ? (panel === 'open' || (panel !== 'closed' && advancedFilterCount.value > 0))
+            : filters.showAdvancedFilters === true;
     } catch {
         // Los filtros siguen disponibles aunque no se puedan restaurar.
     }
@@ -470,6 +478,15 @@ const hasFilters = computed(() =>
     selectedGameMode.value !== ''
 );
 
+const gameDetailsUrl = (gameId: number) => {
+    const path = `${props.catalogBasePath ?? `/catalog/${props.catalogToken}`}/games/${gameId}`;
+    const hasCustomView = hasFilters.value || sortBy.value !== 'name' || showAdvancedFilters.value;
+    if (!hasCustomView) return path;
+
+    const panel = showAdvancedFilters.value ? 'open' : 'closed';
+    return `${path}?${filteredCatalogQuery.value}&panel=${panel}`;
+};
+
 const formatDuration = (game: Game) => {
     if (game.min_playtime === null) {
         return game.max_playtime === null ? 'Sin datos' : `${game.max_playtime} min`;
@@ -503,7 +520,7 @@ const externalUrl = (url: string | null): string | undefined => {
 <template>
     <Head :title="catalogOwnerName ? `Colección de ${catalogOwnerName}` : 'Catálogo de juegos de mesa'" />
 
-    <div class="min-h-screen bg-[#f7f7f5] text-zinc-950">
+    <div class="catalog-public-light min-h-screen bg-[#f7f7f5] text-zinc-950">
 
         <!-- CABECERA PUBLICA COMPACTA - Clover -->
         <div class="mx-auto max-w-7xl px-4 pt-5 sm:px-8 sm:pt-8">
@@ -803,7 +820,7 @@ const externalUrl = (url: string | null): string | undefined => {
                     <!-- Enlace que permite abrir la ficha pulsando
                          sobre cualquier zona libre de la tarjeta -->
                     <Link
-                        :href="`${catalogBasePath ?? `/catalog/${catalogToken}`}/games/${game.id}`"
+                        :href="gameDetailsUrl(game.id)"
                         :aria-label="`Ver ficha de ${game.name}`"
                         class="absolute inset-0 z-10 rounded-3xl focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#5200FF]"
                     />
@@ -874,8 +891,8 @@ const externalUrl = (url: string | null): string | undefined => {
                                 <span
                                     v-for="(collection, index) in game.collections"
                                     :key="collection.id"
-                                    class="inline-block max-w-full truncate rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700"
-                                    :class="index >= 2 ? 'hidden sm:inline-flex' : ''"
+                                    class="inline-block min-w-0 max-w-full wrap-anywhere rounded-xl bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700"
+                                    :class="index >= 2 ? 'hidden sm:inline-block' : ''"
                                 >
                                     {{ collection.name }}
                                 </span>
@@ -895,7 +912,7 @@ const externalUrl = (url: string | null): string | undefined => {
                             <span class="inline-flex items-center gap-1.5 whitespace-nowrap">
                                 <UsersRound class="size-4 shrink-0 text-[#6D28D9]" :stroke-width="2.2" aria-hidden="true" />
                                 <span class="sr-only">Jugadores:</span>
-                                {{ game.min_players }}–{{ game.max_players }}
+                                {{ game.min_players === game.max_players ? game.min_players : `${game.min_players}–${game.max_players}` }}
                             </span>
                             <span class="inline-flex items-center gap-1.5 whitespace-nowrap">
                                 <HourglassCog class="size-4 shrink-0 text-[#1D4ED8]" :stroke-width="2.2" aria-hidden="true" />
@@ -905,7 +922,7 @@ const externalUrl = (url: string | null): string | undefined => {
                             <span v-if="game.complexity !== null" class="inline-flex items-center gap-1.5 whitespace-nowrap" title="Dificultad sobre 5">
                                 <BrainCog class="size-4 shrink-0 text-pink-600" :stroke-width="2" aria-hidden="true" />
                                 <span class="sr-only">Dificultad:</span>
-                                {{ Number(game.complexity).toFixed(2) }}/5
+                                {{ Number(game.complexity).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}/5
                             </span>
                         </div>
 
@@ -970,7 +987,8 @@ const externalUrl = (url: string | null): string | undefined => {
                 </p>
                 <button
                     v-if="games.length && hasFilters"
-                    class="mt-5 font-bold text-[#5200FF] hover:underline"
+                    type="button"
+                    class="mt-5 min-h-11 rounded-xl px-4 font-bold text-[#5200FF] hover:bg-violet-50 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                     @click="clearFilters"
                 >
                     Mostrar todos

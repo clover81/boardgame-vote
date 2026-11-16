@@ -212,3 +212,29 @@ test('updating a play requires authentication', function () {
 
     ($this->assertPlayUnchanged)();
 });
+
+test('editing a linked play returns to its entry point', function (?string $back, array $pollQuery) {
+    $fromPoll = $back !== null;
+    $query = $fromPoll ? ['from' => 'poll', 'back' => $back] : [];
+    $parameters = ['play' => $this->play, ...$query];
+    $pollUrl = route('polls.show', ['poll' => $this->poll, ...$pollQuery]);
+
+    $this->withoutVite();
+    $this->actingAs($this->user)
+        ->get(route('plays.edit', $parameters))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('plays/edit')
+            ->where('pollReturn', $fromPoll ? ['url' => $pollUrl, 'back' => $back] : null)
+        );
+
+    $this->put(route('plays.update', $parameters), $this->payload)
+        ->assertSessionHasNoErrors()
+        ->assertRedirect($fromPoll ? $pollUrl : route('plays.index'));
+
+    expect($this->play->fresh()->notes)->toBe($this->payload['notes']);
+})->with([
+    'from the filtered polls list via the poll' => ['/polls?status=closed', ['back' => '/polls?status=closed']],
+    'from the history via the poll' => ['/plays', ['from' => 'history']],
+    'directly from the history' => [null, []],
+]);

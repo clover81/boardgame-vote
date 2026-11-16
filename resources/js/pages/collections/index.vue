@@ -2,7 +2,7 @@
 import { BuildingComplexPlus } from '@lucide/vue';
 import { Link as ChainIcon } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import {
     Head,
@@ -74,24 +74,42 @@ const props = defineProps<{
 |--------------------------------------------------------------------------
 */
 
-const showCreateForm =
-    ref(false);
+const showCreateForm = ref(false);
+const createCollectionButton = ref<HTMLButtonElement | null>(null);
+const collectionNameInput = ref<HTMLInputElement | null>(null);
 
 const form = useForm({
     name: '',
 });
 
+const toggleCreateForm = async () => {
+    if (form.processing) return;
+
+    showCreateForm.value = !showCreateForm.value;
+    if (showCreateForm.value) {
+        await nextTick();
+        collectionNameInput.value?.focus();
+    }
+};
+
 const submit = () => {
+    if (form.processing) return;
+
     form.post(
         '/collections',
         {
             preserveScroll: true,
 
-            onSuccess: () => {
+            onSuccess: async () => {
                 form.reset();
+                showCreateForm.value = false;
+                await nextTick();
+                createCollectionButton.value?.focus();
+            },
 
-                showCreateForm.value =
-                    false;
+            onError: async () => {
+                await nextTick();
+                collectionNameInput.value?.focus();
             },
         }
     );
@@ -121,12 +139,18 @@ const makeDefault = (
     );
 };
 
+const changingVisibility = ref(false);
+
 const togglePublic = (collection: Collection) => {
+    if (changingVisibility.value) return;
+
     router.patch(
         `/collections/${collection.id}/public`,
         {},
         {
             preserveScroll: true,
+            onStart: () => { changingVisibility.value = true; },
+            onFinish: () => { changingVisibility.value = false; },
         }
     );
 };
@@ -342,12 +366,7 @@ onUnmounted(() => {
 
 const syncBggCollection = () => {
     const collectionId = bggCollectionId.value;
-    if (
-        collectionId === '' ||
-        bggSyncing.value ||
-        bggRemovingId.value !== null ||
-        bggRemovingExpansionId.value !== null
-    ) return;
+    if (collectionId === '' || bggLoading.value || bggChangesBlocked.value) return;
 
     bggSyncing.value = true;
     bggSyncMessage.value = '';
@@ -408,17 +427,7 @@ const confirmBggRemoval = (game: {
     bgg_id: number;
     name: string;
 }) => {
-    if (
-        bggCollectionId.value === '' ||
-        bggSyncing.value ||
-        bggRemovingId.value !== null ||
-        bggSyncing.value ||
-        ['pending', 'running'].includes(
-            selectedBggCollection.value?.bgg_sync_status ?? ''
-        )
-    ) {
-        return;
-    }
+    if (bggChangesBlocked.value) return;
 
     bggGameToRemove.value = game;
     bggRemoveDialogOpen.value = true;
@@ -441,17 +450,7 @@ const executeBggRemoval = (game: {
     name: string;
 }) => {
     const collectionId = bggCollectionId.value;
-    if (
-        collectionId === '' ||
-        bggSyncing.value ||
-        bggRemovingId.value !== null ||
-        bggSyncing.value ||
-        ['pending', 'running'].includes(
-            selectedBggCollection.value?.bgg_sync_status ?? ''
-        )
-    ) {
-        return;
-    }
+    if (collectionId === '' || bggChangesBlocked.value) return;
 
     bggRemovingId.value = game.id;
     bggSyncError.value = '';
@@ -494,7 +493,7 @@ const executeBggRemoval = (game: {
 
 const bggRemovingExpansionId = ref<number | null>(null);
 
-const bggRemovalBlocked = computed(() =>
+const bggChangesBlocked = computed(() =>
     bggCollectionId.value === '' ||
     bggSyncing.value ||
     bggRemovingId.value !== null ||
@@ -517,18 +516,7 @@ const confirmBggExpansionRemoval = (expansion: {
     name: string;
     game_id: number;
 }) => {
-    if (
-        bggCollectionId.value === '' ||
-        bggSyncing.value ||
-        bggRemovingExpansionId.value !== null ||
-        bggRemovingId.value !== null ||
-        bggSyncing.value ||
-        ['pending', 'running'].includes(
-            selectedBggCollection.value?.bgg_sync_status ?? ''
-        )
-    ) {
-        return;
-    }
+    if (bggChangesBlocked.value) return;
 
     bggExpansionToRemove.value = expansion;
     bggExpansionRemoveDialogOpen.value = true;
@@ -552,18 +540,7 @@ const executeBggExpansionRemoval = (expansion: {
     game_id: number;
 }) => {
     const collectionId = bggCollectionId.value;
-    if (
-        collectionId === '' ||
-        bggSyncing.value ||
-        bggRemovingExpansionId.value !== null ||
-        bggRemovingId.value !== null ||
-        bggSyncing.value ||
-        ['pending', 'running'].includes(
-            selectedBggCollection.value?.bgg_sync_status ?? ''
-        )
-    ) {
-        return;
-    }
+    if (collectionId === '' || bggChangesBlocked.value) return;
 
     bggRemovingExpansionId.value = expansion.id;
     bggSyncError.value = '';
@@ -626,21 +603,25 @@ const loadBggPreview = async () => {
             }
         );
 
-        const result = await response.json();
+        const result = await response.json().catch(() => null);
         if (request.signal.aborted) return;
 
         if (!response.ok) {
-            throw new Error(
-                result.message ?? 'No se pudo consultar BGG.'
-            );
+            bggError.value = response.status === 401
+                ? 'Tu sesión ha caducado. Vuelve a iniciar sesión para consultar BGG.'
+                : (typeof result?.message === 'string' && result.message) || 'No se pudo consultar BGG.';
+            return;
+        }
+
+        if (!result?.summary || !Array.isArray(result.games) || !Array.isArray(result.expansions)) {
+            bggError.value = 'No se pudo cargar la vista previa de BGG. Vuelve a intentarlo.';
+            return;
         }
 
         bggPreview.value = result as BggPreview;
-    } catch (error) {
+    } catch {
         if (request.signal.aborted) return;
-        bggError.value = error instanceof Error
-            ? error.message
-            : 'Error al conectar con BGG.';
+        bggError.value = 'No se pudo conectar para consultar BGG. Vuelve a intentarlo.';
     } finally {
         if (bggPreviewRequest === request) {
             bggPreviewRequest = null;
@@ -703,10 +684,10 @@ watch(
                 <button
                     type="button"
                     class="inline-flex w-full items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90 sm:w-auto"
-                    @click="
-                        showCreateForm =
-                            !showCreateForm
-                    "
+                    ref="createCollectionButton"
+                    :aria-expanded="showCreateForm"
+                    :aria-disabled="form.processing"
+                    @click="toggleCreateForm"
                 >
                     {{
                         showCreateForm
@@ -744,13 +725,17 @@ watch(
                 >
                     <div class="flex-1">
                         <input
+                            ref="collectionNameInput"
                             v-model="form.name"
                             type="text"
+                            aria-label="Nombre de la colección"
+                            :aria-invalid="Boolean(form.errors.name)"
+                            :aria-describedby="form.errors.name ? 'collection-name-error' : undefined"
                             class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 placeholder:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                             placeholder="Nombre de la colección"
                         />
 
-                        <InputError :message="form.errors.name" />
+                        <InputError id="collection-name-error" :message="form.errors.name" />
                     </div>
 
                     <button
@@ -813,7 +798,7 @@ watch(
                             </span>
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-3">
-                                    <h2 class="min-w-0 break-words text-xl font-bold text-zinc-900 dark:text-zinc-100">
+                                    <h2 class="min-w-0 wrap-anywhere text-xl font-bold text-zinc-900 dark:text-zinc-100">
                                         {{ collection.name }}
                                     </h2>
                                     <span
@@ -837,9 +822,10 @@ watch(
                         </div>
 
                         <!-- ACCIÓN PRINCIPAL + OPCIONES DE ADMINISTRACIÓN -->
-                        <div class="flex w-full items-center gap-2 sm:w-auto sm:justify-end">
+                        <div class="flex w-full items-center gap-2 sm:w-auto sm:shrink-0 sm:justify-end">
                             <Link
                                 :href="`/games?collection_id=${collection.id}`"
+                                :aria-label="`Ver juegos de ${collection.name}`"
                                 class="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-[#5200FF] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#4000cc] hover:shadow-md hover:shadow-violet-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] sm:flex-initial"
                             >
                                 Ver juegos
@@ -863,7 +849,7 @@ watch(
                                         <Star class="size-4" aria-hidden="true" />
                                         Marcar como predeterminada
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem @select="togglePublic(collection)">
+                                    <DropdownMenuItem :disabled="changingVisibility" @select="togglePublic(collection)">
                                         <LockKeyhole v-if="collection.is_public" class="size-4" aria-hidden="true" />
                                         <Globe2 v-else class="size-4" aria-hidden="true" />
                                         {{ collection.is_public ? 'Hacer privada' : 'Publicar colección' }}
@@ -915,7 +901,7 @@ watch(
                     >
                         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <div class="min-w-0">
-                                <h3 class="break-words text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                                <h3 class="wrap-anywhere text-lg font-bold text-zinc-900 dark:text-zinc-100">
                                     {{ friendCollection.name }}
                                 </h3>
                                 <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
@@ -928,6 +914,7 @@ watch(
                             </div>
                             <Link
                                 :href="`/friends/collections/${friendCollection.id}`"
+                                :aria-label="`Ver juegos de ${friendCollection.name}`"
                                 class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-[#5200FF] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#4000cc]"
                             >
                                 Ver juegos
@@ -1025,8 +1012,9 @@ watch(
                     <select
                         v-else-if="bggCollections.length > 1"
                         v-model.number="bggCollectionId"
+                        :disabled="bggSyncing || bggRemovingId !== null || bggRemovingExpansionId !== null"
                         aria-label="Colección vinculada a BoardGameGeek"
-                        class="min-w-48 flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                        class="min-w-48 flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         <option value="">Selecciona una colección</option>
                         <option
@@ -1066,16 +1054,7 @@ watch(
 
                     <button
                         type="button"
-                        :disabled="
-                            bggSyncing ||
-                            bggRemovingId !== null ||
-                            bggRemovingExpansionId !== null ||
-                            bggLoading ||
-                            bggCollectionId === '' ||
-                            ['pending', 'running'].includes(
-                                selectedBggCollection?.bgg_sync_status ?? ''
-                            )
-                        "
+                        :disabled="bggLoading || bggChangesBlocked"
                         class="rounded-xl bg-emerald-600 px-5 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                         @click="syncBggCollection"
                     >
@@ -1086,6 +1065,14 @@ watch(
                         }}
                     </button>
                 </div>
+
+                <p
+                    v-if="bggError"
+                    role="alert"
+                    class="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300"
+                >
+                    {{ bggError }}
+                </p>
 
                 <!-- MENSAJE DE SINCRONIZACIÓN -->
                 <div
@@ -1213,14 +1200,6 @@ watch(
                         </p>
                     </details>
                 </div>
-
-                <p
-                    v-if="bggError"
-                    role="alert"
-                    class="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-700"
-                >
-                    {{ bggError }}
-                </p>
 
                 <div v-if="bggPreview" class="mt-7">
                     <p class="mb-4 text-sm text-zinc-500">
@@ -1364,14 +1343,7 @@ watch(
 
                                 <button
                                     type="button"
-                                    :disabled="
-                                        bggSyncing ||
-                                        bggRemovingId !== null ||
-                                        bggSyncing ||
-                                        ['pending', 'running'].includes(
-                                            selectedBggCollection?.bgg_sync_status ?? ''
-                                        )
-                                    "
+                                    :disabled="bggChangesBlocked"
                                     class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
                                     @click="confirmBggRemoval(game)"
                                 >
@@ -1437,15 +1409,7 @@ watch(
 
                                 <button
                                     type="button"
-                                    :disabled="
-                                        bggSyncing ||
-                                        bggRemovingExpansionId !== null ||
-                                        bggRemovingId !== null ||
-                                        bggSyncing ||
-                                        ['pending', 'running'].includes(
-                                            selectedBggCollection?.bgg_sync_status ?? ''
-                                        )
-                                    "
+                                    :disabled="bggChangesBlocked"
                                     class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
                                     @click="confirmBggExpansionRemoval(expansion)"
                                 >
@@ -1576,7 +1540,7 @@ watch(
 
                     <button
                         type="button"
-                        :disabled="bggRemovalBlocked"
+                        :disabled="bggChangesBlocked"
                         class="rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:bg-[#4000cc] disabled:cursor-not-allowed disabled:opacity-50"
                         @click="removeSelectedBggGame"
                     >
@@ -1632,7 +1596,7 @@ watch(
 
                     <button
                         type="button"
-                        :disabled="bggRemovalBlocked"
+                        :disabled="bggChangesBlocked"
                         class="rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:bg-[#4000cc] disabled:cursor-not-allowed disabled:opacity-50"
                         @click="removeSelectedBggExpansion"
                     >

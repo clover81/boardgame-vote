@@ -311,3 +311,19 @@ test('private catalog filters time and difficulty with the same ranges as public
         );
     }
 });
+
+test('non-text filter values use the default collection filters', function () {
+    $this->actingAs($this->user)->get(route('games.index', [
+        'q' => ['Heat'],
+        'difficulty' => ['light'],
+        'mode' => ['competitive'],
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('games/index')
+            ->has('games', 3)
+            ->where('filters.q', '')
+            ->where('filters.difficulty', '')
+            ->where('filters.mode', '')
+        );
+});

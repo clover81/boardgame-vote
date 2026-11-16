@@ -226,6 +226,8 @@ watch(
 const saveError = ref<HTMLDivElement | null>(null);
 
 const submit = () => {
+    if (form.processing) return;
+
     form.transform((data) => ({
         ...data,
         expansion_ids: Object.fromEntries(
@@ -297,6 +299,9 @@ const submit = () => {
                         class="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300"
                     >
                         El ganador está seleccionado. Desmárcalo si no lo jugasteis.
+                    </p>
+                    <p v-else class="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+                        Selecciona los juegos que jugasteis<template v-if="otherGames.length"> o añade uno fuera de la votación</template>.
                     </p>
                 </div>
 
@@ -380,6 +385,7 @@ const submit = () => {
 
                     <div class="mt-6">
                         <label
+                            v-if="otherGames.length"
                             for="other-game"
                             class="mb-2 block text-sm font-bold text-zinc-700 dark:text-zinc-300"
                         >
@@ -387,11 +393,14 @@ const submit = () => {
                         </label>
 
                         <select
+                            v-if="otherGames.length"
                             id="other-game"
                             v-model="selectedOtherGameId"
                             class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                         >
-                            <option :value="null">Otro juego...</option>
+                            <option :value="null">
+                                {{ selectedOtherGameId === null ? 'Selecciona otro juego…' : 'Quitar juego adicional' }}
+                            </option>
                             <option v-for="game in otherGames" :key="game.id" :value="game.id">
                                 {{ game.name }}
                             </option>
@@ -595,6 +604,10 @@ const submit = () => {
                         :errors="Object.values(form.errors)"
                     />
                 </div>
+
+                <p role="status" class="sr-only">
+                    {{ form.processing ? 'Guardando la partida…' : '' }}
+                </p>
 
                 <button
                     type="submit"

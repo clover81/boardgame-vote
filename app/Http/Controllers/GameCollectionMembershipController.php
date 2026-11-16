@@ -44,8 +44,14 @@ class GameCollectionMembershipController extends Controller
          */
         $game->collections()->syncWithoutDetaching($collectionIds);
 
+        $back = $request->query('back');
+        $parameters = ['game' => $game];
+        if (is_string($back) && str_starts_with($back, '/games?')) {
+            $parameters['back'] = $back;
+        }
+
         return redirect()
-            ->route('games.show', $game)
+            ->route('games.show', $parameters)
             ->with('success', 'Juego añadido a las colecciones seleccionadas.');
     }
 

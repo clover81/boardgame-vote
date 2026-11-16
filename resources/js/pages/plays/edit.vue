@@ -54,6 +54,7 @@ interface Play {
 
 const props = defineProps<{
     play: Play;
+    pollReturn: { url: string; back: string | null } | null;
     games: Game[];
     players: Player[];
 }>();
@@ -206,7 +207,16 @@ watch(
 const saveError = ref<HTMLDivElement | null>(null);
 
 const submit = () => {
-    form.put(`/plays/${props.play.id}`, {
+    if (form.processing) return;
+
+    const url = `/plays/${props.play.id}`;
+    const query = new URLSearchParams();
+    if (props.pollReturn) {
+        query.set('from', 'poll');
+        if (props.pollReturn.back) query.set('back', props.pollReturn.back);
+    }
+
+    form.put(query.size ? `${url}?${query}` : url, {
         onError: async () => {
             await nextTick();
             saveError.value?.focus();
@@ -223,10 +233,10 @@ const submit = () => {
             class="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6"
         >
             <Link
-                href="/plays"
+                :href="pollReturn?.url ?? '/plays'"
                 class="text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
             >
-                ← Volver al historial
+                {{ pollReturn ? '← Volver a la votación' : '← Volver al historial' }}
             </Link>
 
             <!-- CABECERA -->
@@ -552,6 +562,10 @@ const submit = () => {
                         :errors="Object.values(form.errors)"
                     />
                 </div>
+
+                <p role="status" class="sr-only">
+                    {{ form.processing ? 'Guardando la partida…' : '' }}
+                </p>
 
                 <button
                     type="submit"

@@ -208,6 +208,8 @@ watch(
 const saveError = ref<HTMLDivElement | null>(null);
 
 const submit = () => {
+    if (form.processing) return;
+
     form.transform(({ game_id, expansion_id, ...data }) => ({
         ...data,
         game_ids: game_id === null ? [] : [game_id],
@@ -529,6 +531,10 @@ const submit = () => {
                         :errors="Object.values(form.errors)"
                     />
                 </div>
+
+                <p role="status" class="sr-only">
+                    {{ form.processing ? 'Guardando la partida…' : '' }}
+                </p>
 
                 <button
                     type="submit"

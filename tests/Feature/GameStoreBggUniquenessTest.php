@@ -81,10 +81,11 @@ test('an existing BGG game is attached without changing any game data or history
         $this->payload['bgg_id'] = null;
     }
 
-    foreach ([1, 2] as $attempt) {
-        $this->actingAs($this->user)->post(route('games.store'), $this->payload)
+    $back = route('games.index', ['collection_id' => $this->collection->id, 'sort' => 'name_desc'], false);
+    foreach ([[], ['back' => $back]] as $query) {
+        $this->actingAs($this->user)->post(route('games.store', $query), $this->payload)
             ->assertSessionHasNoErrors()
-            ->assertRedirect(route('games.show', $existingGame))
+            ->assertRedirect(route('games.show', ['game' => $existingGame, ...$query]))
             ->assertSessionHas('success', 'El juego ya estaba importado desde BGG y se ha añadido a tu colección.');
     }
 

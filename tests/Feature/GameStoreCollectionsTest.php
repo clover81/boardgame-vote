@@ -4,7 +4,7 @@ use App\Models\Game;
 use App\Models\GameCollection;
 use App\Models\User;
 
-test('a new game is attached to the selected collections owned by its creator', function () {
+test('a new game is attached to the selected collections owned by its creator', function ($returnToCollection) {
     $user = User::factory()->create();
     $collections = collect(['Mi colección', 'Otra colección'])->map(
         fn ($name) => GameCollection::create([
@@ -13,7 +13,10 @@ test('a new game is attached to the selected collections owned by its creator', 
         ])
     );
 
-    $this->actingAs($user)->post(route('games.store'), [
+    $filters = $returnToCollection ? ['collection_id' => $collections->last()->id, 'q' => 'Sky Team'] : [];
+    $query = $returnToCollection ? ['back' => route('games.index', $filters, false)] : [];
+
+    $this->actingAs($user)->post(route('games.store', $query), [
         'name' => 'Sky Team',
         'min_players' => 2,
         'max_players' => 2,
@@ -21,7 +24,7 @@ test('a new game is attached to the selected collections owned by its creator', 
         'game_modes' => ['cooperative'],
         'ideal_player_counts' => [2],
         'collection_ids' => $collections->pluck('id')->map('strval')->all(),
-    ])->assertSessionHasNoErrors()->assertRedirect(route('games.index'));
+    ])->assertSessionHasNoErrors()->assertRedirect(route('games.index', $filters));
 
     $game = Game::where('name', 'Sky Team')->sole();
 
@@ -33,7 +36,7 @@ test('a new game is attached to the selected collections owned by its creator', 
     foreach (['bgg_id', 'image_url', 'min_playtime', 'max_playtime', 'complexity', 'short_description', 'additional_information', 'bgg_url', 'youtube_url'] as $field) {
         expect($game->{$field})->toBeNull();
     }
-});
+})->with([false, true]);
 
 test('new game creation saves the explicit fields and ignores unvalidated input', function () {
     $user = User::factory()->create();
@@ -112,3 +115,21 @@ test('invalid collection selections are rejected before a game is created', func
     $this->assertDatabaseCount('games', 0);
     $this->assertDatabaseCount('game_collection_game', 0);
 })->with(['empty', 'foreign', 'missing', 'duplicate', 'non-integer']);
+
+test('the new game form preselects the requested owned collection', function () {
+    $this->withoutVite();
+    $user = User::factory()->create();
+    $default = GameCollection::create(['created_by' => $user->id, 'name' => 'Principal', 'is_default' => true]);
+    $selected = GameCollection::create(['created_by' => $user->id, 'name' => 'Juegos del grupo']);
+    $foreign = GameCollection::create(['created_by' => User::factory()->create()->id, 'name' => 'Ajena']);
+
+    $this->actingAs($user);
+    foreach ([[$selected->id, $selected->id], [$foreign->id, $default->id], [null, $default->id]] as [$requested, $expected]) {
+        $this->get(route('games.create', ['collection_id' => $requested]))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('games/create')
+                ->where('default_collection_ids', [$expected])
+            );
+    }
+});

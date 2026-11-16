@@ -539,16 +539,7 @@ class GameController extends Controller
             }
         });
 
-        $filters = [];
-        $back = $request->query('back');
-        if (is_string($back) && str_starts_with($back, '/games?')) {
-            parse_str(substr($back, strlen('/games?')), $query);
-            foreach (['collection_id', 'q', 'players', 'mode', 'duration', 'difficulty', 'sort'] as $key) {
-                if (isset($query[$key]) && is_string($query[$key])) {
-                    $filters[$key] = $query[$key];
-                }
-            }
-        }
+        $filters = $this->gameListReturnFilters($request);
 
         if ($usedByAnotherUser) {
             return redirect()->route('games.index', $filters)->with(
@@ -567,7 +558,8 @@ class GameController extends Controller
     ): Response {
         $userId = $request->user()->id;
         $collectionId = $request->integer('collection_id') ?: null;
-        $search = trim((string) $request->input('q'));
+        $requestedSearch = $request->input('q');
+        $search = is_string($requestedSearch) ? trim($requestedSearch) : '';
         $playerCount = $request->integer('players') ?: null;
 
         $durationLimit = $request->integer('duration') ?: null;
@@ -575,12 +567,12 @@ class GameController extends Controller
             $durationLimit = null;
         }
 
-        $difficulty = (string) $request->query('difficulty', '');
+        $difficulty = $request->query('difficulty', '');
         if (!in_array($difficulty, ['light', 'medium', 'heavy'], true)) {
             $difficulty = '';
         }
 
-        $gameMode = (string) $request->query('mode', '');
+        $gameMode = $request->query('mode', '');
         $requestedSort = $request->query('sort', 'name');
         $allowedSorts = ['name', 'name_desc', 'recent', 'most_played'];
         $sort = is_string($requestedSort) && in_array($requestedSort, $allowedSorts, true)
@@ -761,7 +753,7 @@ class GameController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
         $collections =
             GameCollection::query()
@@ -806,6 +798,11 @@ class GameController extends Controller
                         ->first()
                         ->id,
                 ]);
+        }
+
+        $selectedCollection = $collections->firstWhere('id', $request->integer('collection_id'));
+        if ($selectedCollection !== null) {
+            $defaultCollectionIds = collect([$selectedCollection->id]);
         }
 
         return Inertia::render(
@@ -1089,6 +1086,11 @@ class GameController extends Controller
         |
         */
 
+        $returnFilters = $this->gameListReturnFilters($request);
+        $showQuery = $returnFilters === []
+            ? []
+            : ['back' => route('games.index', $returnFilters, false)];
+
         $bggId = isset($validated['bgg_id']) ? (int) $validated['bgg_id'] : null;
 
         if ($bggId) {
@@ -1100,7 +1102,7 @@ class GameController extends Controller
                 $this->attachGameToCollections($existingBggGame, $ownedCollectionIds);
 
                 return redirect()
-                    ->route('games.show', $existingBggGame)
+                    ->route('games.show', ['game' => $existingBggGame, ...$showQuery])
                     ->with('success', 'El juego ya estaba importado desde BGG y se ha añadido a tu colección.');
             }
 
@@ -1144,7 +1146,7 @@ class GameController extends Controller
                 });
 
                 return redirect()
-                    ->route('games.show', $legacyGame)
+                    ->route('games.show', ['game' => $legacyGame, ...$showQuery])
                     ->with('success', 'El juego que ya tenías se ha vinculado con BoardGameGeek.');
             }
         }
@@ -1241,8 +1243,24 @@ class GameController extends Controller
         });
 
         return redirect()
-            ->route('games.index')
+            ->route('games.index', $returnFilters)
             ->with('success', 'Juego añadido correctamente.');
+    }
+
+    private function gameListReturnFilters(Request $request): array
+    {
+        $filters = [];
+        $back = $request->query('back');
+        if (is_string($back) && str_starts_with($back, '/games?')) {
+            parse_str(substr($back, strlen('/games?')), $query);
+            foreach (['collection_id', 'q', 'players', 'mode', 'duration', 'difficulty', 'sort'] as $key) {
+                if (isset($query[$key]) && is_string($query[$key])) {
+                    $filters[$key] = $query[$key];
+                }
+            }
+        }
+
+        return $filters;
     }
 
     private function attachGameToCollections(Game $game, $collectionIds): void

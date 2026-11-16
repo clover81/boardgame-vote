@@ -178,7 +178,9 @@ const selectedParticipant =
     );
 
 const voteSaved = ref(false);
+const voteConnectionError = ref('');
 const voteError = ref<HTMLElement | null>(null);
+const pageVoteError = ref<HTMLElement | null>(null);
 const voteConfirmation = ref<HTMLElement | null>(null);
 const voteEditor = ref<HTMLElement | null>(null);
 
@@ -424,6 +426,7 @@ const cancelVoteEdit = async () => {
     form.first_candidate_id = savedVotes.find((vote) => vote.position === 1)?.candidate_id ?? null;
     form.second_candidate_id = savedVotes.find((vote) => vote.position === 2)?.candidate_id ?? null;
     form.clearErrors();
+    voteConnectionError.value = '';
     voteSaved.value = true;
 
     await nextTick();
@@ -435,13 +438,22 @@ const submit = () => {
         return;
     }
 
+    voteConnectionError.value = '';
+
     form.transform((data) => ({ ...data, single_choice: props.poll.single_choice })).post(
         `/vote/${props.poll.token}/${props.voteToken}`,
         {
             preserveScroll: true,
             onError: async () => {
                 await nextTick();
-                voteError.value?.focus();
+                const error = voteError.value ?? pageVoteError.value;
+                error?.focus();
+            },
+
+            onNetworkError: () => {
+                voteConnectionError.value = 'No hemos podido confirmar el guardado. Comprueba tu conexión y vuelve a intentarlo.';
+                void nextTick(() => voteError.value?.focus());
+                return false;
             },
 
             onSuccess: async () => {
@@ -554,7 +566,12 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
         <div
             class="mx-auto max-w-5xl px-4 pt-6 pb-24 sm:pt-8"
         >
-            <div v-if="form.hasErrors" ref="voteError" tabindex="-1" class="mb-6">
+            <div
+                v-if="form.hasErrors && (poll.status !== 'open' || voteSaved)"
+                ref="pageVoteError"
+                tabindex="-1"
+                class="mb-6"
+            >
                 <AlertError
                     title="No hemos podido guardar tu voto"
                     :errors="Object.values(form.errors)"
@@ -792,7 +809,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                             {{ needsSecondChoice ? '🥇 Primera opción' : 'Mi voto' }}
                         </p>
 
-                        <p class="mt-1 font-black">
+                        <p class="mt-1 min-w-0 wrap-anywhere font-black">
                             {{ selectedFirstGame?.name }}
                         </p>
                     </div>
@@ -807,7 +824,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                             🥈 Segunda opción
                         </p>
 
-                        <p class="mt-1 font-black">
+                        <p class="mt-1 min-w-0 wrap-anywhere font-black">
                             {{ selectedSecondGame?.name }}
                         </p>
                     </div>
@@ -1097,7 +1114,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                         class="mb-3 grid min-w-0 gap-2 text-xs sm:text-sm"
                         :class="needsSecondChoice ? 'sm:grid-cols-2' : 'grid-cols-1'"
                     >
-                        <p class="min-w-0 wrap-break-word rounded-xl bg-lime-100 px-3 py-2.5 font-medium" :title="selectedFirstGame?.name ?? ''">
+                        <p class="min-w-0 wrap-anywhere rounded-xl bg-lime-100 px-3 py-2.5 font-medium" :title="selectedFirstGame?.name ?? ''">
                             <template v-if="selectedFirstGame">
                                 {{ needsSecondChoice ? '🥇 Primera opción:' : 'Mi voto:' }}
                                 {{ selectedFirstGame.name }}
@@ -1108,7 +1125,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                         </p>
                         <p
                             v-if="needsSecondChoice"
-                            class="min-w-0 wrap-break-word rounded-xl bg-orange-100 px-3 py-2.5 font-medium"
+                            class="min-w-0 wrap-anywhere rounded-xl bg-orange-100 px-3 py-2.5 font-medium"
                             :title="selectedSecondGame?.name ?? ''"
                         >
                             <template v-if="selectedSecondGame">
@@ -1120,9 +1137,12 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                         </p>
                     </div>
 
-                    <p v-if="form.hasErrors" class="mb-2 text-sm font-semibold text-red-700">
-                        Revisa los datos antes de confirmar tu voto.
-                    </p>
+                    <div v-if="form.hasErrors || voteConnectionError" ref="voteError" tabindex="-1" class="mb-3">
+                        <AlertError
+                            title="No hemos podido guardar tu voto"
+                            :errors="voteConnectionError ? [voteConnectionError] : Object.values(form.errors)"
+                        />
+                    </div>
 
                     <p role="status" class="sr-only">
                         {{ form.processing ? 'Guardando el voto…' : '' }}

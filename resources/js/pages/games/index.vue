@@ -168,6 +168,10 @@ const hasActiveFilters = computed(() =>
     advancedFilterCount.value > 0
 );
 
+const selectedCollectionIsEmpty = computed(() =>
+    props.collections.find(collection => collection.id === props.selected_collection_id)?.games_count === 0,
+);
+
 const gameModeLabels: Record<string, string> = {
     competitive: 'Competitivo',
     cooperative: 'Cooperativo',
@@ -255,6 +259,14 @@ const formatDate = (date: string | null): string => {
             <!-- CABECERA                                           -->
             <!-- ================================================== -->
 
+            <Link
+                v-if="selected_collection_id !== null"
+                href="/collections"
+                class="mb-4 inline-flex min-h-11 items-center rounded-md text-sm font-semibold text-[#5200FF] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-[#CCFF00] dark:focus-visible:outline-[#CCFF00]"
+            >
+                <span aria-hidden="true" class="mr-1.5">←</span> Volver a colecciones
+            </Link>
+
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <h1 ref="gamesHeading" tabindex="-1" class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
                     Mis juegos
@@ -270,7 +282,7 @@ const formatDate = (date: string | null): string => {
                     </Link>
 
                     <Link
-                        :href="`/games/create?back=${encodeURIComponent($page.url)}`"
+                        :href="`/games/create?back=${encodeURIComponent($page.url)}${selected_collection_id === null ? '' : `&collection_id=${selected_collection_id}`}`"
                         class="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#5200FF] px-5 py-2.5 font-bold text-white transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                     >
                         + Añadir juego
@@ -352,7 +364,7 @@ const formatDate = (date: string | null): string => {
                 </div>
                 <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 pt-3 dark:border-zinc-800">
                     <div class="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
-                        <p class="text-sm text-zinc-500 dark:text-zinc-400" aria-live="polite">
+                        <p class="text-sm text-zinc-500 dark:text-zinc-400" aria-live="polite" aria-atomic="true">
                             Mostrando <strong class="text-zinc-900 dark:text-zinc-100">{{ games.length }}</strong>
                             {{ games.length === 1 ? 'juego' : 'juegos' }}
                         </p>
@@ -388,7 +400,7 @@ const formatDate = (date: string | null): string => {
                     :aria-label="`Quitar filtro ${chip.label}`"
                     class="inline-flex max-w-full items-center gap-2 rounded-full border border-violet-200 bg-violet-100 px-3 py-2 text-xs font-bold text-violet-800 transition hover:bg-violet-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-violet-700/50 dark:bg-violet-950/60 dark:text-violet-200 dark:hover:bg-violet-900/80"
                     @click="removeFilter(chip.key, $event)">
-                    <span class="max-w-[190px] truncate sm:max-w-xs">{{ chip.label }}</span>
+                    <span class="min-w-0 wrap-anywhere text-left">{{ chip.label }}</span>
                     <span aria-hidden="true">×</span>
                 </button>
             </div>
@@ -410,6 +422,7 @@ const formatDate = (date: string | null): string => {
 
                     <Link
                         :href="`/games/${game.id}?back=${encodeURIComponent($page.url)}`"
+                        :aria-label="`Ver ficha de ${game.name}`"
                         class="block"
                     >
                         <div
@@ -517,21 +530,20 @@ const formatDate = (date: string | null): string => {
                         >
                             <span>
                                 <UsersRound class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#C4B5FD]" :stroke-width="2.2" role="img" aria-label="Jugadores" />
-                                {{ game.min_players }}–{{
-                                    game.max_players
-                                }}
+                                {{ game.min_players === game.max_players ? game.min_players : `${game.min_players}–${game.max_players}` }}
                             </span>
 
                             <span
                                 v-if="
-                                    game.min_playtime !== null
+                                    game.min_playtime !== null || game.max_playtime !== null
                                 "
                             >
                                 <HourglassCog class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#1D4ED8] dark:text-[#CCFF00]" :stroke-width="2.2" role="img" aria-label="Duración" />
-                                {{ game.min_playtime }}
+                                {{ game.min_playtime ?? game.max_playtime }}
 
                                 <template
                                     v-if="
+                                        game.min_playtime !== null &&
                                         game.max_playtime !== null &&
                                         game.max_playtime !==
                                             game.min_playtime
@@ -548,7 +560,7 @@ const formatDate = (date: string | null): string => {
                                     game.complexity !== null
                                 "
                              class="inline-flex items-center gap-1.5">
-                                <BrainCog class="size-[18px] shrink-0 text-pink-400 dark:text-pink-300" :stroke-width="2.2" aria-hidden="true" /> {{ game.complexity }}/5
+                                <BrainCog class="size-[18px] shrink-0 text-pink-400 dark:text-pink-300" :stroke-width="2.2" aria-hidden="true" /> {{ Number(game.complexity).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}/5
                             </span>
                         </div>
 
@@ -651,24 +663,25 @@ const formatDate = (date: string | null): string => {
                 <p
                     class="text-lg font-black text-zinc-900 dark:text-zinc-100"
                 >
-                    No hay juegos que coincidan
+                    {{ selectedCollectionIsEmpty ? 'Esta colección está vacía' : 'No hay juegos que coincidan' }}
                 </p>
 
                 <p
                     class="mt-2 text-sm text-zinc-500 dark:text-zinc-400"
                 >
-                    Prueba con otra colección,
-                    búsqueda o número de jugadores.
+                    {{ selectedCollectionIsEmpty
+                        ? 'Puedes volver al listado de todos tus juegos.'
+                        : 'Prueba otra búsqueda o cambia alguno de los filtros.' }}
                 </p>
 
                 <button
                     type="button"
-                    class="mt-4 font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
+                    class="mt-4 min-h-11 rounded-xl px-4 font-bold text-[#5200FF] hover:bg-violet-50 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-[#CCFF00] dark:hover:bg-violet-950/40 dark:focus-visible:outline-[#CCFF00]"
                     @click="
                         clearFilters
                     "
                 >
-                    Limpiar filtros
+                    {{ selectedCollectionIsEmpty ? 'Ver todos mis juegos' : 'Limpiar filtros' }}
                 </button>
             </div>
 
@@ -683,7 +696,7 @@ const formatDate = (date: string | null): string => {
                 Todavía no hay juegos en tus colecciones.
             </div>
 
-            <ScrollToTopProgress />
+            <ScrollToTopProgress compact-on-mobile />
         </div>
     </AppLayout>
 </template>

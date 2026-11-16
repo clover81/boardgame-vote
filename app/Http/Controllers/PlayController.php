@@ -699,6 +699,28 @@ class PlayController extends Controller
     |--------------------------------------------------------------------------
     */
 
+    private function editPollReturn(Request $request, Play $play): ?array
+    {
+        if ($request->query('from') !== 'poll' ||
+            ! $play->poll()->where('created_by', $request->user()->id)->exists()) {
+            return null;
+        }
+
+        if ($request->query('back') === '/plays') {
+            return [
+                'url' => route('polls.show', [$play->poll_id, 'from' => 'history']),
+                'back' => '/plays',
+            ];
+        }
+
+        $query = $this->pollReturnQuery($request);
+
+        return [
+            'url' => route('polls.show', [$play->poll_id, ...$query]),
+            'back' => $query['back'] ?? null,
+        ];
+    }
+
     public function edit(
         Request $request,
         Play $play
@@ -775,6 +797,7 @@ class PlayController extends Controller
         return Inertia::render(
             'plays/edit',
             [
+                'pollReturn' => $this->editPollReturn($request, $play),
                 'play' => [
                     'id' =>
                     $play->id,
@@ -931,12 +954,11 @@ class PlayController extends Controller
             }
         );
 
+        $pollReturn = $this->editPollReturn($request, $play);
+
         return redirect()
-            ->route('plays.index')
-            ->with(
-                'success',
-                'Partida actualizada correctamente.'
-            );
+            ->to($pollReturn['url'] ?? route('plays.index'))
+            ->with('success', 'Partida actualizada correctamente.');
     }
 
     /*

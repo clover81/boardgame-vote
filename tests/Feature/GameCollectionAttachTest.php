@@ -33,11 +33,12 @@ beforeEach(function () {
 test('adding collections preserves all memberships and can be repeated without duplicates', function () {
     $this->actingAs($this->user);
 
-    foreach (range(1, 2) as $attempt) {
-        $this->post(route('games.collections.attach', $this->game), [
+    $back = route('games.index', ['collection_id' => $this->ownedCollections[1]->id, 'sort' => 'name_desc'], false);
+    foreach ([[], ['back' => $back]] as $query) {
+        $this->post(route('games.collections.attach', ['game' => $this->game, ...$query]), [
             'collection_ids' => [$this->ownedCollections[1]->id],
         ])->assertSessionHasNoErrors()
-            ->assertRedirect(route('games.show', $this->game))
+            ->assertRedirect(route('games.show', ['game' => $this->game, ...$query]))
             ->assertSessionHas('success', 'Juego añadido a las colecciones seleccionadas.');
     }
 

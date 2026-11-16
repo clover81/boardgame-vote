@@ -271,27 +271,36 @@ const resultText = computed(() => {
     return lines.join('\n');
 });
 
+const sharingResults = ref(false);
+
 const shareResults = async () => {
-    resultShareMessage.value = '';
-    showResultText.value = false;
+    if (sharingResults.value) return;
 
-    if (navigator.share) {
-        try {
-            await navigator.share({ text: resultText.value });
-            return;
-        } catch (error) {
-            if (error instanceof DOMException && error.name === 'AbortError') return;
-        }
-    }
-
+    sharingResults.value = true;
     try {
-        await navigator.clipboard.writeText(resultText.value);
-        resultShareMessage.value = 'Resultado copiado.';
-    } catch {
-        showResultText.value = true;
-        resultShareMessage.value = 'Puedes copiar el resultado manualmente.';
-        await nextTick();
-        resultTextArea.value?.focus();
+        resultShareMessage.value = '';
+        showResultText.value = false;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({ text: resultText.value });
+                return;
+            } catch (error) {
+                if (error instanceof DOMException && error.name === 'AbortError') return;
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(resultText.value);
+            resultShareMessage.value = 'Resultado copiado.';
+        } catch {
+            showResultText.value = true;
+            resultShareMessage.value = 'Puedes copiar el resultado manualmente.';
+            await nextTick();
+            resultTextArea.value?.focus();
+        }
+    } finally {
+        sharingResults.value = false;
     }
 };
 
@@ -417,12 +426,24 @@ const openPoll = () => {
 
 const closePollDialogOpen = ref(false);
 const closingPoll = ref(false);
+const closePollError = ref('');
+const closePollButton = ref<HTMLButtonElement | null>(null);
+const resultsHeading = ref<HTMLElement | null>(null);
+
+const restoreClosePollFocus = (event: Event) => {
+    const target = resultsHeading.value ?? closePollButton.value;
+    if (!target) return;
+
+    event.preventDefault();
+    target.focus();
+};
 
 const closePoll = () => {
     if (closingPoll.value || props.poll.status !== 'open') {
         return;
     }
 
+    closePollError.value = '';
     closePollDialogOpen.value = true;
 };
 
@@ -438,7 +459,12 @@ const confirmClosePoll = () => {
             preserveScroll: true,
 
             onStart: () => {
+                closePollError.value = '';
                 closingPoll.value = true;
+            },
+
+            onError: (errors) => {
+                closePollError.value = errors.poll ?? 'No se ha podido cerrar la votación.';
             },
 
             onSuccess: () => {
@@ -753,6 +779,15 @@ const modeLabel = (
                             {{ refreshingVotes ? 'Actualizando…' : 'Actualizar votos' }}
                         </button>
 
+                        <div role="status">
+                            <p
+                                v-if="poll.participants_count > 0 && poll.voted_participants_count === poll.participants_count"
+                                class="mt-3 text-sm font-semibold text-violet-800 dark:text-violet-200"
+                            >
+                                Todos han votado. Ya puedes cerrar la votación para ver los resultados.
+                            </p>
+                        </div>
+
                         <!-- ENLACES INDIVIDUALES -->
 
                         <div
@@ -818,6 +853,7 @@ const modeLabel = (
                         <button
                             type="button"
                             class="mt-4 w-full rounded-xl border border-red-200 px-5 py-3 font-bold text-red-600 transition hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950/30"
+                            ref="closePollButton"
                             @click="closePoll"
                         >
                             Cerrar votación
@@ -1206,6 +1242,8 @@ const modeLabel = (
 
                     <h2
                         class="mt-1 text-2xl font-bold text-zinc-900 dark:text-zinc-100"
+                        ref="resultsHeading"
+                        tabindex="-1"
                     >
                         Clasificación final
                     </h2>
@@ -1225,9 +1263,10 @@ const modeLabel = (
                     <button
                         type="button"
                         class="min-h-11 w-full rounded-xl bg-[#5200FF] px-4 py-2 text-sm font-bold text-white hover:bg-[#4100cc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 sm:w-auto"
+                        :disabled="sharingResults"
                         @click="shareResults"
                     >
-                        Compartir resultado
+                        {{ sharingResults ? 'Compartiendo…' : 'Compartir resultado' }}
                     </button>
                     <p role="status" class="text-sm text-zinc-600 dark:text-zinc-300">
                         {{ resultShareMessage }}
@@ -1474,7 +1513,7 @@ const modeLabel = (
                             </p>
 
                             <Link
-                                :href="`/plays/${play.id}/edit`"
+                                :href="`/plays/${play.id}/edit?from=poll&back=${encodeURIComponent(fromHistory ? '/plays' : backToPolls)}`"
                                 class="mt-3 inline-block text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                             >
                                 <span class="inline-flex items-center justify-center gap-1.5"><PencilSparklesIcon class="h-4 w-4 shrink-0 text-violet-500 dark:text-[#CCFF00]" />Editar registro</span>
@@ -1500,10 +1539,10 @@ const modeLabel = (
                     </Link>
                 </div>
             </section>
-            <ScrollToTopProgress :hide-on-mobile="addCandidateOpen" />
+            <ScrollToTopProgress :hide-on-mobile="addCandidateOpen" compact-on-mobile />
         </div>
         <Dialog v-model:open="closePollDialogOpen">
-            <DialogContent class="sm:max-w-md">
+            <DialogContent class="sm:max-w-md" @close-auto-focus="restoreClosePollFocus">
                 <DialogHeader>
                     <div
                         class="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-100 text-2xl dark:bg-purple-950"
@@ -1561,6 +1600,10 @@ const modeLabel = (
                         los resultados.
                     </p>
                 </div>
+
+                <p v-if="closePollError" role="alert" class="text-sm font-semibold text-red-700 dark:text-red-300">
+                    {{ closePollError }}
+                </p>
 
                 <DialogFooter class="mt-3 gap-2 sm:gap-3">
                     <button

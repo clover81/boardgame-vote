@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BuildingComplexPlus } from '@lucide/vue';
+import { BuildingComplexPlus, Vote } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 import { UsersRound } from '@lucide/vue';
 import { Head, Link } from '@inertiajs/vue3';
@@ -97,11 +97,7 @@ const formatDate = (
                     href="/polls/create"
                     class="rounded-2xl bg-[#5200FF] p-6 text-white transition hover:opacity-90"
                 >
-                    <p
-                        class="text-3xl"
-                    >
-                        🗳️
-                    </p>
+                    <Vote class="size-8 text-white" :stroke-width="2" aria-hidden="true" />
 
                     <p
                         class="mt-3 text-lg font-black"

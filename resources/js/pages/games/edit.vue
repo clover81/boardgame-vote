@@ -2,10 +2,11 @@
 import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
 import { BuildingComplexPlus, Swords } from '@lucide/vue';
 import { Link as ChainIcon } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import GameCollectionsField from '@/components/GameCollectionsField.vue';
 import BggExpansionsImporter from '@/components/BggExpansionsImporter.vue';
+import AlertError from '@/components/AlertError.vue';
 import InputError from '@/components/InputError.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 import {
@@ -259,12 +260,19 @@ const confirmDeleteExpansion = () => {
 
 const playerNumbers = [1, 2, 3, 4, 5, 6, 7, 8];
 
+const saveError = ref<HTMLDivElement | null>(null);
+
 const submit = () => {
-    if (deleting.value || removingCollectionId.value !== null || bggLinkingId.value !== null) {
+    if (form.processing || deleting.value || removingCollectionId.value !== null || bggLinkingId.value !== null) {
         return;
     }
 
-    form.put(`/games/${props.game.id}?back=${encodeURIComponent(backToGames.value)}`);
+    form.put(`/games/${props.game.id}?back=${encodeURIComponent(backToGames.value)}`, {
+        onError: async () => {
+            await nextTick();
+            saveError.value?.focus();
+        },
+    });
 };
 
 const page = usePage();
@@ -663,6 +671,17 @@ const confirmDeleteGame = () => {
                     :collections="collections"
                     :error="form.errors.collection_ids"
                 />
+
+                <div v-if="form.hasErrors" ref="saveError" tabindex="-1">
+                    <AlertError
+                        title="No se han podido guardar los cambios"
+                        :errors="Object.values(form.errors)"
+                    />
+                </div>
+
+                <p role="status" class="sr-only">
+                    {{ form.processing ? 'Guardando los cambios…' : '' }}
+                </p>
 
                 <button
                     type="submit"
@@ -1199,6 +1218,6 @@ const confirmDeleteGame = () => {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
-        <ScrollToTopProgress :remember-position="false" />
+        <ScrollToTopProgress :remember-position="false" compact-on-mobile />
     </AppLayout>
 </template>

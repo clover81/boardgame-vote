@@ -2,9 +2,10 @@
 import { BuildingComplexPlus, Swords } from '@lucide/vue';
 import { Link as ChainIcon } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import GameCollectionsField from '@/components/GameCollectionsField.vue';
+import AlertError from '@/components/AlertError.vue';
 import InputError from '@/components/InputError.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -93,6 +94,10 @@ const backToGames = computed(() => {
     return back?.startsWith('/games?') ? back : '/games';
 });
 
+const gameListReturnQuery = computed(() =>
+    backToGames.value === '/games' ? '' : `?back=${encodeURIComponent(backToGames.value)}`,
+);
+
 const bggUrl = ref('');
 const importingBgg = ref(false);
 const bggImportError = ref('');
@@ -159,7 +164,8 @@ const bggSearching = ref(false);
 const bggHasSearched = ref(false);
 const bggLoading = ref(false);
 const bggBusy = computed(
-    () => bggSearching.value || bggLoading.value || importingBgg.value,
+    () => bggSearching.value || bggLoading.value || importingBgg.value
+        || form.processing || existingGameForm.processing,
 );
 const bggError = ref('');
 const selectedBggId = ref<number | null>(null);
@@ -368,6 +374,7 @@ const importFromBgg = async () => {
             /*
              * Este formulario solo añade colecciones nuevas.
              */
+            existingGameForm.clearErrors();
             existingGameForm.collection_ids = [];
 
             /*
@@ -434,30 +441,43 @@ const importFromBgg = async () => {
     }
 };
 
+const existingGameError = ref<HTMLDivElement | null>(null);
+
 const addExistingToCollections = () => {
-    if (!existingImportedBggGame.value) {
+    if (!existingImportedBggGame.value || bggBusy.value || !existingGameForm.collection_ids.length) {
         return;
     }
 
     existingGameForm.post(
-        `/games/${existingImportedBggGame.value.id}/collections/attach`
+        `/games/${existingImportedBggGame.value.id}/collections/attach${gameListReturnQuery.value}`,
+        {
+            onError: async () => {
+                await nextTick();
+                existingGameError.value?.focus();
+            },
+        },
     );
 };
 
 const playerNumbers = [1, 2, 3, 4, 5, 6, 7, 8];
 
-const submit = () => {
-    // Los juegos existentes solo se asocian a nuestras colecciones.
-    // No requieren volver a validar ni modificar su ficha global.
-    if (existingBggGame.value) {
-        form.post(
-            `/games/${existingBggGame.value.id}/collections/attach`
-        );
-        return;
-    }
+const saveError = ref<HTMLDivElement | null>(null);
 
-    // Para un juego nuevo mantenemos todas las validaciones.
-    form.post('/games');
+const submit = () => {
+    if (bggBusy.value) return;
+
+    // Los juegos existentes solo se asocian a nuestras colecciones.
+    const existingGame = existingBggGame.value;
+    const url = existingGame
+        ? `/games/${existingGame.id}/collections/attach${gameListReturnQuery.value}`
+        : `/games?back=${encodeURIComponent(backToGames.value)}`;
+
+    form.post(url, {
+        onError: async () => {
+            await nextTick();
+            saveError.value?.focus();
+        },
+    });
 };
 </script>
 
@@ -960,23 +980,17 @@ const submit = () => {
                             </label>
                         </div>
 
-                        <p
-                            v-if="
-                                existingGameForm.errors
-                                    .collection_ids
-                            "
-                            class="mt-3 text-sm text-red-500"
-                        >
-                            {{
-                                existingGameForm.errors
-                                    .collection_ids
-                            }}
-                        </p>
+                        <div v-if="existingGameForm.hasErrors" ref="existingGameError" tabindex="-1" class="mt-3">
+                            <AlertError
+                                title="No se ha podido añadir el juego a las colecciones"
+                                :errors="Object.values(existingGameForm.errors)"
+                            />
+                        </div>
 
                         <button
                             type="button"
                             :disabled="
-                                existingGameForm.processing ||
+                                bggBusy ||
                                 existingGameForm
                                     .collection_ids
                                     .length === 0
@@ -1007,7 +1021,7 @@ const submit = () => {
                     <Link
                         v-if="existingImportedBggGame.collection_ids.length > 0"
                         :href="
-                            `/games/${existingImportedBggGame.id}`
+                            `/games/${existingImportedBggGame.id}${gameListReturnQuery}`
                         "
                         class="mt-5 inline-block font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                     >
@@ -1427,11 +1441,20 @@ const submit = () => {
                     :error="form.errors.collection_ids"
                 />
 
-                <!-- Guardar -->
+                <div v-if="form.hasErrors" ref="saveError" tabindex="-1">
+                    <AlertError
+                        title="No se ha podido añadir el juego"
+                        :errors="Object.values(form.errors)"
+                    />
+                </div>
+
+                <p role="status" class="sr-only">
+                    {{ form.processing ? 'Guardando el juego…' : '' }}
+                </p>
 
                 <button
                     type="submit"
-                    :disabled="form.processing"
+                    :disabled="bggBusy"
                     class="
                         w-full rounded-xl
                         bg-[#5200FF]
@@ -1453,6 +1476,6 @@ const submit = () => {
 
             </form>
         </div>
-        <ScrollToTopProgress :remember-position="false" />
+        <ScrollToTopProgress :remember-position="false" compact-on-mobile />
     </AppLayout>
 </template>

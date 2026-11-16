@@ -1,4 +1,4 @@
-import { createInertiaApp } from '@inertiajs/vue3';
+import { createInertiaApp, router } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
@@ -35,6 +35,14 @@ void createInertiaApp({
     progress: {
         color: '#4B5563',
     },
+});
+
+// La paleta se recalcula al navegar sin recargar (incluido entrar y salir).
+// La primera carga ya llega marcada desde la vista Blade.
+router.on('navigate', (event) => {
+    const palette = event.detail.page.props.ui_palette;
+    document.documentElement.dataset.uiPalette =
+        palette === 'calm-blue' ? 'calm-blue' : 'original';
 });
 
 // This will set light / dark mode on page load...

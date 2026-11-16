@@ -474,7 +474,7 @@ const formatGameMode = (
                             </p>
 
                             <p class="mt-1 text-lg font-black text-zinc-900 dark:text-zinc-100">
-                                <UsersRound class="mr-1 inline-block size-5 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#C4B5FD]" :stroke-width="2.2" role="img" aria-label="Jugadores" /> {{ game.min_players }}–{{ game.max_players }}
+                                <UsersRound class="mr-1 inline-block size-5 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#C4B5FD]" :stroke-width="2.2" role="img" aria-label="Jugadores" /> {{ game.min_players === game.max_players ? game.min_players : `${game.min_players}–${game.max_players}` }}
                             </p>
                         </div>
 
@@ -501,7 +501,7 @@ const formatGameMode = (
                             </p>
 
                             <p class="mt-1 text-lg font-black text-zinc-900 dark:text-zinc-100 inline-flex items-center gap-2">
-                                <BrainCog class="size-5 shrink-0 text-pink-400 dark:text-pink-300" :stroke-width="2.2" aria-hidden="true" /> {{ game.complexity ?? '—' }}
+                                <BrainCog class="size-5 shrink-0 text-pink-400 dark:text-pink-300" :stroke-width="2.2" aria-hidden="true" /> {{ game.complexity === null ? '—' : Number(game.complexity).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' / 5' }}
                             </p>
                         </div>
 
@@ -1251,7 +1251,7 @@ const formatGameMode = (
                     </div>
                 </template>
             </section>
-            <ScrollToTopProgress />
+            <ScrollToTopProgress compact-on-mobile />
         </div>
         <Dialog v-model:open="deleteExpansionDialogOpen">
             <DialogContent class="sm:max-w-md">

@@ -2,9 +2,9 @@
 import YoutubeLogoIcon from '@/components/icons/YoutubeLogoIcon.vue';
 import { Link as ChainIcon, BrainCog, Swords } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
-import { nextTick, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { useResizeObserver } from '@vueuse/core';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
 interface Collection {
@@ -79,7 +79,12 @@ const closeImage = () => {
     imageDialog.value?.close();
 };
 
-const catalogUrl = props.catalogBasePath ?? `/catalog/${props.catalogToken}`;
+const page = usePage();
+const catalogUrl = computed(() => {
+    const path = props.catalogBasePath ?? `/catalog/${props.catalogToken}`;
+    const query = new URLSearchParams(page.url.split('?')[1]);
+    return query.get('view') === 'filtered' ? `${path}?${query}` : path;
+});
 
 const shareMessage = ref('');
 const manualShareUrl = ref('');
@@ -170,7 +175,7 @@ const externalUrl = (url: string | null): string | undefined => {
 <template>
     <Head :title="game.name" />
 
-    <div class="min-h-screen bg-[#f7f7f5] text-zinc-950">
+    <div class="catalog-public-light min-h-screen bg-[#f7f7f5] text-zinc-950">
         <!-- CABECERA -->
         <header class="bg-[#181424] text-white">
             <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-8 sm:py-4">
@@ -265,7 +270,7 @@ const externalUrl = (url: string | null): string | undefined => {
                         <span
                             v-for="collection in game.collections"
                             :key="collection.id"
-                            class="rounded-full bg-violet-100 px-3 py-1.5 text-xs font-bold text-violet-700"
+                            class="min-w-0 max-w-full wrap-anywhere rounded-xl bg-violet-100 px-3 py-1.5 text-xs font-bold text-violet-700"
                         >
                             {{ collection.name }}
                         </span>
@@ -276,7 +281,7 @@ const externalUrl = (url: string | null): string | undefined => {
                         <div class="min-w-0 rounded-2xl bg-white p-2.5 shadow-sm sm:p-4">
                             <p class="text-[11px] text-zinc-500 sm:text-xs">Jugadores</p>
                             <p class="mt-1 text-base font-black sm:mt-2 sm:text-xl">
-                                {{ game.min_players }}–{{ game.max_players }}
+                                {{ game.min_players === game.max_players ? game.min_players : `${game.min_players}–${game.max_players}` }}
                             </p>
                         </div>
 
@@ -292,7 +297,7 @@ const externalUrl = (url: string | null): string | undefined => {
                             <p class="mt-1 inline-flex items-center gap-1 text-sm font-black sm:mt-2 sm:gap-2 sm:text-xl">
                                 <BrainCog class="size-4 shrink-0 text-pink-600 sm:size-5" :stroke-width="2" aria-hidden="true" />{{
                                     game.complexity !== null
-                                        ? Number(game.complexity).toFixed(2) + ' / 5'
+                                        ? Number(game.complexity).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' / 5'
                                         : 'Sin datos'
                                 }}
                             </p>

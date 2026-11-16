@@ -1,0 +1,178 @@
+/*
+ * Paleta Petroleo & Albaricoque para otras cuentas autenticadas.
+ * Los estilos originales no se modifican: solo se aplica cuando el servidor
+ * marca el documento con data-ui-palette="calm-blue".
+ * Neutros, colores personales de meeples, errores y estados permanecen iguales.
+ * Acciones: petroleo #14656B con texto blanco. Acentos: albaricoque
+ * #F6BE78 con texto oscuro, y turquesa #48B6AE para detalles.
+ */
+html[data-ui-palette="calm-blue"] {
+    --bv-petrol-light: #A9E5D7;
+    --bv-apricot-mid: #E6A457;
+    --bv-petrol-middle: #48B6AE;
+    --bv-petrol-dark: #14656B;
+    --bv-warm-accent: #F6BE78;
+    /* Sustituir la familia violet en utilidades de Tailwind. */
+    --color-violet-50: color-mix(in srgb, #A9E5D7 9%, white);
+    --color-violet-100: color-mix(in srgb, #A9E5D7 22%, white);
+    --color-violet-200: color-mix(in srgb, #A9E5D7 45%, white);
+    --color-violet-300: #7ED0C2;
+    --color-violet-400: #48B6AE;
+    --color-violet-500: #14656B;
+    --color-violet-600: #14656B;
+    --color-violet-700: #14656B;
+    --color-violet-800: color-mix(in srgb, #14656B 75%, black);
+    --color-violet-900: color-mix(in srgb, #14656B 55%, black);
+    --color-violet-950: color-mix(in srgb, #14656B 32%, black);
+    /* Sustituir la familia purple en utilidades de Tailwind. */
+    --color-purple-50: color-mix(in srgb, #A9E5D7 9%, white);
+    --color-purple-100: color-mix(in srgb, #A9E5D7 22%, white);
+    --color-purple-200: color-mix(in srgb, #A9E5D7 45%, white);
+    --color-purple-300: #7ED0C2;
+    --color-purple-400: #48B6AE;
+    --color-purple-500: #14656B;
+    --color-purple-600: #14656B;
+    --color-purple-700: #14656B;
+    --color-purple-800: color-mix(in srgb, #14656B 75%, black);
+    --color-purple-900: color-mix(in srgb, #14656B 55%, black);
+    --color-purple-950: color-mix(in srgb, #14656B 32%, black);
+    /* Sustituir la familia lime en utilidades de Tailwind. */
+    --color-lime-50: color-mix(in srgb, #F6BE78 14%, white);
+    --color-lime-100: color-mix(in srgb, #F6BE78 30%, white);
+    --color-lime-200: #F6BE78;
+    --color-lime-300: #F6BE78;
+    --color-lime-400: #F0AE63;
+    --color-lime-500: #CF8B43;
+    --color-lime-600: #915015;
+    --color-lime-700: #915015;
+    --color-lime-800: color-mix(in srgb, #915015 75%, black);
+    --color-lime-900: color-mix(in srgb, #915015 55%, black);
+    --color-lime-950: color-mix(in srgb, #915015 32%, black);
+}
+
+/* Clases con valores hexadecimales escritos directamente en el proyecto.
+   Se respetan los estados hover/focus/dark/checked originales. */
+html[data-ui-palette="calm-blue"] [class~="accent-[#5200FF]"] { accent-color: #14656B; }
+html[data-ui-palette="calm-blue"] [class~="active:bg-[#4200D0]"]:active { background-color: color-mix(in srgb, #14656B 86%, black); }
+html[data-ui-palette="calm-blue"] [class~="bg-[#3C00BB]"] { background-color: color-mix(in srgb, #14656B 86%, black); }
+html[data-ui-palette="calm-blue"] [class~="bg-[#5200FF]"] { background-color: #14656B; }
+html[data-ui-palette="calm-blue"] [class~="bg-[#5200FF]/10"] { background-color: color-mix(in srgb, #14656B 10%, transparent); }
+html[data-ui-palette="calm-blue"] [class~="bg-[#5200FF]/15"] { background-color: color-mix(in srgb, #14656B 15%, transparent); }
+html[data-ui-palette="calm-blue"] [class~="bg-[#5200FF]/20"] { background-color: color-mix(in srgb, #14656B 20%, transparent); }
+html[data-ui-palette="calm-blue"] [class~="bg-[#5200FF]/5"] { background-color: color-mix(in srgb, #14656B 5%, transparent); }
+html[data-ui-palette="calm-blue"] [class~="bg-[#CCFF00]"] { background-color: #F6BE78; }
+html[data-ui-palette="calm-blue"] [class~="bg-[#f0ebff]"] { background-color: color-mix(in srgb, #A9E5D7 18%, white); }
+html[data-ui-palette="calm-blue"] [class~="border-[#5200FF]"] { border-color: #14656B; }
+html[data-ui-palette="calm-blue"] [class~="border-[#5200FF]/10"] { border-color: color-mix(in srgb, #14656B 10%, transparent); }
+html[data-ui-palette="calm-blue"] [class~="border-[#5200FF]/20"] { border-color: color-mix(in srgb, #14656B 20%, transparent); }
+html[data-ui-palette="calm-blue"] [class~="border-[#5200FF]/35"] { border-color: color-mix(in srgb, #14656B 35%, transparent); }
+html[data-ui-palette="calm-blue"] [class~="border-[#7aa600]"] { border-color: #14656B; }
+html[data-ui-palette="calm-blue"] [class~="border-[#9bcb00]"] { border-color: #14656B; }
+html[data-ui-palette="calm-blue"] [class~="border-[#CCFF00]"] { border-color: #F6BE78; }
+html.dark[data-ui-palette="calm-blue"] [class~="dark:bg-[#5200FF]/10"] { background-color: color-mix(in srgb, #14656B 10%, transparent); }
+html.dark[data-ui-palette="calm-blue"] [class~="dark:bg-[#5200FF]/20"] { background-color: color-mix(in srgb, #14656B 20%, transparent); }
+html.dark[data-ui-palette="calm-blue"] [class~="dark:bg-[#CCFF00]"] { background-color: #F6BE78; }
+html.dark[data-ui-palette="calm-blue"] [class~="dark:bg-[#CCFF00]/10"] { background-color: color-mix(in srgb, #F6BE78 10%, transparent); }
+html.dark[data-ui-palette="calm-blue"] [class~="dark:border-[#CCFF00]"] { border-color: #F6BE78; }
+html.dark[data-ui-palette="calm-blue"] [class~="dark:border-[#CCFF00]/10"] { border-color: color-mix(in srgb, #F6BE78 10%, transparent); }
+html.dark[data-ui-palette="calm-blue"] [class~="dark:border-[#CCFF00]/45"] { border-color: color-mix(in srgb, #F6BE78 45%, transparent); }
+html.dark[data-ui-palette="calm-blue"] [class~="dark:data-[active=true]:bg-[#CCFF00]"][data-active="true"] { background-color: #F6BE78; }
+html.dark[data-ui-palette="calm-blue"] [class~="dark:focus-visible:outline-[#CCFF00]"]:focus-visible { outline-color: #F6BE78; }
+html.dark[data-ui-palette="calm-blue"] [class~="dark:hover:bg-[#5200FF]/20"]:hover { background-color: color-mix(in srgb, #14656B 20%, transparent); }
+html.dark[data-ui-palette="calm-blue"] [class~="dark:hover:bg-[#CCFF00]/10"]:hover { background-color: color-mix(in srgb, #F6BE78 10%, transparent); }
+html.dark[data-ui-palette="calm-blue"] [class~="dark:hover:border-[#CCFF00]"]:hover { border-color: #F6BE78; }
+html.dark[data-ui-palette="calm-blue"] [class~="dark:hover:text-[#CCFF00]"]:hover { color: #F6BE78; }
+html.dark[data-ui-palette="calm-blue"] [class~="dark:text-[#BBA6FF]"] { color: #48B6AE; }
+html.dark[data-ui-palette="calm-blue"] [class~="dark:text-[#C4B5FD]"] { color: #A9E5D7; }
+html.dark[data-ui-palette="calm-blue"] [class~="dark:text-[#CCFF00]"] { color: #F6BE78; }
+html.dark[data-ui-palette="calm-blue"] [class~="dark:text-[#CCFF00]/70"] { color: color-mix(in srgb, #F6BE78 70%, transparent); }
+html[data-ui-palette="calm-blue"] [class~="data-[active=true]:bg-[#5200FF]"][data-active="true"] { background-color: #14656B; }
+html[data-ui-palette="calm-blue"] [class~="enabled:hover:border-[#9bcb00]"]:enabled:hover { border-color: #14656B; }
+html[data-ui-palette="calm-blue"] [class~="focus-visible:border-[#5200FF]"]:focus-visible { border-color: #14656B; }
+html[data-ui-palette="calm-blue"] [class~="focus-visible:outline-[#5200FF]"]:focus-visible { outline-color: #14656B; }
+html[data-ui-palette="calm-blue"] [class~="focus-visible:outline-[#CCFF00]"]:focus-visible { outline-color: #F6BE78; }
+html[data-ui-palette="calm-blue"] [class~="focus-visible:ring-[#5200FF]"]:focus-visible { --tw-ring-color: #14656B; }
+html[data-ui-palette="calm-blue"] [class~="focus-visible:ring-[#5200FF]/20"]:focus-visible { --tw-ring-color: color-mix(in srgb, #14656B 20%, transparent); }
+html[data-ui-palette="calm-blue"] [class~="focus-visible:ring-[#5200FF]/40"]:focus-visible { --tw-ring-color: color-mix(in srgb, #14656B 40%, transparent); }
+html[data-ui-palette="calm-blue"] [class~="focus-within:border-[#5200FF]"]:focus-within { border-color: #14656B; }
+html[data-ui-palette="calm-blue"] [class~="focus-within:ring-[#5200FF]/20"]:focus-within { --tw-ring-color: color-mix(in srgb, #14656B 20%, transparent); }
+html[data-ui-palette="calm-blue"] [class~="focus:border-[#5200FF]"]:focus { border-color: #14656B; }
+html[data-ui-palette="calm-blue"] [class~="from-[#f0ebff]"] { --tw-gradient-from: color-mix(in srgb, #A9E5D7 18%, white); }
+html[data-ui-palette="calm-blue"] .group:focus-within [class~="group-focus-within:ring-[#5200FF]"] { --tw-ring-color: #14656B; }
+html[data-ui-palette="calm-blue"] .group:hover [class~="group-hover:bg-[#4000cc]"] { background-color: color-mix(in srgb, #14656B 86%, black); }
+html[data-ui-palette="calm-blue"] [class~="hover:bg-[#3F00C7]"]:hover { background-color: color-mix(in srgb, #14656B 86%, black); }
+html[data-ui-palette="calm-blue"] [class~="hover:bg-[#4000cc]"]:hover { background-color: color-mix(in srgb, #14656B 86%, black); }
+html[data-ui-palette="calm-blue"] [class~="hover:bg-[#4100CC]"]:hover { background-color: color-mix(in srgb, #14656B 86%, black); }
+html[data-ui-palette="calm-blue"] [class~="hover:bg-[#4100cc]"]:hover { background-color: color-mix(in srgb, #14656B 86%, black); }
+html[data-ui-palette="calm-blue"] [class~="hover:bg-[#4200D0]"]:hover { background-color: color-mix(in srgb, #14656B 86%, black); }
+html[data-ui-palette="calm-blue"] [class~="hover:bg-[#5200FF]"]:hover { background-color: #14656B; }
+html[data-ui-palette="calm-blue"] [class~="hover:bg-[#5200FF]/10"]:hover { background-color: color-mix(in srgb, #14656B 10%, transparent); }
+html[data-ui-palette="calm-blue"] [class~="hover:bg-[#e5dcff]"]:hover { background-color: color-mix(in srgb, #A9E5D7 40%, white); }
+html[data-ui-palette="calm-blue"] [class~="hover:bg-[#f1ebff]"]:hover { background-color: color-mix(in srgb, #A9E5D7 18%, white); }
+html[data-ui-palette="calm-blue"] [class~="hover:border-[#5200FF]"]:hover { border-color: #14656B; }
+html[data-ui-palette="calm-blue"] [class~="hover:ring-[#5200FF]/20"]:hover { --tw-ring-color: color-mix(in srgb, #14656B 20%, transparent); }
+html[data-ui-palette="calm-blue"] [class~="hover:text-[#4000cc]"]:hover { color: color-mix(in srgb, #14656B 86%, black); }
+html[data-ui-palette="calm-blue"] [class~="hover:text-[#5200FF]"]:hover { color: #14656B; }
+html[data-ui-palette="calm-blue"] [class~="hover:text-[#CCFF00]"]:hover { color: #915015; }
+html[data-ui-palette="calm-blue"] .peer:checked ~ [class~="peer-checked:bg-[#CCFF00]"] { background-color: #F6BE78; }
+html[data-ui-palette="calm-blue"] .peer:checked ~ [class~="peer-checked:border-[#5200FF]"] { border-color: #14656B; }
+html[data-ui-palette="calm-blue"] .peer:checked ~ [class~="peer-checked:border-[#CCFF00]"] { border-color: #F6BE78; }
+html[data-ui-palette="calm-blue"] .peer:checked ~ [class~="peer-checked:ring-[#5200FF]"] { --tw-ring-color: #14656B; }
+html[data-ui-palette="calm-blue"] .peer:checked ~ [class~="peer-checked:ring-[#5200FF]/20"] { --tw-ring-color: color-mix(in srgb, #14656B 20%, transparent); }
+html[data-ui-palette="calm-blue"] .peer:checked ~ [class~="peer-checked:ring-[#5200FF]/30"] { --tw-ring-color: color-mix(in srgb, #14656B 30%, transparent); }
+html[data-ui-palette="calm-blue"] .peer:focus-visible ~ [class~="peer-focus-visible:outline-[#5200FF]"] { outline-color: #14656B; }
+html[data-ui-palette="calm-blue"] .peer:focus-visible ~ [class~="peer-focus-visible:ring-[#5200FF]"] { --tw-ring-color: #14656B; }
+html[data-ui-palette="calm-blue"] [class~="ring-[#5200FF]/30"] { --tw-ring-color: color-mix(in srgb, #14656B 30%, transparent); }
+html[data-ui-palette="calm-blue"] [class~="ring-[#5200FF]/40"] { --tw-ring-color: color-mix(in srgb, #14656B 40%, transparent); }
+html[data-ui-palette="calm-blue"] [class~="ring-[#CCFF00]/70"] { --tw-ring-color: color-mix(in srgb, #F6BE78 70%, transparent); }
+html[data-ui-palette="calm-blue"] [class~="text-[#5200FF]"] { color: #14656B; }
+html[data-ui-palette="calm-blue"] [class~="text-[#5200FF]/70"] { color: color-mix(in srgb, #14656B 70%, transparent); }
+html[data-ui-palette="calm-blue"] [class~="text-[#6D28D9]"] { color: #14656B; }
+html[data-ui-palette="calm-blue"] [class~="text-[#CCFF00]"] { color: #915015; }
+
+/* En superficies oscuras, los textos petroleo necesitan el tono claro
+   para conservar contraste, incluso cuando no tienen clase dark:text. */
+html.dark[data-ui-palette="calm-blue"] [class~="text-[#5200FF]"],
+html.dark[data-ui-palette="calm-blue"] [class~="text-[#6D28D9]"] {
+    color: #A9E5D7;
+}
+html.dark[data-ui-palette="calm-blue"] [class~="hover:text-[#5200FF]"]:hover {
+    color: #A9E5D7;
+}
+
+/* Acentos cálidos: texto legible sobre superficies claras y oscuras. */
+html.dark[data-ui-palette="calm-blue"] [class~="text-[#CCFF00]"] {
+    color: #F6BE78;
+}
+html.dark[data-ui-palette="calm-blue"] [class~="hover:text-[#CCFF00]"]:hover {
+    color: #F6BE78;
+}
+
+/* Indicador de progreso: la geometría y el porcentaje no cambian. */
+html[data-ui-palette="calm-blue"] svg circle[stroke="#CCFF00"] {
+    stroke: #F6BE78;
+}
+
+/* Sombras violetas de las tarjetas: mismo tamaño, nuevo tono petroleo. */
+html[data-ui-palette="calm-blue"] [class~="enabled:hover:shadow-[0_12px_26px_rgba(82,0,255,0.14)]"]:enabled:hover { --tw-shadow: 0 12px 26px rgba(20,101,107,0.14); }
+html[data-ui-palette="calm-blue"] .group:hover [class~="group-hover:shadow-[0_12px_26px_rgba(82,0,255,0.14)]"] { --tw-shadow: 0 12px 26px rgba(20,101,107,0.14); }
+html[data-ui-palette="calm-blue"] [class~="hover:shadow-[0_12px_30px_rgba(82,0,255,0.10)]"]:hover { --tw-shadow: 0 12px 30px rgba(20,101,107,0.10); }
+html[data-ui-palette="calm-blue"] [class~="hover:shadow-[0_12px_30px_rgba(82,0,255,0.12)]"]:hover { --tw-shadow: 0 12px 30px rgba(20,101,107,0.12); }
+html[data-ui-palette="calm-blue"] [class~="hover:shadow-[0_14px_32px_rgba(82,0,255,0.28)]"]:hover { --tw-shadow: 0 14px 32px rgba(20,101,107,0.28); }
+html[data-ui-palette="calm-blue"] [class~="hover:shadow-[0_6px_20px_rgba(82,0,255,0.12)]"]:hover { --tw-shadow: 0 6px 20px rgba(20,101,107,0.12); }
+html[data-ui-palette="calm-blue"] [class~="hover:shadow-[0_8px_20px_rgba(82,0,255,0.10)]"]:hover { --tw-shadow: 0 8px 20px rgba(20,101,107,0.10); }
+html[data-ui-palette="calm-blue"] [class~="hover:shadow-[0_8px_22px_rgba(82,0,255,0.16)]"]:hover { --tw-shadow: 0 8px 22px rgba(20,101,107,0.16); }
+html[data-ui-palette="calm-blue"] [class~="hover:shadow-[0_8px_22px_rgba(82,0,255,0.22)]"]:hover { --tw-shadow: 0 8px 22px rgba(20,101,107,0.22); }
+html[data-ui-palette="calm-blue"] [class~="shadow-[0_12px_28px_rgba(82,0,255,0.18)]"] { --tw-shadow: 0 12px 28px rgba(20,101,107,0.18); }
+
+
+/* El catálogo público usa fondo claro incluso si la cuenta tiene tema
+   oscuro (html.dark). No aplicar allí el tono menta destinado a superficies
+   oscuras: etiquetas, enlaces BGG y títulos deben seguir siendo legibles. */
+html.dark[data-ui-palette="calm-blue"] .catalog-public-light [class~="text-[#5200FF]"],
+html.dark[data-ui-palette="calm-blue"] .catalog-public-light [class~="text-[#6D28D9]"] {
+    color: #14656B;
+}
+html.dark[data-ui-palette="calm-blue"] .catalog-public-light [class~="hover:text-[#5200FF]"]:hover {
+    color: #104D52;
+}

@@ -38,6 +38,12 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            // Solo las cuentas autenticadas distintas de la principal reciben
+            // la paleta azul. Invitados y propietario mantienen el diseño actual.
+            'ui_palette' => $request->user()
+                && strcasecmp(trim($request->user()->email), 'alejandroruedamar@gmail.com') !== 0
+                    ? 'calm-blue'
+                    : 'original',
             'auth' => [
                 'user' => $request->user(),
             ],
