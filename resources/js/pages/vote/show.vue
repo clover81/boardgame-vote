@@ -1098,7 +1098,13 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                         :class="needsSecondChoice ? 'sm:grid-cols-2' : 'grid-cols-1'"
                     >
                         <p class="min-w-0 wrap-break-word rounded-xl bg-lime-100 px-3 py-2.5 font-medium" :title="selectedFirstGame?.name ?? ''">
-                            🥇 {{ selectedFirstGame?.name ?? (needsSecondChoice ? 'Elige primera opción' : 'Elige un juego') }}
+                            <template v-if="selectedFirstGame">
+                                {{ needsSecondChoice ? '🥇 Primera opción:' : 'Mi voto:' }}
+                                {{ selectedFirstGame.name }}
+                            </template>
+                            <template v-else>
+                                {{ needsSecondChoice ? 'Elige primera opción' : 'Elige un juego' }}
+                            </template>
                         </p>
                         <p
                             v-if="needsSecondChoice"
