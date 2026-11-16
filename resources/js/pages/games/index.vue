@@ -253,7 +253,7 @@ const formatDate = (date: string | null): string => {
 
     <AppLayout>
         <div
-            class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6"
+            class="@container/games mx-auto w-full max-w-7xl px-4 py-6 sm:px-6"
         >
             <!-- ================================================== -->
             <!-- CABECERA                                           -->
@@ -299,7 +299,7 @@ const formatDate = (date: string | null): string => {
                 :class="activeFilterChips.length ? 'mb-3' : 'mb-6'"
                 @submit.prevent="applyFilters"
             >
-                <div class="grid gap-x-4 gap-y-3 md:grid-cols-2 xl:grid-cols-3">
+                <div class="grid gap-x-4 gap-y-3 @min-[40rem]/games:grid-cols-2 @min-[50rem]/games:grid-cols-3">
                     <div class="min-w-0">
                         <label for="game-search" class="text-sm font-bold">Buscar juego</label>
                         <input id="game-search" v-model="search" type="search"
@@ -307,13 +307,13 @@ const formatDate = (date: string | null): string => {
                             placeholder="Busca por nombre o temática..."
                             class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
                     </div>
-                    <button type="button" class="rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-bold md:hidden dark:border-zinc-700"
+                    <button type="button" class="rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-bold @min-[40rem]/games:hidden dark:border-zinc-700"
                         :aria-expanded="showMobileFilters" aria-controls="game-advanced-filters"
                         @click="showMobileFilters = !showMobileFilters">
                         Filtros <span v-if="advancedFilterCount">({{ advancedFilterCount }})</span>
                         <span aria-hidden="true">{{ showMobileFilters ? ' −' : ' +' }}</span>
                     </button>
-                    <div id="game-advanced-filters" :class="showMobileFilters ? 'contents' : 'hidden md:contents'">
+                    <div id="game-advanced-filters" :class="showMobileFilters ? 'contents' : 'hidden @min-[40rem]/games:contents'">
                         <div class="min-w-0">
                             <label for="game-player-count" class="text-sm font-bold">Jugadores ideales</label>
                             <select id="game-player-count" v-model.number="playerCount" @change="applyFilters" class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
@@ -411,7 +411,7 @@ const formatDate = (date: string | null): string => {
 
             <div
                 v-if="games.length"
-                class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+                class="grid gap-5 @min-[32rem]/games:grid-cols-2 @min-[50rem]/games:grid-cols-3"
             >
                 <article
                     v-for="game in games"

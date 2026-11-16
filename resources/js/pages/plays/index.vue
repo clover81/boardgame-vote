@@ -453,7 +453,7 @@ const confirmDeletePlay = () => {
 
     <AppLayout>
         <div
-            class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6"
+            class="@container/history mx-auto w-full max-w-7xl px-4 py-6 sm:px-6"
         >
             <!-- ================================================== -->
             <!-- CABECERA                                           -->
@@ -570,7 +570,7 @@ const confirmDeletePlay = () => {
                 <!-- En móvil, los filtros secundarios no ocupan espacio al entrar. -->
                 <button
                     type="button"
-                    class="mt-3 inline-flex items-center gap-2 rounded-xl border border-zinc-200 px-3 py-2 text-sm font-semibold text-[#5200FF] sm:hidden dark:border-zinc-700 dark:text-[#CCFF00]"
+                    class="mt-3 inline-flex items-center gap-2 rounded-xl border border-zinc-200 px-3 py-2 text-sm font-semibold text-[#5200FF] @min-[38rem]/history:hidden dark:border-zinc-700 dark:text-[#CCFF00]"
                     :aria-expanded="showAdvancedFilters"
                     aria-controls="history-advanced-filters"
                     @click="showAdvancedFilters = !showAdvancedFilters"
@@ -581,7 +581,7 @@ const confirmDeletePlay = () => {
 
                 <div
                     id="history-advanced-filters"
-                    class="mt-4 gap-3 sm:grid sm:grid-cols-3"
+                    class="mt-4 gap-3 @min-[38rem]/history:grid @min-[38rem]/history:grid-cols-3"
                     :class="showAdvancedFilters ? 'grid' : 'hidden'"
                 >
                     <!-- JUEGO -->
@@ -739,14 +739,14 @@ const confirmDeletePlay = () => {
                     class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
                 >
                     <!-- La portada y los datos principales comparten una sola fila. -->
-                    <div class="flex items-start gap-3 p-3 sm:gap-5 sm:p-4">
-                        <div class="flex w-24 shrink-0 items-center justify-center rounded-xl bg-zinc-100 p-2 dark:bg-zinc-900 sm:w-36 sm:p-3">
+                    <div class="flex items-start gap-3 p-3 @min-[38rem]/history:gap-5 @min-[38rem]/history:p-4">
+                        <div class="flex w-24 shrink-0 items-center justify-center rounded-xl bg-zinc-100 p-2 dark:bg-zinc-900 @min-[38rem]/history:w-36 @min-[38rem]/history:p-3">
                             <img
                                 v-if="play.game.image_url && !brokenCoverIds.includes(play.game.id)"
                                 :src="play.game.image_url"
                                 :alt="`Portada de ${play.game.name}`"
                                 loading="lazy"
-                                class="max-h-36 w-full object-contain sm:max-h-44"
+                                class="max-h-36 w-full object-contain @min-[38rem]/history:max-h-44"
                                 @error="markCoverAsBroken(play.game.id)"
                             />
                             <div v-else class="flex min-h-28 items-center justify-center text-center text-xs text-zinc-500 dark:text-zinc-400">

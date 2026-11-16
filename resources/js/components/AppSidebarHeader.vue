@@ -9,6 +9,7 @@ import {
     History,
     LayoutGrid,
     LibraryBig,
+    Settings,
     Users,
     Vote,
 } from '@lucide/vue';
@@ -77,6 +78,10 @@ const currentSection = computed(() => {
         return { title: 'Estadísticas', icon: BarChart3 };
     }
 
+    if (path === '/settings' || path.startsWith('/settings/')) {
+        return { title: 'Ajustes', icon: Settings };
+    }
+
     return { title: 'Mi espacio', icon: LayoutGrid };
 });
 </script>
@@ -86,7 +91,7 @@ const currentSection = computed(() => {
         class="flex h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4 sm:px-6"
     >
         <SidebarTrigger
-            class="-ml-1 shrink-0 rounded-lg hover:bg-[#5200FF]/10"
+            class="-ml-1 h-11 w-11 shrink-0 rounded-lg hover:bg-[#5200FF]/10 lg:h-7 lg:w-7"
         />
 
         <span class="h-5 w-px shrink-0 bg-border/70"></span>

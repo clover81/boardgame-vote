@@ -531,7 +531,7 @@ const modeLabel = (
 
     <AppLayout>
         <div
-            class="mx-auto w-full max-w-6xl px-4 pt-6 pb-24 sm:px-6"
+            class="@container/poll mx-auto w-full max-w-6xl px-4 pt-6 pb-24 sm:px-6"
         >
             <!-- VOLVER -->
 
@@ -547,7 +547,7 @@ const modeLabel = (
             <!-- ================================================== -->
 
             <div
-                class="mt-5 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between"
+                class="mt-5 grid items-start gap-5 @min-[50rem]/poll:grid-cols-[minmax(0,1fr)_24rem]"
             >
                 <div class="min-w-0">
                     <h1
@@ -672,7 +672,7 @@ const modeLabel = (
                 <!-- ================================================== -->
 
                 <div
-                    class="w-full sm:max-w-sm"
+                    class="min-w-0"
                 >
                     <!-- BORRADOR -->
 
@@ -1025,7 +1025,7 @@ const modeLabel = (
                     v-if="
                         poll.candidates.length
                     "
-                    class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+                    class="mt-5 grid gap-5 @min-[32rem]/poll:grid-cols-2 @min-[50rem]/poll:grid-cols-3"
                 >
                     <article
                         v-for="candidate in poll.candidates"

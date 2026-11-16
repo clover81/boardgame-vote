@@ -670,20 +670,20 @@ watch(
 
     <AppLayout>
         <div
-            class="mx-auto w-full max-w-7xl px-4 pt-6 pb-24 sm:px-6"
+            class="@container/collections mx-auto w-full max-w-7xl px-4 pt-6 pb-24 sm:px-6"
         >
             <!-- ================================================== -->
             <!-- CABECERA                                           -->
             <!-- ================================================== -->
 
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex flex-col gap-4 @min-[38rem]/collections:flex-row @min-[38rem]/collections:items-center @min-[38rem]/collections:justify-between">
                 <h1 class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
                     Mis colecciones
                 </h1>
 
                 <button
                     type="button"
-                    class="inline-flex w-full items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90 sm:w-auto"
+                    class="inline-flex w-full items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90 @min-[38rem]/collections:w-auto"
                     ref="createCollectionButton"
                     :aria-expanded="showCreateForm"
                     :aria-disabled="form.processing"
@@ -785,7 +785,7 @@ watch(
                     class="group rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/30 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-violet-500 sm:p-6"
                 >
                     <div
-                        class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"
+                        class="flex flex-col gap-5 @min-[38rem]/collections:flex-row @min-[38rem]/collections:items-center @min-[38rem]/collections:justify-between"
                     >
                         <!-- INFO -->
 
@@ -822,11 +822,11 @@ watch(
                         </div>
 
                         <!-- ACCIÓN PRINCIPAL + OPCIONES DE ADMINISTRACIÓN -->
-                        <div class="flex w-full items-center gap-2 sm:w-auto sm:shrink-0 sm:justify-end">
+                        <div class="flex w-full items-center gap-2 @min-[38rem]/collections:w-auto @min-[38rem]/collections:shrink-0 @min-[38rem]/collections:justify-end">
                             <Link
                                 :href="`/games?collection_id=${collection.id}`"
                                 :aria-label="`Ver juegos de ${collection.name}`"
-                                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-[#5200FF] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#4000cc] hover:shadow-md hover:shadow-violet-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] sm:flex-initial"
+                                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-[#5200FF] px-5 py-2 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#4000cc] hover:shadow-md hover:shadow-violet-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] @min-[38rem]/collections:flex-initial"
                             >
                                 Ver juegos
                             </Link>
@@ -899,7 +899,7 @@ watch(
                         :key="friendCollection.id"
                         class="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:p-6"
                     >
-                        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="flex flex-col gap-4 @min-[38rem]/collections:flex-row @min-[38rem]/collections:items-center @min-[38rem]/collections:justify-between">
                             <div class="min-w-0">
                                 <h3 class="wrap-anywhere text-lg font-bold text-zinc-900 dark:text-zinc-100">
                                     {{ friendCollection.name }}

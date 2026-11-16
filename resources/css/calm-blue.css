@@ -76,7 +76,6 @@ html.dark[data-ui-palette="calm-blue"] [class~="dark:bg-[#CCFF00]/10"] { backgro
 html.dark[data-ui-palette="calm-blue"] [class~="dark:border-[#CCFF00]"] { border-color: #F6BE78; }
 html.dark[data-ui-palette="calm-blue"] [class~="dark:border-[#CCFF00]/10"] { border-color: color-mix(in srgb, #F6BE78 10%, transparent); }
 html.dark[data-ui-palette="calm-blue"] [class~="dark:border-[#CCFF00]/45"] { border-color: color-mix(in srgb, #F6BE78 45%, transparent); }
-html.dark[data-ui-palette="calm-blue"] [class~="dark:data-[active=true]:bg-[#CCFF00]"][data-active="true"] { background-color: #F6BE78; }
 html.dark[data-ui-palette="calm-blue"] [class~="dark:focus-visible:outline-[#CCFF00]"]:focus-visible { outline-color: #F6BE78; }
 html.dark[data-ui-palette="calm-blue"] [class~="dark:hover:bg-[#5200FF]/20"]:hover { background-color: color-mix(in srgb, #14656B 20%, transparent); }
 html.dark[data-ui-palette="calm-blue"] [class~="dark:hover:bg-[#CCFF00]/10"]:hover { background-color: color-mix(in srgb, #F6BE78 10%, transparent); }
@@ -86,7 +85,6 @@ html.dark[data-ui-palette="calm-blue"] [class~="dark:text-[#BBA6FF]"] { color: #
 html.dark[data-ui-palette="calm-blue"] [class~="dark:text-[#C4B5FD]"] { color: #A9E5D7; }
 html.dark[data-ui-palette="calm-blue"] [class~="dark:text-[#CCFF00]"] { color: #F6BE78; }
 html.dark[data-ui-palette="calm-blue"] [class~="dark:text-[#CCFF00]/70"] { color: color-mix(in srgb, #F6BE78 70%, transparent); }
-html[data-ui-palette="calm-blue"] [class~="data-[active=true]:bg-[#5200FF]"][data-active="true"] { background-color: #14656B; }
 html[data-ui-palette="calm-blue"] [class~="enabled:hover:border-[#9bcb00]"]:enabled:hover { border-color: #14656B; }
 html[data-ui-palette="calm-blue"] [class~="focus-visible:border-[#5200FF]"]:focus-visible { border-color: #14656B; }
 html[data-ui-palette="calm-blue"] [class~="focus-visible:outline-[#5200FF]"]:focus-visible { outline-color: #14656B; }
@@ -182,4 +180,15 @@ html.dark[data-ui-palette="calm-blue"] .catalog-public-light [class~="hover:text
 html[data-ui-palette="calm-blue"] .palette-sidebar-primary-icon,
 html.dark[data-ui-palette="calm-blue"] .palette-sidebar-primary-icon {
     color: #FFFFFF;
+}
+
+/* La sección activa conserva su contraste al pasar el puntero. */
+html[data-ui-palette="calm-blue"] [data-sidebar="menu-button"][data-active="true"] {
+    background-color: #14656B;
+    color: #FFFFFF;
+}
+
+html.dark[data-ui-palette="calm-blue"] [data-sidebar="menu-button"][data-active="true"] {
+    background-color: #F6BE78;
+    color: #181424;
 }
