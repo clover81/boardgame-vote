@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Player;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,15 +36,18 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+        $ownerId = filter_var(config('app.original_palette_user_id'), FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1],
+        ]);
+        $usesOriginalPalette = $user === null || ($ownerId !== false
+            ? (int) $user->id === $ownerId
+            : strcasecmp(trim($user->email), 'alejandroruedamar@gmail.com') === 0);
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
-            // Solo las cuentas autenticadas distintas de la principal reciben
-            // la paleta azul. Invitados y propietario mantienen el diseño actual.
-            'ui_palette' => $request->user()
-                && strcasecmp(trim($request->user()->email), 'alejandroruedamar@gmail.com') !== 0
-                    ? 'calm-blue'
-                    : 'original',
+            'ui_palette' => $usesOriginalPalette ? 'original' : 'calm-blue',
             'auth' => [
                 'user' => $request->user(),
             ],
@@ -53,7 +57,7 @@ class HandleInertiaRequests extends Middleware
 
             // Colores guardados de los jugadores propios para toda la interfaz privada.
             'player_colors' => fn () => $request->user()
-                ? \App\Models\Player::query()
+                ? Player::query()
                     ->where('created_by', $request->user()->id)
                     ->get(['name', 'color'])
                     ->filter(fn ($player) => $player->color !== null)

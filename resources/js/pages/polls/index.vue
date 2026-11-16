@@ -82,6 +82,10 @@ const filteredPolls = computed(() => {
     return props.polls.filter(poll => poll.status === statusFilter.value);
 });
 
+const hasNoPolls = computed(() =>
+    props.polls.length === 0 && !props.filters.collection_id && !props.filters.search.trim(),
+);
+
 const countByStatus = (status: PollStatus): number => {
     return props.polls.filter(poll => poll.status === status).length;
 };
@@ -240,17 +244,15 @@ const formatDate = (
 
                 <Link
                     :href="withPollListReturn('/polls/create')"
-                    class="inline-flex min-h-11 w-full items-center justify-center gap-2.5 rounded-xl bg-[#5200FF] px-4 py-2.5 text-center font-bold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#4000cc] hover:shadow-[0_8px_22px_rgba(82,0,255,0.22)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:w-auto"
+                    class="inline-flex min-h-12 w-full items-center justify-center gap-2.5 rounded-xl border border-[#5200FF]/35 bg-[#5200FF]/5 px-4 py-2 font-bold text-[#5200FF] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#5200FF] hover:bg-[#5200FF]/10 hover:shadow-[0_8px_22px_rgba(82,0,255,0.16)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none dark:border-[#CCFF00]/45 dark:bg-[#5200FF]/10 dark:text-[#CCFF00] dark:hover:bg-[#5200FF]/20 sm:w-auto"
                 >
-                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#3C00BB]" aria-hidden="true">
-                        <RollingDicesIcon class="size-6 text-[#CCFF00]" />
-                    </span>
+                    <RollingDicesIcon class="size-7 shrink-0 text-[#5200FF] dark:text-[#CCFF00]" aria-hidden="true" />
                     <span>Nueva votación</span>
                 </Link>
             </div>
 
             <div
-                class="-mx-4 mt-5 flex gap-2 overflow-x-auto px-4 pt-1 pb-2 sm:-mx-1 sm:mt-8 sm:flex-wrap sm:px-1 sm:pb-1"
+                class="mt-5 grid grid-cols-2 gap-2 py-1 sm:-mx-1 sm:mt-8 sm:flex sm:flex-wrap sm:px-1"
             >
                 <button
                     type="button"
@@ -563,20 +565,20 @@ const formatDate = (
                 <p
                     class="text-lg font-black"
                 >
-                    {{ hasActiveFilters
-                        ? 'No hay votaciones que coincidan'
-                        : 'Todavía no hay votaciones' }}
+                    {{ hasNoPolls
+                        ? 'Todavía no hay votaciones'
+                        : 'No hay votaciones que coincidan' }}
                 </p>
 
                 <p
                     class="mt-2 text-sm text-zinc-500"
                 >
-                    {{ hasActiveFilters
-                        ? 'Prueba con otras palabras o elimina alguno de los filtros aplicados.'
-                        : 'Crea tu primera votación para elegir a qué jugar.' }}
+                    {{ hasNoPolls
+                        ? 'Crea tu primera votación para elegir a qué jugar.'
+                        : 'Prueba con otras palabras o elimina alguno de los filtros aplicados.' }}
                 </p>
             </div>
-            <ScrollToTopProgress />
+            <ScrollToTopProgress compact-on-mobile />
         </div>
     </AppLayout>
 </template>

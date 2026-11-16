@@ -1321,7 +1321,7 @@ watch(
                             </span>
                         </div>
 
-                        <p class="mt-2 text-sm text-zinc-400">
+                        <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                             Estos juegos siguen en tu colección de Laravel,
                             pero ya no aparecen como propios en BoardGameGeek.
                         </p>
@@ -1330,13 +1330,13 @@ watch(
                             <div
                                 v-for="game in bggPreview.removal_candidates"
                                 :key="game.id"
-                                class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-700 bg-zinc-900 p-4"
+                                class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900"
                             >
                                 <div>
-                                    <p class="font-semibold text-white">
+                                    <p class="font-semibold text-zinc-900 dark:text-white">
                                         {{ game.name }}
                                     </p>
-                                    <p class="text-xs text-zinc-400">
+                                    <p class="text-xs text-zinc-600 dark:text-zinc-400">
                                         BGG ID: {{ game.bgg_id }}
                                     </p>
                                 </div>
@@ -1356,7 +1356,7 @@ watch(
                             </div>
                         </div>
 
-                        <p class="mt-4 text-xs text-zinc-400">
+                        <p class="mt-4 text-xs text-zinc-600 dark:text-zinc-400">
                             Ningún juego se ha eliminado.
                             Las bajas deberán confirmarse antes de aplicarse.
                         </p>

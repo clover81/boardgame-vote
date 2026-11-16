@@ -15,6 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'original_palette_user_id' => env('APP_ORIGINAL_PALETTE_USER_ID'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
-const props = withDefaults(defineProps<{ rememberPosition?: boolean; hideOnMobile?: boolean; compact?: boolean; compactOnMobile?: boolean; hideNearBottom?: boolean; hideNearBottomDistance?: number }>(), {
+const props = withDefaults(defineProps<{ rememberPosition?: boolean; hideOnMobile?: boolean; compact?: boolean; compactOnMobile?: boolean; hideNearBottom?: boolean; hideNearBottomDistance?: number; showAfter?: number }>(), {
     rememberPosition: true,
     hideOnMobile: false,
     compact: false,
     compactOnMobile: false,
     hideNearBottom: false,
+    showAfter: 180,
 });
 
 const scrollY = ref(0);
@@ -20,12 +21,13 @@ const progressOffset = computed(
 );
 
 const visible = computed(
-    () => scrollY.value > 300 && !(props.hideNearBottom && nearBottom.value),
+    () => scrollY.value > props.showAfter && !(props.hideNearBottom && nearBottom.value),
 );
 
 let storageKey = '';
 let mounted = false;
 let restoreFrame = 0;
+let resizeObserver: ResizeObserver | null = null;
 
 const savePosition = (position: number) => {
     if (!props.rememberPosition) return;
@@ -37,12 +39,33 @@ const savePosition = (position: number) => {
     }
 };
 
-const updateScroll = () => {
-    scrollY.value = window.scrollY;
+// En páginas habituales se desplaza la ventana. Si algún layout usa
+// un <main> con desplazamiento propio, usamos ese contenedor en su lugar.
+const getScrollHost = (): HTMLElement | null => {
+    const content = document.querySelector<HTMLElement>('main[data-slot="sidebar-inset"]');
+    if (content && content.scrollHeight > content.clientHeight + 1) {
+        const overflowY = window.getComputedStyle(content).overflowY;
+        if (overflowY === 'auto' || overflowY === 'scroll') return content;
+    }
+    return document.scrollingElement as HTMLElement | null;
+};
 
-    const maxScroll =
-        document.documentElement.scrollHeight -
-        window.innerHeight;
+const scrollPageTo = (top: number, behavior: ScrollBehavior = 'auto') => {
+    const host = getScrollHost();
+    if (host && host !== document.scrollingElement) {
+        host.scrollTo({ top, behavior });
+    } else {
+        window.scrollTo({ top, behavior });
+    }
+};
+
+const updateScroll = () => {
+    const host = getScrollHost();
+    scrollY.value = host?.scrollTop ?? window.scrollY;
+
+    const maxScroll = host
+        ? Math.max(0, host.scrollHeight - host.clientHeight)
+        : Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
 
     // Ocultar el botón flotante en el tramo final de formularios largos
     // para evitar que se superponga al botón principal de envío.
@@ -71,7 +94,7 @@ const scrollToTop = (event: MouseEvent) => {
     }
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    window.scrollTo({ top: 0, behavior: reduceMotion ? 'instant' : 'smooth' });
+    scrollPageTo(0, reduceMotion ? 'instant' : 'smooth');
 };
 
 onMounted(async () => {
@@ -96,32 +119,42 @@ onMounted(async () => {
     restoreFrame = requestAnimationFrame(() => {
         restoreFrame = requestAnimationFrame(() => {
             if (Number.isFinite(savedPosition) && savedPosition > 0) {
-                window.scrollTo(0, savedPosition);
+                scrollPageTo(savedPosition);
             }
 
             updateScroll();
         });
     });
 
-    window.addEventListener('scroll', updateScroll, {
-        passive: true,
-    });
-
+    window.addEventListener('scroll', updateScroll, { passive: true });
+    // Captura también el desplazamiento de un contenedor interno, si existe.
+    document.addEventListener('scroll', updateScroll, true);
     window.addEventListener('resize', updateScroll);
+
+    // La altura puede cambiar al abrir Gestión BGG, filtros y resultados sin
+    // que se produzca un resize de ventana.
+    resizeObserver = new ResizeObserver(updateScroll);
+    resizeObserver.observe(document.documentElement);
+    const content = document.querySelector<HTMLElement>('main[data-slot="sidebar-inset"]');
+    if (content) resizeObserver.observe(content);
 });
 
 onBeforeUnmount(() => {
     mounted = false;
     cancelAnimationFrame(restoreFrame);
 
-    savePosition(window.scrollY);
+    savePosition(getScrollHost()?.scrollTop ?? window.scrollY);
 
     window.removeEventListener('scroll', updateScroll);
+    document.removeEventListener('scroll', updateScroll, true);
     window.removeEventListener('resize', updateScroll);
+    resizeObserver?.disconnect();
+    resizeObserver = null;
 });
 </script>
 
 <template>
+    <Teleport to="body">
     <Transition
         enter-active-class="transition duration-300 ease-out motion-reduce:transition-none"
         enter-from-class="translate-y-4 opacity-0"
@@ -135,7 +168,7 @@ onBeforeUnmount(() => {
             type="button"
             aria-label="Volver al inicio"
             title="Volver arriba"
-            class="fixed z-50 items-center justify-center rounded-full bg-[#181424] text-white shadow-xl transition motion-safe:hover:scale-110 hover:shadow-2xl motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:focus-visible:outline-[#CCFF00]"
+            class="fixed z-40 items-center justify-center rounded-full bg-[#181424] text-white shadow-xl transition motion-safe:hover:scale-110 hover:shadow-2xl motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:focus-visible:outline-[#CCFF00]"
             :class="[
                 props.hideOnMobile ? 'hidden sm:flex' : 'flex',
                 props.compact
@@ -197,4 +230,5 @@ onBeforeUnmount(() => {
             </svg>
         </button>
     </Transition>
+    </Teleport>
 </template>

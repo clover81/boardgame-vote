@@ -33,3 +33,18 @@ test('other authenticated accounts receive the calm blue palette', function () {
         ->assertSee('data-ui-palette="calm-blue"', false)
         ->assertInertia(fn (Assert $page) => $page->where('ui_palette', 'calm-blue'));
 });
+
+test('the configured account keeps the original palette after changing its email', function () {
+    $this->withoutVite();
+    $owner = User::factory()->create();
+    config(['app.original_palette_user_id' => (string) $owner->id]);
+
+    $owner->update(['email' => 'cambio-de-correo@example.test']);
+    $this->actingAs($owner->fresh())->get('/games')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('ui_palette', 'original'));
+
+    $this->actingAs(User::factory()->create())->get('/games')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('ui_palette', 'calm-blue'));
+});
