@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Game;
 use App\Services\BggService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
-use App\Models\Game;
 
 class BggImportController extends Controller
 {
@@ -25,7 +25,7 @@ class BggImportController extends Controller
         ]);
 
         try {
-            $results = $bggService->searchGames($validated['query']);
+            $results = $bggService->search($validated['query']);
         } catch (RuntimeException $exception) {
             throw ValidationException::withMessages([
                 'query' => $exception->getMessage(),
@@ -102,7 +102,7 @@ class BggImportController extends Controller
             }
         }
 
-        if (!$bggId) {
+        if (! $bggId) {
             throw ValidationException::withMessages([
                 'url' => 'Introduce una URL válida de BoardGameGeek o un ID numérico.',
             ]);
@@ -130,22 +130,22 @@ class BggImportController extends Controller
 
         $existingGame =
             Game::query()
-            ->where(
-                'bgg_id',
-                $game['bgg_id']
-            )
-            ->orWhere(
-                'bgg_url',
-                $game['bgg_url']
-            )
-            ->orWhere(
-                'bgg_url',
-                'like',
-                '%/boardgame/'
-                    . $game['bgg_id']
-                    . '/%'
-            )
-            ->first();
+                ->where(
+                    'bgg_id',
+                    $game['bgg_id']
+                )
+                ->orWhere(
+                    'bgg_url',
+                    $game['bgg_url']
+                )
+                ->orWhere(
+                    'bgg_url',
+                    'like',
+                    '%/boardgame/'
+                        .$game['bgg_id']
+                        .'/%'
+                )
+                ->first();
 
         /*
      * Si encontramos un juego antiguo por URL
@@ -157,19 +157,18 @@ class BggImportController extends Controller
         ) {
             $idAlreadyUsed =
                 Game::query()
-                ->where(
-                    'bgg_id',
-                    $game['bgg_id']
-                )
-                ->whereKeyNot(
-                    $existingGame->id
-                )
-                ->exists();
+                    ->where(
+                        'bgg_id',
+                        $game['bgg_id']
+                    )
+                    ->whereKeyNot(
+                        $existingGame->id
+                    )
+                    ->exists();
 
-            if (!$idAlreadyUsed) {
+            if (! $idAlreadyUsed) {
                 $existingGame->update([
-                    'bgg_id' =>
-                    $game['bgg_id'],
+                    'bgg_id' => $game['bgg_id'],
                 ]);
             }
         }
@@ -179,8 +178,7 @@ class BggImportController extends Controller
 
         if ($existingGame) {
             $existingGame->load([
-                'collections' =>
-                function ($query) use (
+                'collections' => function ($query) use (
                     $request
                 ) {
                     $query
@@ -198,37 +196,29 @@ class BggImportController extends Controller
             ]);
 
             $existingGameData = [
-                'id' =>
-                $existingGame->id,
+                'id' => $existingGame->id,
 
-                'name' =>
-                $existingGame->name,
+                'name' => $existingGame->name,
 
-                'image_url' =>
-                $existingGame->image_url,
+                'image_url' => $existingGame->image_url,
 
-                'bgg_id' =>
-                $existingGame->bgg_id,
+                'bgg_id' => $existingGame->bgg_id,
 
                 /*
              * Colecciones de ESTE usuario.
              */
-                'collection_ids' =>
-                $existingGame
+                'collection_ids' => $existingGame
                     ->collections
                     ->pluck('id')
                     ->values(),
 
-                'collections' =>
-                $existingGame
+                'collections' => $existingGame
                     ->collections
                     ->map(
-                        fn($collection) => [
-                            'id' =>
-                            $collection->id,
+                        fn ($collection) => [
+                            'id' => $collection->id,
 
-                            'name' =>
-                            $collection->name,
+                            'name' => $collection->name,
                         ]
                     )
                     ->values(),
@@ -236,11 +226,9 @@ class BggImportController extends Controller
         }
 
         return response()->json([
-            'game' =>
-            $game,
+            'game' => $game,
 
-            'existing_game' =>
-            $existingGameData,
+            'existing_game' => $existingGameData,
         ]);
     }
 }
