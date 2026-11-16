@@ -1111,7 +1111,12 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                             class="min-w-0 wrap-break-word rounded-xl bg-orange-100 px-3 py-2.5 font-medium"
                             :title="selectedSecondGame?.name ?? ''"
                         >
-                            🥈 {{ selectedSecondGame?.name ?? 'Elige segunda opción' }}
+                            <template v-if="selectedSecondGame">
+                                🥈 Segunda opción: {{ selectedSecondGame.name }}
+                            </template>
+                            <template v-else>
+                                Elige segunda opción
+                            </template>
                         </p>
                     </div>
 
