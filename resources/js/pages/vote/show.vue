@@ -362,6 +362,8 @@ watch(
 const selectFirst = (
     candidateId: number
 ) => {
+    if (form.processing) return;
+
     // Segundo clic: quitar la primera opción y reiniciar la segunda.
     if (form.first_candidate_id === candidateId) {
         form.first_candidate_id = null;
@@ -390,6 +392,8 @@ const selectFirst = (
 const selectSecond = (
     candidateId: number
 ) => {
+    if (form.processing) return;
+
     // Segundo clic: quitar únicamente la segunda opción.
     if (form.second_candidate_id === candidateId) {
         form.second_candidate_id = null;
@@ -427,7 +431,7 @@ const cancelVoteEdit = async () => {
 };
 
 const submit = () => {
-    if (!canSubmit.value) {
+    if (form.processing || !canSubmit.value) {
         return;
     }
 
@@ -1005,6 +1009,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                         >
                             <button
                                 type="button"
+                                :disabled="form.processing"
                                 :aria-pressed="form.first_candidate_id === candidate.id"
                                 class="min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-bold transition-[background-color,border-color,box-shadow,transform] duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5200FF] focus-visible:ring-offset-2 motion-safe:active:scale-[0.98] sm:text-base"
                                 :class="form.first_candidate_id === candidate.id
@@ -1017,6 +1022,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                             <button
                                 v-if="needsSecondChoice"
                                 type="button"
+                                :disabled="form.processing"
                                 :aria-pressed="form.second_candidate_id === candidate.id"
                                 class="min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-bold transition-[background-color,border-color,box-shadow,transform] duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5200FF] focus-visible:ring-offset-2 motion-safe:active:scale-[0.98] sm:text-base"
                                 :class="form.second_candidate_id === candidate.id
