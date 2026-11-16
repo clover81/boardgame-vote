@@ -31,8 +31,8 @@ class SecurityController extends Controller
                         'id' => $passkey->id,
                         'name' => $passkey->name,
                         'authenticator' => $passkey->authenticator,
-                        'created_at_diff' => $passkey->created_at->diffForHumans(),
-                        'last_used_at_diff' => $passkey->last_used_at?->diffForHumans(),
+                        'created_at_diff' => $passkey->created_at->locale('es')->diffForHumans(),
+                        'last_used_at_diff' => $passkey->last_used_at?->locale('es')->diffForHumans(),
                     ])
                     ->values()
                     ->all()
@@ -59,7 +59,7 @@ class SecurityController extends Controller
             'password' => $request->password,
         ]);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Password updated.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Contraseña actualizada correctamente.']);
 
         return back();
     }
