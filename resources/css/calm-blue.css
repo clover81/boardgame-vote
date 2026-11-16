@@ -176,3 +176,10 @@ html.dark[data-ui-palette="calm-blue"] .catalog-public-light [class~="text-[#6D2
 html.dark[data-ui-palette="calm-blue"] .catalog-public-light [class~="hover:text-[#5200FF]"]:hover {
     color: #104D52;
 }
+
+/* Solo cuentas con paleta Petroleo: los iconos de marca y accion principal
+   son blancos sobre el fondo petroleo. Sin cambios en otros iconos ni temas. */
+html[data-ui-palette="calm-blue"] .palette-sidebar-primary-icon,
+html.dark[data-ui-palette="calm-blue"] .palette-sidebar-primary-icon {
+    color: #FFFFFF;
+}

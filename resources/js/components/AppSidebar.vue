@@ -54,7 +54,7 @@ const mainNavItems: NavItem[] = [
                             <div
                                 class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#5200FF]"
                             >
-                                <Dices class="size-5 text-[#CCFF00]" />
+                                <Dices class="size-5 text-[#CCFF00] palette-sidebar-primary-icon" />
                             </div>
 
                             <div class="grid min-w-0 flex-1 text-left">
@@ -78,7 +78,7 @@ const mainNavItems: NavItem[] = [
                         class="h-11 rounded-xl bg-[#5200FF] px-3 font-bold text-white hover:bg-[#4200D0] hover:text-white active:bg-[#4200D0] active:text-white"
                     >
                         <Link href="/polls/create">
-                            <Vote class="size-4 text-[#CCFF00]" />
+                            <Vote class="size-4 text-[#CCFF00] palette-sidebar-primary-icon" />
                             <span>Crear votación</span>
                         </Link>
                     </SidebarMenuButton>

@@ -2,7 +2,7 @@
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import MeepleIcon from '@/components/icons/MeepleIcon.vue';
-import { playerColorOptions } from '@/lib/player-colors';
+import { playerColorOptions, playerMeepleColor } from '@/lib/player-colors';
 import {
     BarChart3,
     Gamepad2,
@@ -35,6 +35,13 @@ const welcomeFirstName = computed(() => {
 });
 
 const welcomeMeepleColor = computed(() => {
+    // La vinculación explícita prevalece sobre buscar un jugador por nombre.
+    // Conservamos la tonalidad original del meeple, incluso en modo claro.
+    const linkedColor = page.props.profile_player_color as string | null | undefined;
+    if (linkedColor) {
+        return playerMeepleColor(null, linkedColor);
+    }
+
     const fullName = (page.props.auth?.user?.name ?? '')
         .trim()
         .toLocaleLowerCase('es');

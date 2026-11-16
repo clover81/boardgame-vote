@@ -14,6 +14,7 @@ use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property int $id
@@ -47,6 +48,15 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Jugador que representa a esta cuenta en una colección ajena.
+     * Solo se asigna de forma explícita y administrativa; nunca por nombre.
+     */
+    public function profilePlayer(): BelongsTo
+    {
+        return $this->belongsTo(Player::class, 'profile_player_id');
     }
 
     public function gameCollections(): HasMany

@@ -47,6 +47,10 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            // Una cuenta puede representar de forma explícita un jugador de
+            // otra colección. Solo compartimos su color, nunca sus datos privados.
+            'profile_player_color' => fn () => $request->user()?->profilePlayer?->color,
+
             // Colores guardados de los jugadores propios para toda la interfaz privada.
             'player_colors' => fn () => $request->user()
                 ? \App\Models\Player::query()
