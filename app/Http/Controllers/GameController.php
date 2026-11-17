@@ -405,6 +405,30 @@ class GameController extends Controller
                 ->exists();
         }
 
+
+        // Una partida de otra cuenta también conserva esta ficha global.
+        if (! $usedByAnotherUser) {
+            $usedByAnotherUser = DB::table('plays')
+                ->where('game_id', $game->id)
+                ->where(function ($query) use ($userId) {
+                    $query->where('created_by', '<>', $userId)
+                        ->orWhereNull('created_by');
+                })
+                ->exists();
+        }
+
+        // Comprobar igualmente las votaciones históricas ajenas.
+        if (! $usedByAnotherUser) {
+            $usedByAnotherUser = DB::table('poll_candidates as pc')
+                ->join('polls as p', 'p.id', '=', 'pc.poll_id')
+                ->where('pc.game_id', $game->id)
+                ->where(function ($query) use ($userId) {
+                    $query->where('p.created_by', '<>', $userId)
+                        ->orWhereNull('p.created_by');
+                })
+                ->exists();
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
 

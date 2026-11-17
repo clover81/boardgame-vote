@@ -240,3 +240,56 @@ test('an expansion in another account protects the shared game during updates', 
         'expansion_id' => $expansion->id,
     ]);
 });
+
+test('foreign historical records protect game details during updates', function ($history) {
+    $this->game->collections()->detach($this->foreignCollection);
+
+    $otherUserId = $this->foreignCollection->created_by;
+
+    if ($history === 'play') {
+        Play::create([
+            'created_by' => $otherUserId,
+            'game_id' => $this->game->id,
+            'played_at' => '2026-11-01',
+        ]);
+    } else {
+        $poll = Poll::create([
+            'created_by' => $otherUserId,
+            'name' => 'Votación histórica ajena',
+            'token' => 'FOREIGNHISTORYGAME',
+            'status' => 'closed',
+        ]);
+
+        $poll->candidates()->create([
+            'game_id' => $this->game->id,
+        ]);
+    }
+
+    $selectedIds = [
+        $this->ownedCollections[0]->id,
+        $this->ownedCollections[2]->id,
+    ];
+
+    $this->actingAs($this->user)
+        ->put(route('games.update', $this->game), [
+            ...$this->payload,
+            'collection_ids' => $selectedIds,
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('games.index'))
+        ->assertSessionHas(
+            'success',
+            'Se han actualizado tus colecciones. La ficha compartida no se ha modificado.'
+        );
+
+    $game = $this->game->fresh();
+
+    expect($game->name)->toBe('The White Castle');
+    expect($game->idealPlayerCounts->pluck('player_count')->all())
+        ->toBe([2]);
+    expect($game->collections->modelKeys())
+        ->toEqualCanonicalizing($selectedIds);
+})->with([
+    'partida histórica de otra cuenta' => 'play',
+    'votación histórica de otra cuenta' => 'poll',
+]);
