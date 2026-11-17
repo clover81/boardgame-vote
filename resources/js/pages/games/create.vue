@@ -103,6 +103,9 @@ const importingBgg = ref(false);
 const bggImportError = ref('');
 const bggDescription = ref('');
 const availableBggExpansions = ref<BggExpansion[] | null>(null);
+const bggExpansionsLoading = ref(false);
+const bggExpansionsError = ref('');
+let bggExpansionsRequest = 0;
 
 const existingImportedBggGame = ref<ExistingBggGame | null>(null);
 
@@ -195,8 +198,56 @@ const markBggImageBroken = (id: number) => {
     }
 };
 
+const loadSelectedBggExpansions = async () => {
+    const selected = selectedBggGame.value;
+    if (!selected || bggBusy.value || bggExpansionsLoading.value) return;
+
+    const requestId = ++bggExpansionsRequest;
+    bggExpansionsLoading.value = true;
+    bggExpansionsError.value = '';
+
+    try {
+        const response = await fetch(
+            `/games/import/bgg?url=${selected.bgg_id}`,
+            { headers: { Accept: 'application/json' } },
+        );
+        const data = await response.json();
+
+        if (requestId !== bggExpansionsRequest ||
+            selectedBggGame.value?.bgg_id !== selected.bgg_id) return;
+
+        if (!response.ok) {
+            bggExpansionsError.value =
+                data?.errors?.url?.[0] ??
+                'No se han podido consultar las expansiones.';
+            return;
+        }
+
+        availableBggExpansions.value = Array.isArray(data.game?.expansions)
+            ? data.game.expansions
+            : [];
+    } catch {
+        if (requestId === bggExpansionsRequest) {
+            bggExpansionsError.value =
+                'No se ha podido conectar con BoardGameGeek.';
+        }
+    } finally {
+        if (requestId === bggExpansionsRequest) {
+            bggExpansionsLoading.value = false;
+        }
+    }
+};
+
+const resetBggExpansionLookup = () => {
+    bggExpansionsRequest++;
+    bggExpansionsLoading.value = false;
+    bggExpansionsError.value = '';
+    availableBggExpansions.value = null;
+};
+
 const searchBgg = async () => {
     if (bggBusy.value) return;
+    resetBggExpansionLookup();
 
     selectedBggId.value = null;
     selectedBggGame.value = null;
@@ -247,6 +298,7 @@ const searchBgg = async () => {
 
 const loadBggGame = async (result: BggSearchResult) => {
     if (bggBusy.value) return;
+    resetBggExpansionLookup();
 
     selectedBggId.value = result.bgg_id;
     selectedBggGame.value = null;
@@ -329,6 +381,7 @@ const loadBggGame = async (result: BggSearchResult) => {
 
 const importFromBgg = async () => {
     if (bggBusy.value) return;
+    resetBggExpansionLookup();
 
     if (!bggUrl.value.trim()) {
         bggImportError.value = 'Introduce una URL de BoardGameGeek.';
@@ -462,6 +515,23 @@ const addExistingToCollections = () => {
 const playerNumbers = [1, 2, 3, 4, 5, 6, 7, 8];
 
 const saveError = ref<HTMLDivElement | null>(null);
+const gameForm = ref<HTMLFormElement | null>(null);
+
+const goToGameForm = () => {
+    const target = gameForm.value;
+    if (!target) return;
+
+    const reduceMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)'
+    ).matches;
+
+    target.scrollIntoView({
+        behavior: reduceMotion ? 'auto' : 'smooth',
+        block: 'start',
+    });
+
+    target.focus({ preventScroll: true });
+};
 
 const submit = () => {
     if (bggBusy.value || form.processing || existingGameForm.processing) return;
@@ -732,6 +802,36 @@ const submit = () => {
                                 formulario. Puedes modificarlos antes
                                 de guardar el juego.
                             </p>
+                <button
+                    v-if="!existingBggGame && !legacyBggGame && availableBggExpansions === null"
+                    type="button"
+                    :disabled="bggExpansionsLoading || bggBusy"
+                    class="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-[#5200FF] px-4 py-2.5 text-sm font-bold text-[#5200FF] transition hover:bg-violet-100 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-[#CCFF00]/70 dark:bg-zinc-900 dark:text-[#CCFF00] dark:hover:bg-violet-950 dark:focus-visible:outline-[#CCFF00] sm:mr-3 sm:w-auto"
+                    @click="loadSelectedBggExpansions"
+                >
+                    {{ bggExpansionsLoading ? 'Consultando expansiones...' : 'Consultar expansiones (opcional)' }}
+                </button>
+
+                <p v-if="bggExpansionsError" role="alert"
+                    class="mt-2 text-sm font-semibold text-red-600 dark:text-red-300">
+                    {{ bggExpansionsError }}
+                </p>
+
+                <p v-if="availableBggExpansions !== null"
+                    class="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+                    {{ availableBggExpansions.length }}
+                    {{ availableBggExpansions.length === 1 ? 'expansión encontrada' : 'expansiones encontradas' }}.
+                    Puedes revisarlas más abajo.
+                </p>
+
+                <button
+                    v-if="!existingBggGame && !legacyBggGame"
+                    type="button"
+                    class="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#5200FF] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#4000cc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] sm:w-auto"
+                    @click="goToGameForm"
+                >
+                    Continuar: revisar y guardar ↓
+                </button>
                         </div>
                     </div>
                 </section>
@@ -756,6 +856,15 @@ const submit = () => {
                     Revisa ahora los datos y completa
                     los campos propios de tu colección.
                 </p>
+
+                <button
+                    v-if="!selectedBggGame"
+                    type="button"
+                    class="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#5200FF] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#4000cc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] sm:w-auto"
+                    @click="goToGameForm"
+                >
+                    Continuar: revisar y guardar ↓
+                </button>
             </div>
 
             <div
@@ -1164,7 +1273,9 @@ const submit = () => {
             </section>
 
             <form
-                class="mt-6 space-y-6 rounded-2xl border p-6"
+                ref="gameForm"
+                tabindex="-1"
+                class="mt-6 scroll-mt-4 space-y-6 rounded-2xl border p-6"
                 @submit.prevent="submit"
             >
 
