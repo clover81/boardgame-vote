@@ -1000,7 +1000,19 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                     <span v-if="candidate.game.min_playtime">
                                         <HourglassCog class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#1D4ED8]" :stroke-width="2.2" role="img" aria-label="Duración" /> {{ candidate.game.min_playtime }}<template v-if="candidate.game.max_playtime && candidate.game.max_playtime !== candidate.game.min_playtime">–{{ candidate.game.max_playtime }}</template> min
                                     </span>
-                                    <span v-if="candidate.game.complexity !== null"><BrainCog class="inline h-3.5 w-3.5 shrink-0 text-pink-400" /> {{ candidate.game.complexity }}/5</span>
+                                    <span
+                                        v-if="candidate.game.complexity !== null"
+                                        class="inline-flex items-center gap-1 whitespace-nowrap"
+                                        title="Complejidad sobre 5"
+                                    >
+                                        <BrainCog
+                                            class="size-4 shrink-0 text-pink-600"
+                                            :stroke-width="2"
+                                            aria-hidden="true"
+                                        />
+                                        <span class="sr-only">Complejidad: </span>
+                                        <span>{{ candidate.game.complexity }}/5</span>
+                                    </span>
                                     <span v-if="candidate.game.game_mode"><Swords v-if="candidate.game.game_mode === 'competitive'" class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-orange-700" :stroke-width="2.2" aria-hidden="true" /> {{ modeLabel(candidate.game.game_mode) }}</span>
                                 </div>
 
