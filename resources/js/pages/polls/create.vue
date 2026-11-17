@@ -980,7 +980,17 @@ const submit = () => {
         return;
     }
 
+    // El primer y segundo juego utilizan el mismo componente Vue.
+    // Tras guardar correctamente, reconstruimos el formulario con
+    // el parentPoll de la nueva página. Si hay errores, conservamos
+    // las selecciones realizadas.
+    if (props.parentPoll) {
+        form.parent_poll_id = props.parentPoll.id;
+        form.create_second_game = false;
+    }
+
     form.post('/polls', {
+        preserveState: 'errors',
         onError: async () => {
             await nextTick();
             saveError.value?.focus();
