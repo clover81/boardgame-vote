@@ -363,3 +363,36 @@ test('deleting a game preserves another users poll and votes', function ($status
         'id' => $vote->id,
     ]);
 })->with(['draft', 'open', 'closed']);
+
+test('a foreign collection expansion prevents game deletion', function () {
+    $otherUser = User::factory()->create();
+    $foreignCollection = GameCollection::create([
+        'created_by' => $otherUser->id,
+        'name' => 'Expansiones de otra cuenta',
+    ]);
+
+    // La otra cuenta conserva la expansión, pero no el juego base.
+    $foreignCollection->expansions()->attach($this->expansion->id);
+
+    $this->assertDatabaseMissing('game_collection_game', [
+        'game_id' => $this->game->id,
+        'game_collection_id' => $foreignCollection->id,
+    ]);
+
+    $this->actingAs($this->user)
+        ->from($this->editUrl)
+        ->delete($this->deleteUrl)
+        ->assertRedirect($this->editUrl)
+        ->assertSessionHasErrors('game');
+
+    $this->assertDatabaseHas('games', ['id' => $this->game->id]);
+    $this->assertDatabaseHas('expansions', ['id' => $this->expansion->id]);
+    $this->assertDatabaseHas('game_collection_expansion', [
+        'game_collection_id' => $foreignCollection->id,
+        'expansion_id' => $this->expansion->id,
+    ]);
+    $this->assertDatabaseHas('game_collection_game', [
+        'game_collection_id' => $this->collection->id,
+        'game_id' => $this->game->id,
+    ]);
+});

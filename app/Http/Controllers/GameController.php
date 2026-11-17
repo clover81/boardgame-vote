@@ -871,6 +871,21 @@ class GameController extends Controller
             ]);
         }
 
+        // Las expansiones también pueden pertenecer a colecciones
+        // ajenas aunque el juego base ya no figure en ellas.
+        $hasForeignExpansionCollections = DB::table('expansions as e')
+            ->join('game_collection_expansion as gce', 'gce.expansion_id', '=', 'e.id')
+            ->join('game_collections as gc', 'gc.id', '=', 'gce.game_collection_id')
+            ->where('e.game_id', $game->id)
+            ->where('gc.created_by', '<>', $userId)
+            ->exists();
+
+        if ($hasForeignExpansionCollections) {
+            return back()->withErrors([
+                'game' => 'Este juego tiene expansiones vinculadas a colecciones de otra cuenta. Puedes quitarlo de tus colecciones, pero no eliminarlo globalmente.',
+            ]);
+        }
+
         /*
          * No permitir eliminar un juego que tenga
          * partidas de otras cuentas o sin propietario.
