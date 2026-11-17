@@ -112,6 +112,7 @@ class BggController extends Controller
       ->exists();
 
     abort_unless($belongsToUser, 403);
+    $this->authorizeUnsharedGame($request, $game);
 
     if (!$game->bgg_id) {
       return back()->withErrors([
@@ -335,6 +336,7 @@ class BggController extends Controller
           $request,
           $game
       );
+      $this->authorizeUnsharedGame($request, $game);
 
       /*
        * Ese BGG ID no puede pertenecer
@@ -471,6 +473,23 @@ class BggController extends Controller
           'success',
           'Juego vinculado con BoardGameGeek. Se han completado los datos que faltaban.'
       );
+  }
+
+  private function authorizeUnsharedGame(
+    Request $request,
+    Game $game
+  ): void {
+    $shared = DB::table('game_collection_game as gcg')
+      ->join('game_collections as gc', 'gc.id', '=', 'gcg.game_collection_id')
+      ->where('gcg.game_id', $game->id)
+      ->where('gc.created_by', '<>', $request->user()->id)
+      ->exists();
+
+    abort_if(
+      $shared,
+      403,
+      'No puedes modificar un juego compartido con otra cuenta.'
+    );
   }
 
   private function authorizeUserGame(

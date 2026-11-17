@@ -191,3 +191,23 @@ test('the linking route rejects nonnumeric BGG IDs', function () {
 
     $this->actingAs($this->user)->post(route('games.bgg-link.store', [$this->game, 'invalid']))->assertNotFound();
 });
+
+test('shared games cannot be linked to BGG', function () {
+    $other = User::factory()->create();
+    $foreign = GameCollection::create([
+        'created_by' => $other->id,
+        'name' => 'Colección ajena',
+    ]);
+    $this->game->collections()->attach($foreign);
+
+    $before = $this->game->fresh()->getAttributes();
+
+    $this->mock(BggService::class)
+        ->shouldNotReceive('gameForLink');
+
+    $this->actingAs($this->user)
+        ->post($this->linkUrl)
+        ->assertForbidden();
+
+    expect($this->game->fresh()->getAttributes())->toBe($before);
+});

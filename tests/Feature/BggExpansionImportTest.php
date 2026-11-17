@@ -259,3 +259,31 @@ test('the expansion import route only accepts numeric BGG IDs', function () {
         ->assertNotFound();
     $this->assertDatabaseCount('expansions', 0);
 });
+
+test('shared games cannot import BGG expansions', function ($existing) {
+    $other = User::factory()->create();
+    $foreign = GameCollection::create([
+        'created_by' => $other->id,
+        'name' => 'Colección ajena',
+    ]);
+    $this->game->collections()->attach($foreign);
+
+    if ($existing) {
+        $this->game->expansions()->create([
+            'name' => 'Matcha',
+            'is_active' => false,
+        ]);
+    }
+
+    $before = Expansion::query()->orderBy('id')->get()->toArray();
+
+    $this->mock(BggService::class)
+        ->shouldNotReceive('expansionsForGame');
+
+    $this->actingAs($this->user)
+        ->post($this->url)
+        ->assertForbidden();
+
+    expect(Expansion::query()->orderBy('id')->get()->toArray())
+        ->toBe($before);
+})->with([false, true]);
