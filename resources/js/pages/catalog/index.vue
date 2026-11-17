@@ -457,6 +457,25 @@ const sortedGames = computed(() => {
     });
 });
 
+const showCatalogResults = async () => {
+    showAdvancedFilters.value = false;
+    await nextTick();
+
+    const heading = resultsHeading.value;
+    if (!heading) return;
+
+    const reduceMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)'
+    ).matches;
+
+    heading.scrollIntoView({
+        behavior: reduceMotion ? 'auto' : 'smooth',
+        block: 'start',
+    });
+
+    heading.focus({ preventScroll: true });
+};
+
 const clearFilters = async () => {
     search.value = '';
     playerCount.value = '';
@@ -745,6 +764,17 @@ const externalUrl = (url: string | null): string | undefined => {
                         </div>
                     </div>
                 </div>
+
+                <button
+                    v-if="showAdvancedFilters"
+                    type="button"
+                    class="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#5200FF] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#4000cc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] md:hidden"
+                    @click="showCatalogResults"
+                >
+                    Ver {{ filteredGames.length }}
+                    {{ filteredGames.length === 1 ? 'juego' : 'juegos' }}
+                    <span aria-hidden="true">↓</span>
+                </button>
             </section>
 
 
@@ -810,7 +840,7 @@ const externalUrl = (url: string | null): string | undefined => {
 
             <div
                 v-if="filteredGames.length"
-                class="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4"
+                class="grid gap-4 min-[480px]:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4"
             >
                 <article
                     v-for="game in sortedGames"
@@ -827,7 +857,7 @@ const externalUrl = (url: string | null): string | undefined => {
 
                     <!-- PORTADA DEL JUEGO -->
                     <div
-                        class="relative flex h-60 items-center justify-center overflow-hidden bg-gradient-to-br from-[#f0ebff] via-white to-[#eef2fa] p-4 sm:aspect-square sm:h-auto sm:p-6"
+                        class="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br from-[#f0ebff] via-white to-[#eef2fa] p-4 sm:aspect-square sm:h-auto sm:p-6"
                     >
                         <img
                             v-if="game.image_url && !brokenCoverIds.includes(game.id)"
