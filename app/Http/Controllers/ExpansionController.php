@@ -197,8 +197,28 @@ class ExpansionController extends Controller
                 ->where('gc.created_by', '<>', $userId)
                 ->exists();
 
+        // El historial de otras cuentas también utiliza datos globales.
+        $foreignPlays = $expansion !== null
+            && DB::table('plays')
+                ->where('expansion_id', $expansion->id)
+                ->where(function ($query) use ($userId) {
+                    $query->where('created_by', '<>', $userId)
+                        ->orWhereNull('created_by');
+                })
+                ->exists();
+
+        $foreignPolls = $expansion !== null
+            && DB::table('poll_candidates as pc')
+                ->join('polls as p', 'p.id', '=', 'pc.poll_id')
+                ->where('pc.expansion_id', $expansion->id)
+                ->where(function ($query) use ($userId) {
+                    $query->where('p.created_by', '<>', $userId)
+                        ->orWhereNull('p.created_by');
+                })
+                ->exists();
+
         abort_if(
-            $sharedGame || $sharedExpansion,
+            $sharedGame || $sharedExpansion || $foreignPlays || $foreignPolls,
             403,
             'No puedes modificar una expansión compartida con otra cuenta.'
         );

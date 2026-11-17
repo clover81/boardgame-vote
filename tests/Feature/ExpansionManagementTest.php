@@ -424,3 +424,39 @@ test('an expansion linked to another users collection cannot be edited', functio
 
     expect($this->expansion->fresh()->toArray())->toBe($before);
 });
+
+test('foreign historical references prevent global expansion editing', function ($historyType) {
+    $otherUser = User::factory()->create();
+
+    if ($historyType === 'play') {
+        Play::create([
+            'created_by' => $otherUser->id,
+            'game_id' => $this->game->id,
+            'expansion_id' => $this->expansion->id,
+            'played_at' => '2026-11-01',
+        ]);
+    } else {
+        $poll = Poll::create([
+            'created_by' => $otherUser->id,
+            'name' => 'Votación histórica ajena',
+            'token' => 'FOREIGNHISTORY',
+            'status' => 'closed',
+        ]);
+
+        $poll->candidates()->create([
+            'game_id' => $this->game->id,
+            'expansion_id' => $this->expansion->id,
+        ]);
+    }
+
+    $before = $this->expansion->fresh()->getAttributes();
+
+    $this->actingAs($this->user)
+        ->patch($this->updateUrl, $this->payload)
+        ->assertForbidden();
+
+    expect($this->expansion->fresh()->getAttributes())->toBe($before);
+})->with([
+    'partida de otra cuenta' => 'play',
+    'votacion de otra cuenta' => 'poll',
+]);
