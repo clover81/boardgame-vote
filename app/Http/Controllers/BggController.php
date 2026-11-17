@@ -494,8 +494,25 @@ class BggController extends Controller
       ->where('gc.created_by', '<>', $userId)
       ->exists();
 
+    $foreignPlays = DB::table('plays')
+      ->where('game_id', $game->id)
+      ->where(function ($query) use ($userId) {
+        $query->where('created_by', '<>', $userId)
+          ->orWhereNull('created_by');
+      })
+      ->exists();
+
+    $foreignPolls = DB::table('poll_candidates as pc')
+      ->join('polls as p', 'p.id', '=', 'pc.poll_id')
+      ->where('pc.game_id', $game->id)
+      ->where(function ($query) use ($userId) {
+        $query->where('p.created_by', '<>', $userId)
+          ->orWhereNull('p.created_by');
+      })
+      ->exists();
+
     abort_if(
-      $sharedGame || $sharedExpansion,
+      $sharedGame || $sharedExpansion || $foreignPlays || $foreignPolls,
       403,
       'No puedes modificar un juego o sus expansiones compartidos con otra cuenta.'
     );

@@ -1183,7 +1183,24 @@ class GameController extends Controller
                     ->where('gc.created_by', '<>', $userId)
                     ->exists();
 
-                if ($foreignGame || $foreignExpansion) {
+                $foreignPlays = DB::table('plays')
+                    ->where('game_id', $legacyGame->id)
+                    ->where(function ($query) use ($userId) {
+                        $query->where('created_by', '<>', $userId)
+                            ->orWhereNull('created_by');
+                    })
+                    ->exists();
+
+                $foreignPolls = DB::table('poll_candidates as pc')
+                    ->join('polls as p', 'p.id', '=', 'pc.poll_id')
+                    ->where('pc.game_id', $legacyGame->id)
+                    ->where(function ($query) use ($userId) {
+                        $query->where('p.created_by', '<>', $userId)
+                            ->orWhereNull('p.created_by');
+                    })
+                    ->exists();
+
+                if ($foreignGame || $foreignExpansion || $foreignPlays || $foreignPolls) {
                     return back()->withErrors([
                         'bgg_id' => 'Este juego está compartido con otra cuenta. No se puede modificar su vinculación BGG.',
                     ])->withInput();

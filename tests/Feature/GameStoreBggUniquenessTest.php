@@ -426,3 +426,52 @@ test('shared manual games cannot be linked globally through game creation', func
     'juego en una coleccion ajena' => 'game',
     'expansion en una coleccion ajena' => 'expansion',
 ]);
+
+test('foreign historical references prevent automatic BGG linking of a manual game', function ($history) {
+    $game = Game::create([
+        'name' => 'The White Castle',
+        'min_players' => 2,
+        'max_players' => 3,
+        'game_mode' => 'competitive',
+    ]);
+
+    $game->collections()->attach($this->collection);
+
+    $otherUser = User::factory()->create();
+
+    if ($history === 'play') {
+        Play::create([
+            'created_by' => $otherUser->id,
+            'game_id' => $game->id,
+            'played_at' => '2026-11-01',
+        ]);
+    } else {
+        $poll = Poll::create([
+            'created_by' => $otherUser->id,
+            'name' => 'Votación histórica ajena',
+            'token' => 'BGGFOREIGNHISTORY',
+            'status' => 'closed',
+        ]);
+
+        $poll->candidates()->create([
+            'game_id' => $game->id,
+        ]);
+    }
+
+    $before = $game->fresh()->getAttributes();
+
+    $this->actingAs($this->user)
+        ->post(route('games.store'), $this->payload)
+        ->assertSessionHasErrors('bgg_id');
+
+    expect($game->fresh()->getAttributes())->toBe($before);
+
+    $this->assertDatabaseCount('games', 1);
+    $this->assertDatabaseHas('game_collection_game', [
+        'game_id' => $game->id,
+        'game_collection_id' => $this->collection->id,
+    ]);
+})->with([
+    'partida ajena' => 'play',
+    'votacion ajena' => 'poll',
+]);

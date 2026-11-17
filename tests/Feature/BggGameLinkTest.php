@@ -241,3 +241,41 @@ test('BGG linking is blocked when another account keeps only an expansion', func
         'expansion_id' => $expansion->id,
     ]);
 });
+
+test('foreign historical references prevent BGG game linking', function ($history) {
+    $game = $this->game;
+
+    $otherUser = User::factory()->create();
+
+    if ($history === 'play') {
+        Play::create([
+            'created_by' => $otherUser->id,
+            'game_id' => $game->id,
+            'played_at' => '2026-11-01',
+        ]);
+    } else {
+        $poll = Poll::create([
+            'created_by' => $otherUser->id,
+            'name' => 'Votación histórica ajena',
+            'token' => 'BGGFOREIGNHISTORY',
+            'status' => 'closed',
+        ]);
+
+        $poll->candidates()->create([
+            'game_id' => $game->id,
+        ]);
+    }
+
+    $before = $game->fresh()->getAttributes();
+
+    $this->mock(BggService::class)->shouldNotReceive('gameForLink');
+
+    $this->actingAs($this->user)
+        ->post($this->linkUrl)
+        ->assertForbidden();
+
+    expect($game->fresh()->getAttributes())->toBe($before);
+})->with([
+    'partida ajena' => 'play',
+    'votacion ajena' => 'poll',
+]);

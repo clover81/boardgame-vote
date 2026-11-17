@@ -318,3 +318,39 @@ test('BGG expansion import is blocked when another account keeps an expansion', 
         'expansion_id' => $expansion->id,
     ]);
 });
+
+test('foreign historical references prevent BGG expansion importing', function ($history) {
+    $game = $this->game;
+
+    $otherUser = User::factory()->create();
+
+    if ($history === 'play') {
+        Play::create([
+            'created_by' => $otherUser->id,
+            'game_id' => $game->id,
+            'played_at' => '2026-11-01',
+        ]);
+    } else {
+        $poll = Poll::create([
+            'created_by' => $otherUser->id,
+            'name' => 'Votación histórica ajena',
+            'token' => 'BGGFOREIGNHISTORY',
+            'status' => 'closed',
+        ]);
+
+        $poll->candidates()->create([
+            'game_id' => $game->id,
+        ]);
+    }
+
+    $this->mock(BggService::class)->shouldNotReceive('expansionsForGame');
+
+    $this->actingAs($this->user)
+        ->post($this->url)
+        ->assertForbidden();
+
+    $this->assertDatabaseCount('expansions', 0);
+})->with([
+    'partida ajena' => 'play',
+    'votacion ajena' => 'poll',
+]);
