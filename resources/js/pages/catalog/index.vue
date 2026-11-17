@@ -546,7 +546,7 @@ const externalUrl = (url: string | null): string | undefined => {
             <header class="relative overflow-hidden rounded-[28px] bg-[#181424] px-5 py-5 text-white shadow-lg shadow-[#181424]/10 sm:px-8 sm:py-6">
                 <Link
                     v-if="catalogBasePath"
-                    href="/collections"
+                    href="/collections#friend-collections"
                     class="relative mb-5 inline-flex min-h-11 items-center text-sm font-bold text-[#CCFF00] underline-offset-4 hover:underline focus-visible:underline"
                 >
                     ← Volver a mis colecciones

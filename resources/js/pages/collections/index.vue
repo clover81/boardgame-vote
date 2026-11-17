@@ -888,7 +888,7 @@ watch(
                 </p>
             </div>
             <!-- Colecciones de otros usuarios: SOLO LECTURA. -->
-            <section v-if="friendCollections.length" class="mt-10">
+            <section id="friend-collections" v-if="friendCollections.length" class="mt-10 scroll-mt-24">
                 <h2 class="mb-4 text-2xl font-bold text-zinc-900 dark:text-zinc-100">
                     De otros usuarios
                 </h2>
