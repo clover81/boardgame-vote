@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Link as ChainIcon } from '@lucide/vue';
-import { nextTick, ref, watch } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
+import { computed, nextTick, ref, watch } from 'vue';
+import { Link, router, usePage } from '@inertiajs/vue3';
 
 interface BggExpansion {
     bgg_id: number;
@@ -18,6 +18,24 @@ const props = withDefaults(defineProps<{
     bggId: number | null;
     disabled?: boolean;
 }>(), { disabled: false });
+
+const page = usePage();
+
+const isEditingGame = computed(
+    () => page.url.split('?')[0] === `/games/${props.gameId}/edit`
+);
+
+const editGameUrl = computed(() => {
+    const back = new URLSearchParams(
+        page.url.split('?')[1] ?? ''
+    ).get('back');
+
+    const safeBack = back === '/games' || back?.startsWith('/games?')
+        ? back
+        : '/games';
+
+    return `/games/${props.gameId}/edit?back=${encodeURIComponent(safeBack)}#bgg-link-title`;
+});
 
 const expansions = ref<BggExpansion[]>([]);
 const loading = ref(false);
@@ -121,7 +139,18 @@ const markImageBroken = (id: number) => {
 
         <div v-if="!bggId" class="mt-5 rounded-xl bg-zinc-100 p-4 text-sm text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
             Este juego todavía no está vinculado con BoardGameGeek.
-            <Link :href="`/games/${gameId}/edit#bgg-link-title`" class="ml-1 font-bold text-[#5200FF] underline dark:text-[#CCFF00]">
+            <a
+                v-if="isEditingGame"
+                href="#bgg-link-title"
+                class="ml-1 font-bold text-[#5200FF] underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-[#CCFF00]"
+            >
+                Ir a vincular juego con BGG
+            </a>
+            <Link
+                v-else
+                :href="editGameUrl"
+                class="ml-1 font-bold text-[#5200FF] underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-[#CCFF00]"
+            >
                 Vincular juego con BGG
             </Link>
         </div>
