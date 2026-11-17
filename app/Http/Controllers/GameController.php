@@ -394,6 +394,17 @@ class GameController extends Controller
             ->where('gc.created_by', '<>', $userId)
             ->exists();
 
+        // Una expansión puede seguir en otra colección aunque
+        // el juego base ya se haya quitado de ella.
+        if (! $usedByAnotherUser) {
+            $usedByAnotherUser = DB::table('expansions as e')
+                ->join('game_collection_expansion as gce', 'gce.expansion_id', '=', 'e.id')
+                ->join('game_collections as gc', 'gc.id', '=', 'gce.game_collection_id')
+                ->where('e.game_id', $game->id)
+                ->where('gc.created_by', '<>', $userId)
+                ->exists();
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
 

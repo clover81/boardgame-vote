@@ -202,3 +202,41 @@ test('updating an unshared game can change its global fields', function () {
     expect($this->game->fresh()->idealPlayerCounts->pluck('player_count')->all())
         ->toEqualCanonicalizing([3, 4]);
 });
+
+test('an expansion in another account protects the shared game during updates', function () {
+    // La cuenta ajena conserva la expansión, pero no el juego base.
+    $this->game->collections()->detach($this->foreignCollection);
+
+    $expansion = $this->game->expansions()->create([
+        'name' => 'Matcha',
+        'is_active' => true,
+    ]);
+
+    $this->foreignCollection->expansions()->attach($expansion);
+
+    $selectedIds = [
+        $this->ownedCollections[0]->id,
+        $this->ownedCollections[2]->id,
+    ];
+
+    $this->actingAs($this->user)
+        ->put(route('games.update', $this->game), [
+            ...$this->payload,
+            'collection_ids' => $selectedIds,
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('games.index'));
+
+    $game = $this->game->fresh();
+
+    expect($game->name)->toBe('The White Castle');
+    expect($game->collections->modelKeys())
+        ->toEqualCanonicalizing($selectedIds);
+    expect($game->idealPlayerCounts->pluck('player_count')->all())
+        ->toBe([2]);
+
+    $this->assertDatabaseHas('game_collection_expansion', [
+        'game_collection_id' => $this->foreignCollection->id,
+        'expansion_id' => $expansion->id,
+    ]);
+});
