@@ -113,3 +113,29 @@ test('previewing an existing BGG game preserves manually edited data and expansi
     $this->assertDatabaseCount('games', 1);
     $this->assertDatabaseCount('expansions', 1);
 });
+
+test('BGG preview does not modify a legacy game', function () {
+    $legacy = Game::create([
+        'name' => 'Nombre editado manualmente',
+        'bgg_url' => 'https://boardgamegeek.com/boardgame/371942',
+        'min_players' => 1,
+        'max_players' => 4,
+        'game_mode' => 'competitive',
+    ]);
+
+    $before = $legacy->fresh()->getAttributes();
+
+    $service = $this->mock(BggService::class);
+    $service->shouldReceive('game')
+        ->once()->with(371942)->andReturn($this->bggGame);
+    $service->shouldReceive('expansionsForGame')
+        ->once()->with(371942)->andReturn([]);
+
+    $this->actingAs($this->user)
+        ->getJson(route('games.import-bgg', ['url' => '371942']))
+        ->assertOk()
+        ->assertJsonPath('existing_game.id', $legacy->id)
+        ->assertJsonPath('existing_game.bgg_id', null);
+
+    expect($legacy->fresh()->getAttributes())->toBe($before);
+});

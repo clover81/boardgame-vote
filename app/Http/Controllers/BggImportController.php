@@ -147,32 +147,6 @@ class BggImportController extends Controller
                 )
                 ->first();
 
-        /*
-     * Si encontramos un juego antiguo por URL
-     * pero aún no tenía bgg_id, lo completamos.
-     */
-        if (
-            $existingGame &&
-            $existingGame->bgg_id === null
-        ) {
-            $idAlreadyUsed =
-                Game::query()
-                    ->where(
-                        'bgg_id',
-                        $game['bgg_id']
-                    )
-                    ->whereKeyNot(
-                        $existingGame->id
-                    )
-                    ->exists();
-
-            if (! $idAlreadyUsed) {
-                $existingGame->update([
-                    'bgg_id' => $game['bgg_id'],
-                ]);
-            }
-        }
-
         $existingGameData =
             null;
 
