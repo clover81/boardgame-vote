@@ -185,6 +185,7 @@ const voteConfirmation = ref<HTMLElement | null>(null);
 const voteEditor = ref<HTMLElement | null>(null);
 
 const candidateSearch = ref('');
+const candidateSort = ref<'name' | 'name_desc'>('name');
 
 const editVote = async () => {
     candidateSearch.value = '';
@@ -207,10 +208,24 @@ const normalizeCandidateName = (name: string) =>
 const visibleCandidates = computed(() => {
     const terms = normalizeCandidateName(candidateSearch.value).trim().split(/\s+/).filter(Boolean);
 
-    return props.poll.candidates.filter(({ game }) => {
-        const name = normalizeCandidateName(game.name);
-        return terms.every(term => name.includes(term));
-    });
+    return props.poll.candidates
+        .filter(({ game }) => {
+            const name = normalizeCandidateName(game.name);
+            return terms.every(term => name.includes(term));
+        })
+        .sort((a, b) => {
+            const comparison = a.game.name.localeCompare(
+                b.game.name,
+                'es',
+                { sensitivity: 'base' }
+            );
+
+            return (
+                candidateSort.value === 'name_desc'
+                    ? -comparison
+                    : comparison
+            ) || a.id - b.id;
+        });
 });
 
 const brokenCoverIds = ref<number[]>([]);
@@ -909,6 +924,26 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                     >
                         Mostrar todos los juegos
                     </button>
+                </div>
+
+                <div
+                    v-if="poll.candidates.length > 1"
+                    class="mb-4 flex items-center justify-end gap-2"
+                >
+                    <label
+                        for="vote-candidate-sort"
+                        class="text-sm font-semibold text-zinc-700"
+                    >
+                        Ordenar:
+                    </label>
+                    <select
+                        id="vote-candidate-sort"
+                        v-model="candidateSort"
+                        class="min-h-11 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 focus-visible:outline-2 focus-visible:outline-[#5200FF]"
+                    >
+                        <option value="name">Nombre (A–Z)</option>
+                        <option value="name_desc">Nombre (Z–A)</option>
+                    </select>
                 </div>
 
                 <div class="grid items-stretch gap-4 lg:grid-cols-2">
