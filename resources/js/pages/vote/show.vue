@@ -183,12 +183,28 @@ const voteError = ref<HTMLElement | null>(null);
 const pageVoteError = ref<HTMLElement | null>(null);
 const voteConfirmation = ref<HTMLElement | null>(null);
 const voteEditor = ref<HTMLElement | null>(null);
+const confirmationPanel = ref<HTMLElement | null>(null);
 
 const candidateSearch = ref('');
 const candidateSort = ref<'name' | 'name_desc'>('name');
+const lastSelectedCandidateId = ref<number | null>(null);
+
+const goToConfirmation = () => {
+    const panel = confirmationPanel.value;
+    if (!panel) return;
+
+    panel.focus({ preventScroll: true });
+    panel.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            ? 'auto'
+            : 'smooth',
+        block: 'center',
+    });
+};
 
 const editVote = async () => {
     candidateSearch.value = '';
+    lastSelectedCandidateId.value = null;
     voteSaved.value = false;
     await nextTick();
     voteEditor.value?.focus();
@@ -398,6 +414,7 @@ const selectFirst = (
 
     form.first_candidate_id =
         candidateId;
+    lastSelectedCandidateId.value = candidateId;
 };
 
 /*
@@ -427,6 +444,7 @@ const selectSecond = (
 
     form.second_candidate_id =
         candidateId;
+    lastSelectedCandidateId.value = candidateId;
 };
 
 /*
@@ -1098,6 +1116,21 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                             </button>
                         </div>
 
+                        <div
+                            v-if="poll.candidates.length >= 4 && canSubmit && lastSelectedCandidateId === candidate.id"
+                            class="px-3 pb-3 sm:px-4"
+                        >
+                            <button
+                                type="button"
+                                aria-controls="vote-confirmation"
+                                class="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2.5 text-sm font-bold text-[#5200FF] transition hover:bg-violet-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                                @click="goToConfirmation"
+                            >
+                                Ver resumen y confirmar
+                                <span aria-hidden="true">↓</span>
+                            </button>
+                        </div>
+
                         <!-- La descripción, el historial y los enlaces siguen disponibles. -->
                         <details class="group border-t border-zinc-200 bg-zinc-50/70">
                             <summary class="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-semibold text-[#5200FF] [&::-webkit-details-marker]:hidden">
@@ -1156,7 +1189,14 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
 
                 <!-- CONFIRMAR -->
 
-                <div class="mx-auto mt-6 max-w-3xl rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
+                <div
+                    id="vote-confirmation"
+                    ref="confirmationPanel"
+                    tabindex="-1"
+                    role="region"
+                    aria-label="Resumen y confirmación del voto"
+                    class="mx-auto mt-6 max-w-3xl rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-4"
+                >
                     <div
                         class="mb-3 grid min-w-0 gap-2 text-xs sm:text-sm"
                         :class="needsSecondChoice ? 'sm:grid-cols-2' : 'grid-cols-1'"
