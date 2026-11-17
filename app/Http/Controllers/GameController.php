@@ -1145,6 +1145,26 @@ class GameController extends Controller
                 ->first();
 
             if ($legacyGame) {
+                // No vincular globalmente un juego usado por otra cuenta.
+                $foreignGame = DB::table('game_collection_game as gcg')
+                    ->join('game_collections as gc', 'gc.id', '=', 'gcg.game_collection_id')
+                    ->where('gcg.game_id', $legacyGame->id)
+                    ->where('gc.created_by', '<>', $userId)
+                    ->exists();
+
+                $foreignExpansion = DB::table('expansions as e')
+                    ->join('game_collection_expansion as gce', 'gce.expansion_id', '=', 'e.id')
+                    ->join('game_collections as gc', 'gc.id', '=', 'gce.game_collection_id')
+                    ->where('e.game_id', $legacyGame->id)
+                    ->where('gc.created_by', '<>', $userId)
+                    ->exists();
+
+                if ($foreignGame || $foreignExpansion) {
+                    return back()->withErrors([
+                        'bgg_id' => 'Este juego está compartido con otra cuenta. No se puede modificar su vinculación BGG.',
+                    ])->withInput();
+                }
+
                 DB::transaction(function () use (
                     $legacyGame,
                     $validated,

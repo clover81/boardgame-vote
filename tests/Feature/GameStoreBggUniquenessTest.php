@@ -375,3 +375,54 @@ test('reimporting an existing BGG game preserves populated optional values', fun
         ->and($game->max_playtime)->toBe(90)
         ->and($game->complexity)->toBe('3.00');
 })->with(['omitted', 'null']);
+
+test('shared manual games cannot be linked globally through game creation', function ($reference) {
+    $game = Game::create([
+        'name' => 'The White Castle',
+        'min_players' => 2,
+        'max_players' => 3,
+        'game_mode' => 'competitive',
+    ]);
+
+    $game->collections()->attach($this->collection);
+
+    $foreign = GameCollection::create([
+        'created_by' => User::factory()->create()->id,
+        'name' => 'Colección ajena',
+    ]);
+
+    if ($reference === 'game') {
+        $game->collections()->attach($foreign);
+    } else {
+        $expansion = $game->expansions()->create([
+            'name' => 'Matcha',
+            'is_active' => true,
+        ]);
+
+        $foreign->expansions()->attach($expansion);
+    }
+
+    $before = $game->fresh()->getAttributes();
+
+    $this->actingAs($this->user)
+        ->post(route('games.store'), $this->payload)
+        ->assertSessionHasErrors('bgg_id');
+
+    expect($game->fresh()->getAttributes())->toBe($before);
+
+    $this->assertDatabaseCount('games', 1);
+    $this->assertDatabaseHas('game_collection_game', [
+        'game_id' => $game->id,
+        'game_collection_id' => $this->collection->id,
+    ]);
+
+    if ($reference === 'expansion') {
+        $this->assertDatabaseHas('game_collection_expansion', [
+            'game_collection_id' => $foreign->id,
+            'expansion_id' => $expansion->id,
+        ]);
+    }
+})->with([
+    'juego en una coleccion ajena' => 'game',
+    'expansion en una coleccion ajena' => 'expansion',
+]);
