@@ -479,16 +479,25 @@ class BggController extends Controller
     Request $request,
     Game $game
   ): void {
-    $shared = DB::table('game_collection_game as gcg')
+    $userId = (int) $request->user()->id;
+
+    $sharedGame = DB::table('game_collection_game as gcg')
       ->join('game_collections as gc', 'gc.id', '=', 'gcg.game_collection_id')
       ->where('gcg.game_id', $game->id)
-      ->where('gc.created_by', '<>', $request->user()->id)
+      ->where('gc.created_by', '<>', $userId)
+      ->exists();
+
+    $sharedExpansion = DB::table('expansions as e')
+      ->join('game_collection_expansion as gce', 'gce.expansion_id', '=', 'e.id')
+      ->join('game_collections as gc', 'gc.id', '=', 'gce.game_collection_id')
+      ->where('e.game_id', $game->id)
+      ->where('gc.created_by', '<>', $userId)
       ->exists();
 
     abort_if(
-      $shared,
+      $sharedGame || $sharedExpansion,
       403,
-      'No puedes modificar un juego compartido con otra cuenta.'
+      'No puedes modificar un juego o sus expansiones compartidos con otra cuenta.'
     );
   }
 

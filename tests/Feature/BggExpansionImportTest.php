@@ -287,3 +287,34 @@ test('shared games cannot import BGG expansions', function ($existing) {
     expect(Expansion::query()->orderBy('id')->get()->toArray())
         ->toBe($before);
 })->with([false, true]);
+
+test('BGG expansion import is blocked when another account keeps an expansion', function () {
+    $foreign = GameCollection::create([
+        'created_by' => User::factory()->create()->id,
+        'name' => 'Colección ajena',
+    ]);
+
+    $expansion = $this->game->expansions()->create([
+        'name' => 'Matcha',
+        'is_active' => false,
+    ]);
+
+    $foreign->expansions()->attach($expansion);
+
+    $before = $expansion->fresh()->getAttributes();
+
+    $this->mock(BggService::class)
+        ->shouldNotReceive('expansionsForGame');
+
+    $this->actingAs($this->user)
+        ->post($this->url)
+        ->assertForbidden();
+
+    expect($expansion->fresh()->getAttributes())->toBe($before);
+
+    $this->assertDatabaseCount('expansions', 1);
+    $this->assertDatabaseHas('game_collection_expansion', [
+        'game_collection_id' => $foreign->id,
+        'expansion_id' => $expansion->id,
+    ]);
+});

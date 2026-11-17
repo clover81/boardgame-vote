@@ -211,3 +211,33 @@ test('shared games cannot be linked to BGG', function () {
 
     expect($this->game->fresh()->getAttributes())->toBe($before);
 });
+
+test('BGG linking is blocked when another account keeps only an expansion', function () {
+    $foreign = GameCollection::create([
+        'created_by' => User::factory()->create()->id,
+        'name' => 'Colección ajena',
+    ]);
+
+    $expansion = $this->game->expansions()->create([
+        'name' => 'Matcha',
+        'is_active' => true,
+    ]);
+
+    $foreign->expansions()->attach($expansion);
+
+    $before = $this->game->fresh()->getAttributes();
+
+    $this->mock(BggService::class)
+        ->shouldNotReceive('gameForLink');
+
+    $this->actingAs($this->user)
+        ->post($this->linkUrl)
+        ->assertForbidden();
+
+    expect($this->game->fresh()->getAttributes())->toBe($before);
+
+    $this->assertDatabaseHas('game_collection_expansion', [
+        'game_collection_id' => $foreign->id,
+        'expansion_id' => $expansion->id,
+    ]);
+});
