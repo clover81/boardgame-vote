@@ -683,7 +683,7 @@ watch(
 
                 <button
                     type="button"
-                    class="inline-flex w-full items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90 @min-[38rem]/collections:w-auto"
+                    class="inline-flex w-full items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:focus-visible:outline-[#CCFF00] @min-[38rem]/collections:w-auto"
                     ref="createCollectionButton"
                     :aria-expanded="showCreateForm"
                     :aria-disabled="form.processing"
@@ -743,7 +743,7 @@ watch(
                         :disabled="
                             form.processing
                         "
-                        class="rounded-xl bg-[#CCFF00] px-5 py-3 font-bold text-black transition hover:opacity-90 disabled:opacity-50"
+                        class="rounded-xl bg-[#CCFF00] px-5 py-3 font-bold text-black transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:focus-visible:outline-[#CCFF00] disabled:opacity-50"
                     >
                         {{
                             form.processing
@@ -915,7 +915,7 @@ watch(
                             <Link
                                 :href="`/friends/collections/${friendCollection.id}`"
                                 :aria-label="`Ver juegos de ${friendCollection.name}`"
-                                class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-[#5200FF] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#4000cc]"
+                                class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-[#5200FF] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#4000cc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:focus-visible:outline-[#CCFF00]"
                             >
                                 Ver juegos
                             </Link>
@@ -943,14 +943,14 @@ watch(
                         :href="publicCatalogPath"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="rounded-xl bg-[#5200FF] px-5 py-3 text-sm font-bold text-white transition hover:opacity-90"
+                        class="inline-flex min-h-11 items-center rounded-xl bg-[#5200FF] px-5 py-3 text-sm font-bold text-white transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:focus-visible:outline-[#CCFF00]"
                     >
                         Ver mi catálogo <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                     </a>
 
                     <button
                         type="button"
-                        class="rounded-xl border border-violet-300 bg-white px-5 py-3 text-sm font-bold text-[#5200FF] transition hover:bg-violet-100"
+                        class="inline-flex min-h-11 items-center rounded-xl border border-violet-300 bg-white px-5 py-3 text-sm font-bold text-[#5200FF] transition hover:bg-violet-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:focus-visible:outline-[#CCFF00]"
                         @click="copyCatalogLink"
                     >
                         {{ copiedCatalogLink

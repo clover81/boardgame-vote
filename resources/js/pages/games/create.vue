@@ -444,7 +444,7 @@ const importFromBgg = async () => {
 const existingGameError = ref<HTMLDivElement | null>(null);
 
 const addExistingToCollections = () => {
-    if (!existingImportedBggGame.value || bggBusy.value || !existingGameForm.collection_ids.length) {
+    if (!existingImportedBggGame.value || bggBusy.value || existingGameForm.processing || !existingGameForm.collection_ids.length) {
         return;
     }
 
@@ -464,7 +464,7 @@ const playerNumbers = [1, 2, 3, 4, 5, 6, 7, 8];
 const saveError = ref<HTMLDivElement | null>(null);
 
 const submit = () => {
-    if (bggBusy.value) return;
+    if (bggBusy.value || form.processing || existingGameForm.processing) return;
 
     // Los juegos existentes solo se asocian a nuestras colecciones.
     const existingGame = existingBggGame.value;
@@ -991,6 +991,7 @@ const submit = () => {
                             type="button"
                             :disabled="
                                 bggBusy ||
+                                existingGameForm.processing ||
                                 existingGameForm
                                     .collection_ids
                                     .length === 0
@@ -1454,7 +1455,7 @@ const submit = () => {
 
                 <button
                     type="submit"
-                    :disabled="bggBusy"
+                    :disabled="bggBusy || form.processing || existingGameForm.processing"
                     class="
                         w-full rounded-xl
                         bg-[#5200FF]
