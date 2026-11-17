@@ -555,6 +555,21 @@ const formatDate = (
         )
     );
 };
+// Admitir únicamente enlaces web externos válidos.
+const externalUrl = (url: string | null): string | undefined => {
+    if (!url) return undefined;
+
+    try {
+        const parsed = new URL(url);
+
+        return ['http:', 'https:'].includes(parsed.protocol)
+            ? parsed.href
+            : undefined;
+    } catch {
+        return undefined;
+    }
+};
+
 const hasRecordedVotes = computed(() => props.results.some(result => result.points > 0));
 </script>
 
@@ -656,7 +671,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
 
                     <div
                         v-else
-                        class="rounded-2xl bg-orange-100 p-5 text-orange-900 dark:bg-orange-950/30 dark:text-orange-200"
+                        class="rounded-2xl bg-orange-100 p-5 text-orange-900"
                     >
                         <p class="font-black">
                             🤝 Empate en primera posición
@@ -692,7 +707,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                 'bg-orange-100 text-orange-800':
                                     result.is_top_tie,
 
-                                'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200':
+                                'bg-zinc-100 text-zinc-700':
                                     !result.is_winner &&
                                     !result.is_top_tie,
                             }"
@@ -748,7 +763,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                 "
                                 class="mt-1 text-sm font-bold text-[#5200FF]"
                             >
-                                <BuildingComplexPlus class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" />
+                                <BuildingComplexPlus class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9]" :stroke-width="2" aria-hidden="true" />
                                 {{
                                     resultExpansion(result.candidate_id)?.name
                                 }}
@@ -1054,7 +1069,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                             v-if="candidate.expansion"
                             class="mx-3 mb-3 rounded-lg bg-violet-50 px-3 py-2 text-sm text-violet-900 sm:mx-4"
                         >
-                            <BuildingComplexPlus class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" /> Con expansión: <strong>{{ candidate.expansion.name }}</strong>
+                            <BuildingComplexPlus class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9]" :stroke-width="2" aria-hidden="true" /> Con expansión: <strong>{{ candidate.expansion.name }}</strong>
                         </p>
 
                         <div
@@ -1144,7 +1159,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                 <p v-else class="text-zinc-500">Este juego no tiene descripción breve.</p>
 
                                 <div class="rounded-xl bg-white p-3">
-                                    <p class="font-bold"><LibraryBig class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-violet-600 dark:text-violet-300" :stroke-width="2" aria-hidden="true" /> Historial registrado</p>
+                                    <p class="font-bold"><LibraryBig class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-violet-600" :stroke-width="2" aria-hidden="true" /> Historial registrado</p>
                                     <p class="mt-1 text-zinc-600">
                                         {{ candidate.history.total_plays }}
                                         {{ candidate.history.total_plays === 1 ? 'partida registrada' : 'partidas registradas' }}
@@ -1166,17 +1181,17 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                     </div>
                                 </div>
 
-                                <div v-if="candidate.game.bgg_url || candidate.game.youtube_url" class="flex flex-wrap gap-4">
+                                <div v-if="externalUrl(candidate.game.bgg_url) || externalUrl(candidate.game.youtube_url)" class="flex flex-wrap gap-4">
                                     <a
-                                        v-if="candidate.game.bgg_url"
-                                        :href="candidate.game.bgg_url"
+                                        v-if="externalUrl(candidate.game.bgg_url)"
+                                        :href="externalUrl(candidate.game.bgg_url)"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         class="font-bold text-[#5200FF] underline-offset-2 hover:underline"
                                     >BGG <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" /></a>
                                     <a
-                                        v-if="candidate.game.youtube_url"
-                                        :href="candidate.game.youtube_url"
+                                        v-if="externalUrl(candidate.game.youtube_url)"
+                                        :href="externalUrl(candidate.game.youtube_url)"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         class="font-bold text-[#5200FF] underline-offset-2 hover:underline inline-flex items-center justify-center gap-1.5"
