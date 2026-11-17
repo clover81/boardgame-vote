@@ -38,6 +38,8 @@ jobs:
         run: npm run types:check
 
       - name: Run Laravel tests
+        env:
+          BGG_API_TOKEN: ci-test-token
         run: php artisan test
 
       # Deuda técnica existente: se comprueba sin bloquear
