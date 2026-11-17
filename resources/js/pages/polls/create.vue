@@ -153,6 +153,43 @@ const form = useForm({
         >,
 });
 
+// Si Inertia reutiliza el componente al cambiar de juego,
+// reconstruir las selecciones propias de esa votación.
+watch(
+    () => props.parentPoll?.id ?? null,
+    () => {
+        const parent = props.parentPoll;
+
+        form.name = parent
+            ? `${parent.name.slice(0, 230)} · Juego 2`
+            : 'Partida';
+
+        form.parent_poll_id = parent?.id ?? null;
+        form.create_second_game = false;
+        form.ranking_slots = null;
+
+        form.collection_ids = parent
+            ? parent.collection_ids.filter(id =>
+                props.collections.some(collection => collection.id === id)
+            )
+            : props.collections
+                .filter(collection => collection.is_default)
+                .map(collection => collection.id);
+
+        form.player_ids = parent
+            ? parent.player_ids.filter(id =>
+                props.players.some(player => player.id === id)
+            )
+            : [];
+
+        // Nunca heredar candidatos, notas ni expansiones.
+        form.candidate_ids = [];
+        form.candidate_notes = {};
+        form.candidate_expansion_ids = {};
+        form.clearErrors();
+    }
+);
+
 const togglePlayer = (playerId: number) => {
     const ids = form.player_ids.map(Number);
 
@@ -989,7 +1026,13 @@ const submit = () => {
         form.create_second_game = false;
     }
 
-    form.post('/polls', {
+    form.transform(data => ({
+        ...data,
+        parent_poll_id: props.parentPoll?.id ?? null,
+        create_second_game: props.parentPoll
+            ? false
+            : data.create_second_game,
+    })).post('/polls', {
         preserveState: 'errors',
         onError: async () => {
             await nextTick();
