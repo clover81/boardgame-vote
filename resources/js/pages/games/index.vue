@@ -78,10 +78,7 @@ const props = defineProps<{
 
 const search = ref(props.filters.q);
 // En móvil, los filtros secundarios se pueden plegar para ver los juegos antes.
-const showMobileFilters = ref(Boolean(
-    props.filters.players || props.filters.mode || props.filters.duration ||
-    props.filters.difficulty || props.selected_collection_id
-));
+const showMobileFilters = ref(false);
 const gameMode = ref(props.filters.mode ?? '');
 const sortOrder = ref(props.filters.sort ?? 'name');
 const playerCount = ref<number | ''>(props.filters.players ?? '');
@@ -141,6 +138,25 @@ const scheduleSearch = () => {
 };
 
 const gamesHeading = ref<HTMLHeadingElement | null>(null);
+
+const revealGames = async () => {
+    showMobileFilters.value = false;
+    await nextTick();
+
+    const results = document.getElementById('games-results');
+    if (!results) return;
+
+    const reduceMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)'
+    ).matches;
+
+    results.scrollIntoView({
+        behavior: reduceMotion ? 'auto' : 'smooth',
+        block: 'start',
+    });
+
+    results.focus({ preventScroll: true });
+};
 
 const clearFilters = async () => {
     search.value = '';
@@ -362,6 +378,18 @@ const formatDate = (date: string | null): string => {
                         </div>
                     </div>
                 </div>
+
+                <button
+                    v-if="showMobileFilters"
+                    type="button"
+                    class="mt-4 flex min-h-11 w-full items-center justify-center rounded-xl bg-[#5200FF] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#4000cc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] @min-[40rem]/games:hidden"
+                    @click="revealGames"
+                >
+                    Ver {{ games.length }}
+                    {{ games.length === 1 ? 'juego' : 'juegos' }}
+                    <span aria-hidden="true">↓</span>
+                </button>
+
                 <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 pt-3 dark:border-zinc-800">
                     <div class="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
                         <p class="text-sm text-zinc-500 dark:text-zinc-400" aria-live="polite" aria-atomic="true">
@@ -411,7 +439,9 @@ const formatDate = (date: string | null): string => {
 
             <div
                 v-if="games.length"
-                class="grid gap-5 @min-[32rem]/games:grid-cols-2 @min-[50rem]/games:grid-cols-3"
+                id="games-results"
+                tabindex="-1"
+                class="grid gap-5 scroll-mt-4 @min-[32rem]/games:grid-cols-2 @min-[50rem]/games:grid-cols-3"
             >
                 <article
                     v-for="game in games"
@@ -658,7 +688,9 @@ const formatDate = (date: string | null): string => {
 
             <div
                 v-else-if="hasActiveFilters"
-                class="rounded-2xl border border-dashed border-zinc-300 p-10 text-center dark:border-zinc-700"
+                id="games-results"
+                tabindex="-1"
+                class="rounded-2xl scroll-mt-4 border border-dashed border-zinc-300 p-10 text-center dark:border-zinc-700"
             >
                 <p
                     class="text-lg font-black text-zinc-900 dark:text-zinc-100"
@@ -691,7 +723,9 @@ const formatDate = (date: string | null): string => {
 
             <div
                 v-else
-                class="rounded-2xl border border-dashed border-zinc-300 p-10 text-center text-zinc-500 dark:border-zinc-700 dark:text-zinc-400"
+                id="games-results"
+                tabindex="-1"
+                class="rounded-2xl scroll-mt-4 border border-dashed border-zinc-300 p-10 text-center text-zinc-500 dark:border-zinc-700 dark:text-zinc-400"
             >
                 Todavía no hay juegos en tus colecciones.
             </div>
