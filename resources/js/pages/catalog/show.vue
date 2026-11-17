@@ -181,7 +181,7 @@ const externalUrl = (url: string | null): string | undefined => {
             <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-8 sm:py-4">
                 <Link
                     :href="catalogUrl"
-                    class="inline-flex items-center gap-2 text-sm font-semibold text-zinc-300 transition hover:text-[#CCFF00]"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-zinc-300 transition hover:text-[#CCFF00] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CCFF00]"
                 >
                     ← Volver al catálogo
                 </Link>
@@ -333,7 +333,7 @@ const externalUrl = (url: string | null): string | undefined => {
                         <button
                             v-if="!catalogBasePath"
                             type="button"
-                            class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#181424] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#5200FF] sm:w-auto"
+                            class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#181424] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] sm:w-auto"
                             @click="shareGame"
                         >
                             <span aria-hidden="true"><ChainIcon class="inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" /></span>
@@ -406,7 +406,7 @@ const externalUrl = (url: string | null): string | undefined => {
                     <button
                         v-if="descriptionIsClipped || showFullDescription"
                         type="button"
-                        class="mt-4 rounded-xl bg-violet-50 px-4 py-2 text-sm font-bold text-[#5200FF] transition hover:bg-violet-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                        class="mt-4 inline-flex min-h-11 items-center rounded-xl bg-violet-50 px-4 py-2 text-sm font-bold text-[#5200FF] transition hover:bg-violet-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                         :aria-expanded="showFullDescription"
                         aria-controls="catalog-game-description"
                         @click="showFullDescription = !showFullDescription"
@@ -512,7 +512,7 @@ const externalUrl = (url: string | null): string | undefined => {
             <div class="mt-12 text-center">
                 <Link
                     :href="catalogUrl"
-                    class="inline-flex rounded-xl bg-[#181424] px-7 py-3 font-bold text-white transition hover:bg-[#5200FF]"
+                    class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#181424] px-7 py-3 font-bold text-white transition hover:bg-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                 >
                     ← Seguir explorando juegos
                 </Link>
