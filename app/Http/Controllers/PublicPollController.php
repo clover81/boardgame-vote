@@ -115,6 +115,11 @@ class PublicPollController extends Controller
                                 ->where('position', 2)
                                 ->count();
 
+                        $thirdVotes =
+                            $candidate->votes
+                                ->where('position', 3)
+                                ->count();
+
                         return [
                             'candidate_id' =>
                                 $candidate->id,
@@ -136,8 +141,13 @@ class PublicPollController extends Controller
                             'second_votes' =>
                                 $secondVotes,
 
+                            'third_votes' =>
+                                $thirdVotes,
+
                             'points' =>
-                                $poll->votePoints($firstVotes, $secondVotes),
+                                $poll->votePoints(
+                                    $firstVotes, $secondVotes, $thirdVotes
+                                ),
                         ];
                     })
                     ->sort(function (
@@ -283,6 +293,7 @@ class PublicPollController extends Controller
                     $poll->status,
 
                     'single_choice' => (bool) $poll->single_choice,
+                    'ranking_slots' => $poll->ranking_slots,
                     'required_vote_count' => $poll->requiredVoteCount($poll->candidates->count()),
 
                     'has_clear_winner' =>
@@ -605,54 +616,71 @@ class PublicPollController extends Controller
             $validated = $request->validate([
                 'first_candidate_id' => ['required', 'integer'],
                 'second_candidate_id' => ['nullable', 'integer'],
+                'third_candidate_id' => ['nullable', 'integer'],
                 'single_choice' => ['sometimes', 'boolean'],
+                'ranking_slots' => ['sometimes', 'integer', 'between:1,3'],
             ]);
 
-            if (isset($validated['single_choice']) && (bool) $validated['single_choice'] !== $poll->single_choice) {
+            if (
+                isset($validated['single_choice']) &&
+                (bool) $validated['single_choice'] !== $poll->single_choice
+            ) {
                 return back()->withErrors([
-                    'vote' => 'Ha cambiado el modo de votación. Revisa las opciones y confirma de nuevo.',
+                    'vote' => 'Ha cambiado el modo de votación. Revisa y confirma de nuevo.',
                 ]);
             }
 
-            $firstCandidateId = (int) $validated['first_candidate_id'];
+            $requiredCount = $poll->requiredVoteCount($candidateIds->count());
 
-            abort_unless($candidateIds->contains($firstCandidateId), 422);
-
-            $needsSecondChoice = $poll->requiredVoteCount($candidateIds->count()) === 2;
-            $secondCandidateId = null;
-
-            if ($needsSecondChoice) {
-                if (empty($validated['second_candidate_id'])) {
-                    return back()->withErrors([
-                        'second_candidate_id' => 'Debes elegir una segunda opción.',
-                    ]);
-                }
-
-                $secondCandidateId = (int) $validated['second_candidate_id'];
-
-                abort_unless($candidateIds->contains($secondCandidateId), 422);
-
-                if ($firstCandidateId === $secondCandidateId) {
-                    return back()->withErrors([
-                        'second_candidate_id' => 'La primera y segunda opción deben ser distintas.',
-                    ]);
-                }
+            if (
+                isset($validated['ranking_slots']) &&
+                (int) $validated['ranking_slots'] !== $requiredCount
+            ) {
+                return back()->withErrors([
+                    'vote' => 'Ha cambiado el número de preferencias. Revisa tu voto.',
+                ]);
             }
 
-            // Si ya había votado, sustituimos sus votos.
+            $fields = [
+                1 => 'first_candidate_id',
+                2 => 'second_candidate_id',
+                3 => 'third_candidate_id',
+            ];
+
+            $selected = [];
+
+            for ($position = 1; $position <= $requiredCount; $position++) {
+                $field = $fields[$position];
+
+                if (empty($validated[$field])) {
+                    return back()->withErrors([
+                        $field => 'Debes seleccionar esta preferencia.',
+                    ]);
+                }
+
+                $candidateId = (int) $validated[$field];
+
+                abort_unless($candidateIds->contains($candidateId), 422);
+
+                if (in_array($candidateId, $selected, true)) {
+                    return back()->withErrors([
+                        $field => $position === 2
+                            ? 'La primera y segunda opción deben ser distintas.'
+                            : 'No puedes elegir dos veces el mismo juego.',
+                    ]);
+                }
+
+                $selected[] = $candidateId;
+            }
+
+            // Sustituye el voto anterior de forma atómica.
             $participant->votes()->delete();
 
-            $participant->votes()->create([
-                'poll_id' => $poll->id,
-                'poll_candidate_id' => $firstCandidateId,
-                'position' => 1,
-            ]);
-
-            if ($secondCandidateId !== null) {
+            foreach ($selected as $index => $candidateId) {
                 $participant->votes()->create([
                     'poll_id' => $poll->id,
-                    'poll_candidate_id' => $secondCandidateId,
-                    'position' => 2,
+                    'poll_candidate_id' => $candidateId,
+                    'position' => $index + 1,
                 ]);
             }
 

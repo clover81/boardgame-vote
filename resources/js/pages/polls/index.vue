@@ -40,6 +40,8 @@ interface Poll {
     token: string;
 
     status: PollStatus;
+    session_position: 1 | 2 | null;
+    linked_poll_id: number | null;
 
     participants_count: number;
     candidates_count: number;
@@ -448,6 +450,13 @@ const formatDate = (
                                 </h2>
 
                                 <span
+                                    v-if="poll.session_position"
+                                    class="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-black text-[#5200FF] dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-200"
+                                >
+                                    Juego {{ poll.session_position }} de 2
+                                </span>
+
+                                <span
                                     class="rounded-full px-3 py-1 text-xs font-black"
                                     :class="{
                                         'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300':
@@ -530,6 +539,14 @@ const formatDate = (
                                         ? 'Ver resultados'
                                         : 'Ver votación'
                                 }}
+                            </Link>
+
+                            <Link
+                                v-if="poll.linked_poll_id"
+                                :href="withPollListReturn(`/polls/${poll.linked_poll_id}`)"
+                                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-violet-300 px-4 py-2.5 text-center text-sm font-bold text-[#5200FF] transition hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-950"
+                            >
+                                {{ poll.session_position === 1 ? 'Ver juego 2' : 'Ver juego 1' }}
                             </Link>
 
                             <Link

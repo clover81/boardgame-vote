@@ -98,6 +98,7 @@ interface Result {
 
     first_votes: number;
     second_votes: number;
+    third_votes: number;
 
     points: number;
 
@@ -154,6 +155,15 @@ interface Poll {
 
     has_clear_winner: boolean;
     single_choice: boolean;
+    ranking_slots: number | null;
+
+    is_second_game: boolean;
+    can_add_second_game: boolean;
+    linked_poll: {
+        id: number;
+        name: string;
+        status: 'draft' | 'open' | 'closed';
+    } | null;
 
     participants_count: number;
     voted_participants_count: number;
@@ -245,7 +255,7 @@ const resultText = computed(() => {
     const tied = results.filter(result => result.is_top_tie);
 
     const score = (points: number) => {
-        const unit = props.poll.single_choice
+        const unit = props.poll.single_choice || props.poll.ranking_slots === 1
             ? (points === 1 ? 'voto' : 'votos')
             : (points === 1 ? 'punto' : 'puntos');
 
@@ -557,6 +567,32 @@ const modeLabel = (
                     </h1>
 
                     <div
+                        v-if="poll.linked_poll || poll.can_add_second_game"
+                        class="mt-4 rounded-xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-900 dark:bg-violet-950/20"
+                    >
+                        <p class="text-sm font-bold text-[#5200FF] dark:text-[#CCFF00]">
+                            {{ poll.is_second_game ? 'Juego 2 de 2' : poll.linked_poll ? 'Juego 1 de 2' : 'Sesión de un juego' }}
+                        </p>
+
+                        <Link
+                            v-if="poll.linked_poll"
+                            :href="withPollReturn(`/polls/${poll.linked_poll.id}`)"
+                            class="mt-2 inline-block font-semibold text-[#5200FF] underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-[#CCFF00]"
+                        >
+                            {{ poll.is_second_game ? 'Ver primera votación' : 'Ver segunda votación' }}:
+                            {{ poll.linked_poll.name }}
+                        </Link>
+
+                        <Link
+                            v-else-if="poll.can_add_second_game"
+                            :href="`/polls/create?parent_poll_id=${poll.id}`"
+                            class="mt-2 inline-block font-semibold text-[#5200FF] underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-[#CCFF00]"
+                        >
+                            + Preparar un segundo juego
+                        </Link>
+                    </div>
+
+                    <div
                         class="mt-3 flex flex-wrap gap-3"
                     >
                         <!-- ESTADO -->
@@ -605,9 +641,11 @@ const modeLabel = (
                             v-if="poll.status !== 'closed'"
                             class="rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-800 dark:bg-violet-950 dark:text-violet-200"
                         >
-                            {{ poll.required_vote_count === 1
-                                ? 'Un voto por persona'
-                                : 'Primera y segunda opción' }}
+                            {{ poll.required_vote_count === 3
+                                ? 'Primera, segunda y tercera opción'
+                                : poll.required_vote_count === 1
+                                    ? 'Un voto por persona'
+                                    : 'Primera y segunda opción' }}
                         </span>
                         <button
                             v-if="canChangeVotingMode"
@@ -1251,7 +1289,13 @@ const modeLabel = (
                     <p
                         class="mt-2 text-sm text-zinc-500 dark:text-zinc-400"
                     >
-                        <template v-if="poll.single_choice">Un voto por persona.</template>
+                        <template v-if="poll.required_vote_count === 3">
+                            Primera opción: 3 puntos. Segunda: 2. Tercera: 1.
+                            En caso de empate se priorizan las primeras opciones.
+                        </template>
+                        <template v-else-if="poll.single_choice || poll.ranking_slots === 1">
+                            Un voto por persona.
+                        </template>
                         <template v-else>
                             Primera opción: 2 puntos. Segunda opción: 1 punto.
                             En caso de empate se priorizan las primeras opciones.
@@ -1426,12 +1470,15 @@ const modeLabel = (
                                     result.second_votes
                                 }}
                                 segundas
+                                <template v-if="poll.required_vote_count === 3">
+                                    · 🥉 {{ result.third_votes }} terceras
+                                </template>
                             </p>
 
                             <!-- En móvil, los puntos acompañan al título en vez de ocupar otra fila. -->
                             <p class="mt-1 flex items-baseline gap-1.5 sm:hidden">
                                 <span class="text-xl font-black text-[#5200FF] dark:text-[#CCFF00]">{{ result.points }}</span>
-                                <span class="text-xs font-semibold text-zinc-500 dark:text-zinc-400">{{ poll.single_choice ? (result.points === 1 ? 'voto' : 'votos') : 'puntos' }}</span>
+                                <span class="text-xs font-semibold text-zinc-500 dark:text-zinc-400">{{ poll.single_choice || poll.ranking_slots === 1 ? (result.points === 1 ? 'voto' : 'votos') : 'puntos' }}</span>
                             </p>
                         </div>
 
@@ -1451,7 +1498,7 @@ const modeLabel = (
                             <p
                                 class="text-xs font-semibold text-zinc-500"
                             >
-                                {{ poll.single_choice ? (result.points === 1 ? 'voto' : 'votos') : 'puntos' }}
+                                {{ poll.single_choice || poll.ranking_slots === 1 ? (result.points === 1 ? 'voto' : 'votos') : 'puntos' }}
                             </p>
                         </div>
                     </article>

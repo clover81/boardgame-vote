@@ -84,6 +84,13 @@ const props = defineProps<{
     collections: Collection[];
 
     games: Game[];
+
+    parentPoll?: {
+        id: number;
+        name: string;
+        player_ids: number[];
+        collection_ids: number[];
+    } | null;
 }>();
 
 // Si una portada externa falla, mostramos la alternativa en todas sus apariciones.
@@ -95,26 +102,32 @@ const markCoverAsBroken = (gameId: number) => {
     }
 };
 
-const defaultCollectionIds =
-    props.collections
-        .filter(
-            (collection) =>
-                collection.is_default
-        )
-        .map(
-            (collection) =>
-                collection.id
-        );
+const defaultCollectionIds = props.parentPoll
+    ? props.parentPoll.collection_ids.filter(id =>
+        props.collections.some(collection => collection.id === id)
+    )
+    : props.collections.filter(collection => collection.is_default)
+        .map(collection => collection.id);
+
+const defaultPlayerIds = props.parentPoll
+    ? props.parentPoll.player_ids.filter(id =>
+        props.players.some(player => player.id === id)
+    )
+    : [];
 
 const form = useForm({
-    name: 'Partida',
-    single_choice: false,
+    name: props.parentPoll
+        ? `${props.parentPoll.name.slice(0, 230)} · Juego 2`
+        : 'Partida',
+    ranking_slots: null as number | null,
+    create_second_game: false,
+    parent_poll_id: props.parentPoll?.id ?? null,
 
     collection_ids:
         defaultCollectionIds,
 
     player_ids:
-        [] as number[],
+        [...defaultPlayerIds] as number[],
 
     candidate_ids:
         [] as number[],
@@ -173,6 +186,46 @@ const selectedCandidateGames = computed(() => {
         form.candidate_ids.includes(game.id)
     );
 });
+
+const suggestedRankingSlots = computed(() => {
+    const candidates = form.candidate_ids.length;
+    const participants = form.player_ids.length;
+
+    if (candidates <= 2) return 1;
+    if (candidates >= 6 && participants >= 4) return 3;
+    return 2;
+});
+
+const maximumRankingSlots = computed(() =>
+    Math.max(1, Math.min(3, form.candidate_ids.length - 1))
+);
+
+const effectiveRankingSlots = computed(() =>
+    form.ranking_slots ?? suggestedRankingSlots.value
+);
+
+const rankingDescription = computed(() => {
+    switch (effectiveRankingSlots.value) {
+        case 1:
+            return 'Una preferencia: 1 punto.';
+        case 2:
+            return 'Dos preferencias: 2 y 1 puntos.';
+        default:
+            return 'Tres preferencias: 3, 2 y 1 puntos.';
+    }
+});
+
+watch(
+    () => form.candidate_ids.length,
+    () => {
+        if (
+            form.ranking_slots !== null &&
+            form.ranking_slots > maximumRankingSlots.value
+        ) {
+            form.ranking_slots = null;
+        }
+    }
+);
 
 const canCreatePoll = computed(() => {
     return (
@@ -923,7 +976,7 @@ const formatDate = (
 const saveError = ref<HTMLDivElement | null>(null);
 
 const submit = () => {
-    if (!canCreatePoll.value) {
+    if (form.processing || !canCreatePoll.value) {
         return;
     }
 
@@ -937,7 +990,7 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Nueva votación" />
+    <Head :title="parentPoll ? 'Segundo juego' : 'Nueva votación'" />
 
     <AppLayout>
         <div
@@ -945,10 +998,10 @@ const submit = () => {
             class="mx-auto box-border w-full min-w-0 max-w-7xl px-4 py-6 sm:px-6"
         >
             <Link
-                :href="returnUrl"
+                :href="parentPoll ? `/polls/${parentPoll.id}` : returnUrl"
                 class="text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
             >
-                {{ returnUrl.startsWith('/games') ? '← Volver a la colección' : '← Volver a votaciones' }}
+                {{ parentPoll ? '← Volver al primer juego' : returnUrl.startsWith('/games') ? '← Volver a la colección' : '← Volver a votaciones' }}
             </Link>
 
             <!-- CABECERA -->
@@ -957,15 +1010,13 @@ const submit = () => {
                 <h1
                     class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl"
                 >
-                    Nueva votación
+                    {{ parentPoll ? 'Segundo juego de la sesión' : 'Nueva votación' }}
                 </h1>
 
-                <p
-                    class="mt-2 text-zinc-500 dark:text-zinc-400"
-                >
-                    Selecciona quién juega y
-                    te mostraremos los juegos
-                    ideales.
+                <p class="mt-2 text-zinc-500 dark:text-zinc-400">
+                    {{ parentPoll
+                        ? 'Puedes cambiar jugadores, colecciones y juegos. Los votos y resultados serán independientes.'
+                        : 'Elige si vais a jugar uno o dos juegos y prepara los participantes y candidatos.' }}
                 </p>
             </div>
 
@@ -1008,6 +1059,64 @@ const submit = () => {
                 <section
                     class="box-border w-full min-w-0 scroll-mt-24 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:p-6"
                 >
+                    <div
+                        v-if="parentPoll"
+                        class="mb-5 rounded-xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-900 dark:bg-violet-950/20"
+                    >
+                        <p class="font-bold text-[#5200FF] dark:text-[#CCFF00]">
+                            Juego 2 de 2
+                        </p>
+                        <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                            La primera votación, «{{ parentPoll.name }}», ya está creada como borrador.
+                            Hemos preseleccionado sus jugadores y colecciones;
+                            puedes modificarlos para este segundo juego.
+                        </p>
+                        <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+                            Los candidatos se eligen de nuevo y no se comparten los votos.
+                        </p>
+                    </div>
+
+                    <fieldset v-else class="mb-5">
+                        <legend class="font-bold text-zinc-900 dark:text-zinc-100">
+                            ¿Cuántos juegos vais a jugar?
+                        </legend>
+                        <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                            <label
+                                class="flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border p-4 transition-colors"
+                                :class="!form.create_second_game
+                                    ? 'border-[#5200FF] bg-violet-50 dark:bg-violet-950/30'
+                                    : 'border-zinc-300 dark:border-zinc-700'"
+                            >
+                                <input
+                                    v-model="form.create_second_game"
+                                    type="radio"
+                                    :value="false"
+                                    class="size-5 accent-[#5200FF]"
+                                />
+                                <span class="font-bold">1 juego</span>
+                            </label>
+                            <label
+                                class="flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border p-4 transition-colors"
+                                :class="form.create_second_game
+                                    ? 'border-[#5200FF] bg-violet-50 dark:bg-violet-950/30'
+                                    : 'border-zinc-300 dark:border-zinc-700'"
+                            >
+                                <input
+                                    v-model="form.create_second_game"
+                                    type="radio"
+                                    :value="true"
+                                    class="size-5 accent-[#5200FF]"
+                                />
+                                <span class="font-bold">2 juegos</span>
+                            </label>
+                        </div>
+                        <p class="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+                            {{ form.create_second_game
+                                ? 'Primero prepararás el juego 1. Después elegirás participantes y candidatos para el juego 2.'
+                                : 'Crearás una única votación.' }}
+                        </p>
+                    </fieldset>
+
                     <label
                         class="mb-2 block font-semibold"
                     >
@@ -1023,18 +1132,49 @@ const submit = () => {
 
                     <InputError :message="form.errors.name" />
 
-                    <label for="poll-single-choice" class="mt-4 block font-semibold">
-                        Modo de votación
-                    </label>
-                    <select
-                        id="poll-single-choice"
-                        v-model="form.single_choice"
-                        class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900"
-                    >
-                        <option :value="false">Primera y segunda opción</option>
-                        <option :value="true">Un voto por persona</option>
-                    </select>
-                    <InputError :message="form.errors.single_choice" />
+                    <div class="mt-5 rounded-xl border border-violet-200 p-4 dark:border-violet-900">
+                        <label for="poll-ranking-slots" class="block font-bold">
+                            Sistema de puntuación
+                        </label>
+
+                        <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                            Se recomienda automáticamente según el número de
+                            participantes y juegos candidatos.
+                        </p>
+
+                        <select
+                            id="poll-ranking-slots"
+                            v-model="form.ranking_slots"
+                            class="mt-3 min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                        >
+                            <option :value="null">Automático (recomendado)</option>
+                            <option :value="1">Una preferencia · 1 punto</option>
+                            <option :value="2" :disabled="maximumRankingSlots < 2">
+                                Dos preferencias · 2 y 1 puntos
+                            </option>
+                            <option :value="3" :disabled="maximumRankingSlots < 3">
+                                Tres preferencias · 3, 2 y 1 puntos
+                            </option>
+                        </select>
+
+                        <p
+                            class="mt-3 text-sm font-semibold text-[#5200FF] dark:text-[#CCFF00]"
+                            role="status"
+                        >
+                            {{ form.ranking_slots === null
+                                ? 'Sistema recomendado: '
+                                : 'Sistema personalizado: ' }}
+                            {{ rankingDescription }}
+                        </p>
+
+                        <p class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                            {{ form.player_ids.length }} participantes ·
+                            {{ form.candidate_ids.length }} juegos candidatos.
+                            La recomendación se actualiza mientras los seleccionas.
+                        </p>
+
+                        <InputError :message="form.errors.ranking_slots" />
+                    </div>
                 </section>
 
                 <!-- ================================================== -->
@@ -2165,11 +2305,20 @@ const submit = () => {
 
                     <!-- RESUMEN -->
 
-                    <p class="mt-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                        Modo de votación:
-                        {{ form.single_choice || form.candidate_ids.length === 1
-                            ? 'Un voto por persona'
-                            : 'Primera y segunda opción' }}
+                    <p class="mt-4 text-sm font-semibold text-[#5200FF] dark:text-[#CCFF00]">
+                        {{ parentPoll
+                            ? 'Juego 2 de 2 · Votación independiente'
+                            : form.create_second_game
+                                ? 'Juego 1 de 2 · Después configurarás el segundo'
+                                : 'Sesión de un juego' }}
+                    </p>
+
+                    <p class="mt-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                        Puntuación:
+                        {{ rankingDescription }}
+                        <span v-if="form.ranking_slots === null">
+                            (automática)
+                        </span>
                     </p>
 
                     <div
@@ -2368,15 +2517,22 @@ const submit = () => {
                     {{
                         form.processing
                             ? 'Creando votación...'
-                            : 'Crear votación'
+                            : parentPoll
+                                ? 'Crear segundo juego'
+                                : form.create_second_game
+                                    ? 'Continuar al segundo juego'
+                                    : 'Crear votación'
                     }}
                 </button>
 
                 <p
                     class="text-center text-sm text-zinc-500 dark:text-zinc-400"
                 >
-                    Se creará como borrador para que puedas
-                    revisarla antes de compartirla con el grupo.
+                    {{ parentPoll
+                        ? 'La segunda votación se guardará como borrador, con un enlace de voto propio.'
+                        : form.create_second_game
+                            ? 'Se guardará el primer juego como borrador y podrás configurar el segundo.'
+                            : 'Se creará como borrador antes de compartirla con el grupo.' }}
                 </p>
             </form>
 

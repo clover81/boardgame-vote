@@ -142,3 +142,39 @@ test('an account without polls sees an empty list', function () {
 test('the poll index requires authentication', function () {
     $this->get(route('polls.index'))->assertRedirect(route('login'));
 });
+
+test('el listado identifica las dos votaciones vinculadas', function () {
+    $first = Poll::create([
+        'created_by' => $this->user->id,
+        'name' => 'Sesión del sábado',
+        'token' => 'SESSIONFIRST',
+        'status' => 'draft',
+        'ranking_slots' => 3,
+    ]);
+
+    $second = Poll::create([
+        'created_by' => $this->user->id,
+        'name' => 'Sesión del sábado · Juego 2',
+        'token' => 'SESSIONSECOND',
+        'status' => 'draft',
+        'parent_poll_id' => $first->id,
+        'ranking_slots' => 2,
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->get(route('polls.index'))
+        ->assertOk();
+
+    $rows = collect($response->inertiaProps('polls'));
+
+    $firstRow = $rows->firstWhere('id', $first->id);
+    $secondRow = $rows->firstWhere('id', $second->id);
+    $legacyRow = $rows->firstWhere('id', $this->recordedPoll->id);
+
+    expect($firstRow['session_position'])->toBe(1)
+        ->and($firstRow['linked_poll_id'])->toBe($second->id)
+        ->and($secondRow['session_position'])->toBe(2)
+        ->and($secondRow['linked_poll_id'])->toBe($first->id)
+        ->and($legacyRow['session_position'])->toBeNull()
+        ->and($legacyRow['linked_poll_id'])->toBeNull();
+});

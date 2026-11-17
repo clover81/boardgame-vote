@@ -311,11 +311,16 @@ class PlayController extends Controller
             ->map(function ($candidate) use ($poll) {
                 $firstVotes = $candidate->votes->where('position', 1)->count();
                 $secondVotes = $candidate->votes->where('position', 2)->count();
+                $thirdVotes = $candidate->votes->where('position', 3)->count();
 
                 return [
                     'candidate' => $candidate,
                     'first_votes' => $firstVotes,
-                    'points' => $poll->votePoints($firstVotes, $secondVotes),
+                    'points' => $poll->votePoints(
+                        $firstVotes,
+                        $secondVotes,
+                        $thirdVotes
+                    ),
                 ];
             })
             ->sort(function (array $a, array $b) {

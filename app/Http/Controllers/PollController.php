@@ -51,6 +51,9 @@ class PollController extends Controller
             ->with([
                 'gameCollections' => fn ($query) => $query
                     ->where('created_by', $userId),
+                'secondGamePoll' => fn ($query) => $query
+                    ->where('created_by', $userId)
+                    ->select(['id', 'parent_poll_id']),
             ])
             ->when($collectionId, fn ($query, $collectionId) => $query
                 ->whereHas('gameCollections', fn ($collectionQuery) => $collectionQuery
@@ -73,6 +76,12 @@ class PollController extends Controller
             'name' => $poll->name,
             'token' => $poll->token,
             'status' => $poll->status,
+            'session_position' => $poll->parent_poll_id !== null
+                ? 2
+                : ($poll->secondGamePoll !== null ? 1 : null),
+            'linked_poll_id' => $poll->parent_poll_id !== null
+                ? (int) $poll->parent_poll_id
+                : $poll->secondGamePoll?->id,
             'participants_count' => $poll->participants_count,
             'candidates_count' => $poll->candidates_count,
             'has_registered_play' => in_array($poll->id, $playedPollIds, true),
@@ -106,6 +115,24 @@ class PollController extends Controller
     {
         $userId =
             request()->user()->id;
+
+        $parentPoll = null;
+        $parentPollId = request()->integer('parent_poll_id');
+
+        if ($parentPollId > 0) {
+            $parentPoll = Poll::query()
+                ->whereKey($parentPollId)
+                ->where('created_by', $userId)
+                ->firstOrFail();
+
+            abort_unless(
+                $parentPoll->parent_poll_id === null
+                && $parentPoll->status === 'draft'
+                && $parentPoll->secondGamePoll()->doesntExist(),
+                409,
+                'Esta sesión no admite una segunda votación nueva.'
+            );
+        }
 
         /*
     |--------------------------------------------------------------------------
@@ -328,6 +355,20 @@ class PollController extends Controller
 
                 'games' =>
                 $games,
+
+                'parentPoll' => $parentPoll
+                    ? [
+                        'id' => $parentPoll->id,
+                        'name' => $parentPoll->name,
+                        'player_ids' => $parentPoll->participants()
+                            ->pluck('player_id')
+                            ->filter()
+                            ->values(),
+                        'collection_ids' => $parentPoll->gameCollections()
+                            ->pluck('game_collections.id')
+                            ->values(),
+                    ]
+                    : null,
             ]
         );
     }
@@ -352,6 +393,11 @@ class PollController extends Controller
                 ],
 
                 'single_choice' => ['sometimes', 'boolean'],
+                'ranking_slots' => ['nullable', 'integer', 'between:1,3'],
+                'create_second_game' => ['sometimes', 'boolean'],
+                'parent_poll_id' => [
+                    'nullable', 'integer', 'exists:polls,id',
+                ],
 
                 'collection_ids' => [
                     'required',
@@ -618,15 +664,72 @@ class PollController extends Controller
 
         /*
          * Todo validado.
+         * Cada juego es una votación independiente.
          */
+        $parentPollId = isset($validated['parent_poll_id'])
+            ? (int) $validated['parent_poll_id']
+            : null;
+
+        if ($parentPollId !== null && !empty($validated['create_second_game'])) {
+            throw ValidationException::withMessages([
+                'parent_poll_id' => 'Una sesión admite como máximo dos votaciones.',
+            ]);
+        }
+
+        $suggestedSlots = Poll::suggestedRankingSlots(
+            $playerIds->count(),
+            $candidateIds->count()
+        );
+
+        // Evitar puntuar todos los juegos cuando hay varios.
+        $maximumSlots = max(
+            1,
+            min(3, $candidateIds->count() - 1)
+        );
+
+        $rankingSlots = isset($validated['ranking_slots'])
+            ? (int) $validated['ranking_slots']
+            : $suggestedSlots;
+
+        if ($rankingSlots > $maximumSlots) {
+            throw ValidationException::withMessages([
+                'ranking_slots' =>
+                    'El número de preferencias es demasiado alto para los juegos candidatos.',
+            ]);
+        }
+
         $poll = DB::transaction(
             function () use (
                 $validated,
                 $userId,
                 $ownedCollectionIds,
                 $playerIds,
-                $candidateIds
+                $candidateIds,
+                $parentPollId,
+                $rankingSlots
             ) {
+                if ($parentPollId !== null) {
+                    $parent = Poll::query()
+                        ->lockForUpdate()
+                        ->findOrFail($parentPollId);
+
+                    abort_unless(
+                        (int) $parent->created_by === $userId,
+                        403
+                    );
+
+                    if (
+                        $parent->parent_poll_id !== null ||
+                        $parent->status !== 'draft' ||
+                        $parent->secondGamePoll()->exists()
+                    ) {
+                        throw ValidationException::withMessages([
+                            'parent_poll_id' =>
+                                'La segunda votación ya existe o la primera no está en borrador.',
+                        ]);
+                    }
+                }
+
                 do {
                     $token =
                         Str::upper(
@@ -655,7 +758,9 @@ class PollController extends Controller
                         'status' =>
                             'draft',
 
-                        'single_choice' => $validated['single_choice'] ?? false,
+                        'single_choice' => $rankingSlots === 1,
+                        'ranking_slots' => $rankingSlots,
+                        'parent_poll_id' => $parentPollId,
                     ]);
 
                 /*
@@ -736,6 +841,15 @@ class PollController extends Controller
                 return $poll;
             }
         );
+
+        if ($parentPollId === null && !empty($validated['create_second_game'])) {
+            return redirect()
+                ->route('polls.create', ['parent_poll_id' => $poll->id])
+                ->with(
+                    'success',
+                    'Primer juego preparado. Configura ahora la segunda votación.'
+                );
+        }
 
         return redirect()
             ->route(
@@ -846,6 +960,7 @@ class PollController extends Controller
                 ->map(function ($candidate) use ($poll) {
                     $firstVotes = $candidate->votes->where('position', 1)->count();
                     $secondVotes = $candidate->votes->where('position', 2)->count();
+                    $thirdVotes = $candidate->votes->where('position', 3)->count();
 
                     return [
                         'candidate_id' => $candidate->id,
@@ -856,7 +971,10 @@ class PollController extends Controller
                         ],
                         'first_votes' => $firstVotes,
                         'second_votes' => $secondVotes,
-                        'points' => $poll->votePoints($firstVotes, $secondVotes),
+                        'third_votes' => $thirdVotes,
+                        'points' => $poll->votePoints(
+                            $firstVotes, $secondVotes, $thirdVotes
+                        ),
                     ];
                 })
                 // El nombre estabiliza el orden visual; no decide el ganador.
@@ -921,6 +1039,15 @@ class PollController extends Controller
         $candidateGameIds = $poll->candidates->pluck('game_id');
         $registeredPlay = $poll->play;
 
+        $linkedPoll = $poll->parent_poll_id !== null
+            ? Poll::query()
+                ->where('created_by', $poll->created_by)
+                ->find($poll->parent_poll_id)
+            : Poll::query()
+                ->where('created_by', $poll->created_by)
+                ->where('parent_poll_id', $poll->id)
+                ->first();
+
         /*
     |--------------------------------------------------------------------------
     | Vista
@@ -951,7 +1078,8 @@ class PollController extends Controller
             'polls/show',
             [
                 'canAddCandidates' => $canAddCandidates,
-                'canChangeVotingMode' => $canAddCandidates,
+                'canChangeVotingMode' => $canAddCandidates
+                    && $poll->ranking_slots === null,
                 'availableGames' => $availableGames,
                 'poll' => [
                     'id' =>
@@ -965,6 +1093,21 @@ class PollController extends Controller
 
                     'status' =>
                     $poll->status,
+
+                    'is_second_game' => $poll->parent_poll_id !== null,
+
+                    'linked_poll' => $linkedPoll
+                        ? [
+                            'id' => $linkedPoll->id,
+                            'name' => $linkedPoll->name,
+                            'status' => $linkedPoll->status,
+                        ]
+                        : null,
+
+                    'can_add_second_game' =>
+                        $poll->parent_poll_id === null
+                        && $poll->status === 'draft'
+                        && $linkedPoll === null,
 
                     'participants_count' =>
                     $poll
@@ -981,6 +1124,7 @@ class PollController extends Controller
                     $candidateCount,
 
                     'single_choice' => (bool) $poll->single_choice,
+                    'ranking_slots' => $poll->ranking_slots,
 
                     'required_vote_count' =>
                     $requiredVoteCount,
@@ -1202,6 +1346,9 @@ class PollController extends Controller
     public function updateVotingMode(Request $request, Poll $poll): RedirectResponse
     {
         abort_unless((int) $poll->created_by === (int) $request->user()->id, 403);
+        abort_if($poll->ranking_slots !== null, 409,
+            'El sistema nuevo de puntuación no utiliza el selector antiguo.');
+
         $validated = $request->validate(['single_choice' => ['required', 'boolean']]);
 
         return DB::transaction(function () use ($poll, $validated): RedirectResponse {

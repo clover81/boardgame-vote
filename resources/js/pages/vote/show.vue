@@ -109,6 +109,7 @@ interface Result {
 
     first_votes: number;
     second_votes: number;
+    third_votes: number;
 
     points: number;
 
@@ -129,6 +130,7 @@ interface Poll {
 
     has_clear_winner: boolean;
     single_choice: boolean;
+    ranking_slots: number | null;
     required_vote_count: number;
 
     participants: Participant[];
@@ -271,6 +273,12 @@ const selectedSecondGame = computed(() => {
     )?.game ?? null;
 });
 
+const selectedThirdGame = computed(() =>
+    props.poll.candidates.find(
+        candidate => candidate.id === form.third_candidate_id
+    )?.game ?? null
+);
+
 const hasPreviousVote = computed(() => {
     return (selectedParticipant.value?.votes.length ?? 0) >= requiredVoteCount.value;
 });
@@ -290,36 +298,55 @@ const form = useForm({
 
     second_candidate_id:
         null as number | null,
-});
 
-const needsSecondChoice = computed(() => props.poll.required_vote_count === 2);
-
-watch(needsSecondChoice, (required) => {
-    if (!required) form.second_candidate_id = null;
-});
-
-const canSubmit = computed(() => {
-    if (
-        form.participant_id === null ||
-        form.first_candidate_id === null
-    ) {
-        return false;
-    }
-
-    if (!needsSecondChoice.value) {
-        return true;
-    }
-
-    return (
-        form.second_candidate_id !== null &&
-        form.second_candidate_id !==
-            form.first_candidate_id
-    );
+    third_candidate_id:
+        null as number | null,
 });
 
 const requiredVoteCount = computed(
-    () => needsSecondChoice.value ? 2 : 1
+    () => props.poll.required_vote_count
 );
+const needsSecondChoice = computed(() => requiredVoteCount.value >= 2);
+const needsThirdChoice = computed(() => requiredVoteCount.value === 3);
+
+watch(requiredVoteCount, count => {
+    if (count < 2) form.second_candidate_id = null;
+    if (count < 3) form.third_candidate_id = null;
+});
+
+const selectedIds = computed(() => [
+    form.first_candidate_id,
+    ...(needsSecondChoice.value ? [form.second_candidate_id] : []),
+    ...(needsThirdChoice.value ? [form.third_candidate_id] : []),
+]);
+
+const selectedVoteCount = computed(
+    () => selectedIds.value.filter(id => id !== null).length
+);
+
+const canSubmit = computed(() =>
+    form.participant_id !== null &&
+    selectedIds.value.length === requiredVoteCount.value &&
+    selectedIds.value.every(id => id !== null) &&
+    new Set(selectedIds.value).size === selectedIds.value.length
+);
+
+const voteButtonLabel = computed(() => {
+    if (form.processing) return 'Guardando...';
+    if (canSubmit.value) {
+        return needsSecondChoice.value ? 'Confirmar votos' : 'Confirmar voto';
+    }
+    if (form.first_candidate_id === null) {
+        return needsSecondChoice.value ? 'Elige tu 1.ª opción' : 'Elige un juego';
+    }
+    if (needsSecondChoice.value && form.second_candidate_id === null) {
+        return 'Elige tu 2.ª opción';
+    }
+    if (needsThirdChoice.value && form.third_candidate_id === null) {
+        return 'Elige tu 3.ª opción';
+    }
+    return 'Revisa tus elecciones';
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -339,6 +366,9 @@ watch(
             null;
 
         form.second_candidate_id =
+            null;
+
+        form.third_candidate_id =
             null;
 
         const participant =
@@ -364,12 +394,20 @@ watch(
                 form.second_candidate_id =
                     vote.candidate_id;
             }
+
+            if (vote.position === 3) {
+                form.third_candidate_id = vote.candidate_id;
+            }
         }
 
         // Al recargar, la confirmación depende de los votos guardados,
         // no de un estado temporal del navegador.
-        voteSaved.value = participant.votes.some((vote) => vote.position === 1)
-            && (!needsSecondChoice.value || participant.votes.some((vote) => vote.position === 2));
+        voteSaved.value = Array.from(
+            { length: requiredVoteCount.value },
+            (_, index) => index + 1
+        ).every(position =>
+            participant.votes.some(vote => vote.position === position)
+        );
 
         /*
          * Si solo existe un candidato,
@@ -392,60 +430,40 @@ watch(
 |--------------------------------------------------------------------------
 */
 
-const selectFirst = (
-    candidateId: number
-) => {
+const preferenceFields = [
+    'first_candidate_id',
+    'second_candidate_id',
+    'third_candidate_id',
+] as const;
+
+const selectPreference = (position: 1 | 2 | 3, candidateId: number) => {
     if (form.processing) return;
 
-    // Segundo clic: quitar la primera opción y reiniciar la segunda.
-    if (form.first_candidate_id === candidateId) {
-        form.first_candidate_id = null;
-        form.second_candidate_id = null;
-        return;
+    const field = preferenceFields[position - 1];
+
+    if (form[field] === candidateId) {
+        form[field] = null;
+
+        if (position === 1) {
+            form.second_candidate_id = null;
+            form.third_candidate_id = null;
+        }
+    } else {
+        for (const otherField of preferenceFields) {
+            if (otherField !== field && form[otherField] === candidateId) {
+                form[otherField] = null;
+            }
+        }
+
+        form[field] = candidateId;
     }
 
-    if (
-        form.second_candidate_id ===
-        candidateId
-    ) {
-        form.second_candidate_id =
-            null;
-    }
-
-    form.first_candidate_id =
-        candidateId;
     lastSelectedCandidateId.value = candidateId;
 };
 
-/*
-|--------------------------------------------------------------------------
-| Segunda opción
-|--------------------------------------------------------------------------
-*/
-
-const selectSecond = (
-    candidateId: number
-) => {
-    if (form.processing) return;
-
-    // Segundo clic: quitar únicamente la segunda opción.
-    if (form.second_candidate_id === candidateId) {
-        form.second_candidate_id = null;
-        return;
-    }
-
-    if (
-        form.first_candidate_id ===
-        candidateId
-    ) {
-        form.first_candidate_id =
-            null;
-    }
-
-    form.second_candidate_id =
-        candidateId;
-    lastSelectedCandidateId.value = candidateId;
-};
+const selectFirst = (id: number) => selectPreference(1, id);
+const selectSecond = (id: number) => selectPreference(2, id);
+const selectThird = (id: number) => selectPreference(3, id);
 
 /*
 |--------------------------------------------------------------------------
@@ -458,6 +476,7 @@ const cancelVoteEdit = async () => {
 
     form.first_candidate_id = savedVotes.find((vote) => vote.position === 1)?.candidate_id ?? null;
     form.second_candidate_id = savedVotes.find((vote) => vote.position === 2)?.candidate_id ?? null;
+    form.third_candidate_id = savedVotes.find((vote) => vote.position === 3)?.candidate_id ?? null;
     form.clearErrors();
     voteConnectionError.value = '';
     voteSaved.value = true;
@@ -473,7 +492,11 @@ const submit = () => {
 
     voteConnectionError.value = '';
 
-    form.transform((data) => ({ ...data, single_choice: props.poll.single_choice })).post(
+    form.transform((data) => ({
+        ...data,
+        single_choice: props.poll.single_choice,
+        ranking_slots: requiredVoteCount.value,
+    })).post(
         `/vote/${props.poll.token}/${props.voteToken}`,
         {
             preserveScroll: true,
@@ -598,9 +621,11 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                 >
                     <template v-if="poll.status === 'open'">
                         {{
-                            needsSecondChoice
-                                ? 'Elige tu primera y segunda opción.'
-                                : poll.candidates.length > 1 ? 'Elige un juego y confirma tu voto.' : 'Confirma tu voto para este juego.'
+                            needsThirdChoice
+                                ? 'Elige tres juegos distintos: 3, 2 y 1 puntos.'
+                                : needsSecondChoice
+                                    ? 'Elige tu primera y segunda opción.'
+                                    : poll.candidates.length > 1 ? 'Elige un juego y confirma tu voto.' : 'Confirma tu voto para este juego.'
                         }}
                     </template>
 
@@ -643,11 +668,13 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                     class="mt-2 text-zinc-500"
                 >
                     {{
-                        poll.single_choice
-                            ? 'Un voto por persona.'
-                            : needsSecondChoice
-                                ? 'Primera opción: 2 puntos · Segunda opción: 1 punto'
-                                : 'Cada voto vale 2 puntos'
+                        needsThirdChoice
+                            ? 'Primera opción: 3 puntos · Segunda: 2 · Tercera: 1'
+                            : poll.single_choice || poll.ranking_slots === 1
+                                ? 'Un voto por persona.'
+                                : needsSecondChoice
+                                    ? 'Primera opción: 2 puntos · Segunda opción: 1 punto'
+                                    : 'Cada voto vale 2 puntos'
                     }}
                 </p>
 
@@ -786,6 +813,9 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                     result.second_votes
                                 }}
                                 segundas
+                                <template v-if="needsThirdChoice">
+                                    · 🥉 {{ result.third_votes }} terceras
+                                </template>
                             </p>
                         </div>
 
@@ -805,7 +835,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                             <p
                                 class="text-xs text-zinc-500"
                             >
-                                {{ poll.single_choice ? (result.points === 1 ? 'voto' : 'votos') : 'puntos' }}
+                                {{ poll.single_choice || poll.ranking_slots === 1 ? (result.points === 1 ? 'voto' : 'votos') : 'puntos' }}
                             </p>
                         </div>
                     </article>
@@ -846,7 +876,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
 
                 <div
                     class="mt-6 grid gap-3 text-left"
-                    :class="{ 'sm:grid-cols-2': needsSecondChoice }"
+                    :class="needsThirdChoice ? 'sm:grid-cols-3' : needsSecondChoice ? 'sm:grid-cols-2' : ''"
                 >
                     <div
                         class="rounded-2xl bg-lime-50 p-4"
@@ -874,6 +904,15 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
 
                         <p class="mt-1 min-w-0 wrap-anywhere font-black">
                             {{ selectedSecondGame?.name }}
+                        </p>
+                    </div>
+
+                    <div v-if="needsThirdChoice" class="rounded-2xl bg-sky-50 p-4">
+                        <p class="text-xs font-black uppercase text-zinc-500">
+                            🥉 Tercera opción
+                        </p>
+                        <p class="mt-1 min-w-0 wrap-anywhere font-black">
+                            {{ selectedThirdGame?.name }}
                         </p>
                     </div>
                 </div>
@@ -989,9 +1028,12 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                 form.first_candidate_id === candidate.id,
                             'border-[#FF6B00] ring-2 ring-[#FF6B00]/30':
                                 form.second_candidate_id === candidate.id,
+                            'border-sky-500 ring-2 ring-sky-200':
+                                form.third_candidate_id === candidate.id,
                             'border-zinc-200 hover:border-violet-400 hover:ring-2 hover:ring-violet-500/15':
                                 form.first_candidate_id !== candidate.id &&
-                                form.second_candidate_id !== candidate.id,
+                                form.second_candidate_id !== candidate.id &&
+                                form.third_candidate_id !== candidate.id,
                         }"
                     >
                         <!-- Una portada pequeña y completa, también en móvil. -->
@@ -1021,6 +1063,12 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                         class="inline-block rounded-full bg-orange-100 px-2.5 py-1 text-xs font-black text-orange-900"
                                     >
                                         🥈 Segunda opción
+                                    </span>
+                                    <span
+                                        v-else-if="form.third_candidate_id === candidate.id"
+                                        class="inline-block rounded-full bg-sky-100 px-2.5 py-1 text-xs font-black text-sky-900"
+                                    >
+                                        🥉 Tercera opción
                                     </span>
                                 </div>
 
@@ -1102,7 +1150,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                         <!-- Los botones quedan antes de las secciones secundarias. -->
                         <div
                             class="grid gap-2 px-3 pb-3 sm:px-4"
-                            :class="needsSecondChoice ? 'grid-cols-2' : 'grid-cols-1'"
+                            :class="needsThirdChoice ? 'grid-cols-3' : needsSecondChoice ? 'grid-cols-2' : 'grid-cols-1'"
                         >
                             <button
                                 type="button"
@@ -1128,6 +1176,19 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                 @click="selectSecond(candidate.id)"
                             >
                                 🥈 2.ª opción
+                            </button>
+                            <button
+                                v-if="needsThirdChoice"
+                                type="button"
+                                :disabled="form.processing"
+                                :aria-pressed="form.third_candidate_id === candidate.id"
+                                class="min-h-12 rounded-xl border-2 px-1 py-3 text-xs font-bold transition hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 disabled:opacity-75 sm:text-sm"
+                                :class="form.third_candidate_id === candidate.id
+                                    ? 'border-sky-500 bg-sky-100 text-sky-950'
+                                    : 'border-zinc-200 bg-white text-zinc-900 hover:border-sky-400 hover:bg-sky-50'"
+                                @click="selectThird(candidate.id)"
+                            >
+                                🥉 3.ª opción
                             </button>
                         </div>
 
@@ -1214,7 +1275,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                 >
                     <div
                         class="mb-3 grid min-w-0 gap-2 text-xs sm:text-sm"
-                        :class="needsSecondChoice ? 'sm:grid-cols-2' : 'grid-cols-1'"
+                        :class="needsThirdChoice ? 'sm:grid-cols-3' : needsSecondChoice ? 'sm:grid-cols-2' : 'grid-cols-1'"
                     >
                         <p class="min-w-0 wrap-anywhere rounded-xl bg-lime-100 px-3 py-2.5 font-medium" :title="selectedFirstGame?.name ?? ''">
                             <template v-if="selectedFirstGame">
@@ -1237,6 +1298,18 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                 Elige segunda opción
                             </template>
                         </p>
+                        <p
+                            v-if="needsThirdChoice"
+                            class="min-w-0 wrap-anywhere rounded-xl bg-sky-100 px-3 py-2.5 font-medium"
+                            :title="selectedThirdGame?.name ?? ''"
+                        >
+                            <template v-if="selectedThirdGame">
+                                🥉 Tercera opción: {{ selectedThirdGame.name }}
+                            </template>
+                            <template v-else>
+                                Elige tercera opción
+                            </template>
+                        </p>
                     </div>
 
                     <div v-if="form.hasErrors || voteConnectionError" ref="voteError" tabindex="-1" class="mb-3">
@@ -1257,13 +1330,13 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                         @click="submit"
                     >
                         <span class="sm:hidden">
-                            {{ form.processing ? 'Guardando...' : canSubmit ? (needsSecondChoice ? 'Confirmar votos' : 'Confirmar voto') : form.first_candidate_id === null ? (needsSecondChoice ? 'Elige tu 1.ª opción' : 'Elige un juego') : 'Elige tu 2.ª opción' }}
+                            {{ voteButtonLabel }}
                             <span v-if="!form.processing" class="ml-1 opacity-75">
-                                ({{ Number(form.first_candidate_id !== null) + Number(needsSecondChoice && form.second_candidate_id !== null) }}/{{ requiredVoteCount }})
+                                ({{ selectedVoteCount }}/{{ requiredVoteCount }})
                             </span>
                         </span>
                         <span class="hidden sm:inline">
-                            {{ form.processing ? 'Guardando...' : needsSecondChoice ? 'Confirmar mis votos' : 'Confirmar mi voto' }}
+                            {{ form.processing ? 'Guardando...' : voteButtonLabel === 'Confirmar votos' ? 'Confirmar mis votos' : voteButtonLabel === 'Confirmar voto' ? 'Confirmar mi voto' : voteButtonLabel }}
                         </span>
                     </button>
                     <button

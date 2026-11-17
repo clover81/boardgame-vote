@@ -342,3 +342,79 @@ test('opening the poll registration form requires authentication', function () {
     $this->get(route('plays.create-from-poll', $this->poll))
         ->assertRedirect(route('login'));
 });
+
+test('el registro desde una votacion 321 utiliza el ganador correcto', function () {
+    $this->poll->update([
+        'ranking_slots' => 3,
+        'single_choice' => false,
+    ]);
+
+    $games = collect([$this->game]);
+
+    foreach (['Heat', 'Cascadia', 'Sky Team'] as $name) {
+        $game = Game::create([
+            'name' => $name,
+            'min_players' => 1,
+            'max_players' => 4,
+            'game_mode' => 'competitive',
+            'is_active' => true,
+        ]);
+
+        $this->collection->games()->attach($game);
+        $games->push($game);
+    }
+
+    $candidates = $games->map(
+        fn ($game) => $this->poll->candidates()->create([
+            'game_id' => $game->id,
+        ])
+    );
+
+    $ballots = [
+        [0, 1, 2],
+        [0, 1, 2],
+        [1, 2, 0],
+    ];
+
+    foreach ($ballots as $index => $choices) {
+        $player = Player::create([
+            'created_by' => $this->user->id,
+            'name' => 'Jugador '.($index + 1),
+            'is_active' => true,
+        ]);
+
+        $participant = $this->poll->participants()->create([
+            'player_id' => $player->id,
+            'display_name' => $player->name,
+        ]);
+
+        foreach ($choices as $position => $choice) {
+            $participant->votes()->create([
+                'poll_id' => $this->poll->id,
+                'poll_candidate_id' => $candidates[$choice]->id,
+                'position' => $position + 1,
+            ]);
+        }
+    }
+
+    // Con 3-2-1: White Castle y Heat empatan a 7 puntos.
+    // Gana White Castle por tener más primeras preferencias.
+    // Si se ignora la tercera preferencia, Heat ganaría 7 a 6.
+    $winner = $games[0];
+
+    $this->actingAs($this->user)
+        ->get(route('polls.show', $this->poll))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('poll.has_clear_winner', true)
+            ->where('results.0.game.id', $winner->id)
+            ->where('results.0.points', 7)
+        );
+
+    $this->get(route('plays.create-from-poll', $this->poll))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('poll.has_clear_winner', true)
+            ->where('defaults.game_ids', [$winner->id])
+        );
+});
