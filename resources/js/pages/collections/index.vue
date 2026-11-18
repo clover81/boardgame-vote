@@ -637,8 +637,9 @@ const loadBggPreview = async () => {
 
     bggLoading.value = true;
     bggError.value = '';
-    bggPreview.value = null;
 
+    // Conservar los resultados anteriores mientras se actualizan.
+    // Evita que desaparezca el bloque y salte el desplazamiento.
     try {
         const response = await fetch(
             `/collections/${bggCollectionId.value}/bgg/preview`,
@@ -1145,6 +1146,10 @@ watch(
                     class="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300"
                 >
                     {{ explainBggError(bggError) }}
+                    <span v-if="bggPreview" class="mt-2 block font-medium">
+                        Se siguen mostrando los resultados de la última
+                        consulta correcta, que pueden estar desactualizados.
+                    </span>
                 </p>
 
                 <p
@@ -1287,6 +1292,15 @@ watch(
                         </p>
                     </details>
                 </div>
+
+                <p
+                    v-if="bggLoading && bggPreview"
+                    role="status"
+                    class="mt-4 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-medium text-violet-900 dark:border-violet-800 dark:bg-violet-950/30 dark:text-violet-200"
+                >
+                    Actualizando la información de BGG...
+                    Los resultados anteriores permanecen visibles.
+                </p>
 
                 <div v-if="bggPreview" class="mt-7">
                     <p class="mb-4 text-sm text-zinc-500">
