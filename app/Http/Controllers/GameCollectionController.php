@@ -323,6 +323,8 @@ class GameCollectionController extends Controller
         }
 
         try {
+            $fromCache = Cache::has($collection->bggPreviewCacheKey());
+
             // Una vista previa repetida durante unos minutos no debe
             // multiplicar las peticiones a BGG (que aplica límites).
             $preview = Cache::remember(
@@ -357,6 +359,7 @@ class GameCollectionController extends Controller
                 'name' => $collection->name,
             ],
             'username' => $username,
+            'from_cache' => $fromCache,
             ...$preview,
 
             // Juegos presentes en esta colección de Laravel

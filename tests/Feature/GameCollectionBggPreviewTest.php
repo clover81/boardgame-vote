@@ -24,6 +24,7 @@ test('the owner can preview the configured BGG collection without importing reco
         'expansions' => [['bgg_id' => 200, 'name' => 'Expansión nueva', 'status' => 'new']],
     ];
     $before = $this->collection->fresh()->getAttributes();
+    \Illuminate\Support\Facades\Cache::forget($this->collection->bggPreviewCacheKey());
     $bgg = $this->mock(BggCollectionService::class);
 
     $bgg->shouldReceive('preview')
@@ -43,6 +44,7 @@ test('the owner can preview the configured BGG collection without importing reco
         ->assertExactJson([
             'collection' => ['id' => $this->collection->id, 'name' => 'Mi colección'],
             'username' => 'clover81',
+            'from_cache' => false,
             ...$preview,
             'removal_candidates' => [],
             'expansion_removal_candidates' => [],
@@ -115,8 +117,13 @@ test('consultas repetidas de vista previa reutilizan caché y no saturan BGG', f
     $bgg->shouldReceive('removalCandidates')->twice()->andReturn([]);
     $bgg->shouldReceive('expansionRemovalCandidates')->twice()->andReturn([]);
 
-    $this->actingAs($this->user)->getJson($this->url)->assertOk();
-    $this->actingAs($this->user)->getJson($this->url)->assertOk();
+    $this->actingAs($this->user)->getJson($this->url)
+        ->assertOk()
+        ->assertJsonPath('from_cache', false);
+
+    $this->actingAs($this->user)->getJson($this->url)
+        ->assertOk()
+        ->assertJsonPath('from_cache', true);
 });
 
 

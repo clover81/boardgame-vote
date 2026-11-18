@@ -276,6 +276,7 @@ const bggPreview = ref<BggPreview | null>(null);
 const bggLoading = ref(false);
 let bggPreviewRequest: AbortController | null = null;
 const bggError = ref('');
+const bggPreviewFeedback = ref('');
 const bggTab = ref<'games' | 'expansions'>('games');
 const bggPreviewItems = computed(() => bggPreview.value?.[bggTab.value] ?? []);
 const bggPanelOpen = ref(false);
@@ -301,6 +302,7 @@ watch(bggCollectionId, () => {
 
     bggPreview.value = null;
     bggError.value = '';
+    bggPreviewFeedback.value = '';
     bggSyncMessage.value = '';
     bggSyncError.value = '';
 });
@@ -637,6 +639,7 @@ const loadBggPreview = async () => {
 
     bggLoading.value = true;
     bggError.value = '';
+    bggPreviewFeedback.value = 'Consultando BGG...';
 
     // Conservar los resultados anteriores mientras se actualizan.
     // Evita que desaparezca el bloque y salte el desplazamiento.
@@ -656,6 +659,9 @@ const loadBggPreview = async () => {
         if (request.signal.aborted) return;
 
         if (!response.ok) {
+            bggPreviewFeedback.value =
+                'No se pudo actualizar la consulta. Revisa el error indicado.';
+
             if (response.status === 429) {
                 router.reload({
                     only: ['collections'],
@@ -669,13 +675,27 @@ const loadBggPreview = async () => {
         }
 
         if (!result?.summary || !Array.isArray(result.games) || !Array.isArray(result.expansions)) {
+            bggPreviewFeedback.value = 'La respuesta de BGG no es válida.';
             bggError.value = 'No se pudo cargar la vista previa de BGG. Vuelve a intentarlo.';
             return;
         }
 
         bggPreview.value = result as BggPreview;
+
+        const hour = new Date().toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+        });
+
+        bggPreviewFeedback.value = result.from_cache === true
+            ? `Consulta completada a las ${hour} · datos en caché (máximo 5 min).`
+            : result.from_cache === false
+                ? `Consulta completada a las ${hour} · datos obtenidos de BGG.`
+                : `Consulta completada a las ${hour}.`;
     } catch {
         if (request.signal.aborted) return;
+        bggPreviewFeedback.value = 'No se pudo actualizar la consulta.';
         bggError.value = 'No se pudo conectar para consultar BGG. Vuelve a intentarlo.';
     } finally {
         if (bggPreviewRequest === request) {
@@ -1050,8 +1070,12 @@ watch(
                 </div>
 
                 <div id="bgg-panel-content" v-show="bggPanelOpen">
-                    <p class="mt-4 text-sm text-zinc-500 dark:text-zinc-400">
-                        Primero consulta los cambios. La vista previa no modifica tu colección.
+                    <p
+                        role="status"
+                        aria-live="polite"
+                        class="mt-4 min-h-10 text-sm text-zinc-500 dark:text-zinc-400 sm:min-h-5"
+                    >
+                        {{ bggPreviewFeedback || 'Primero consulta los cambios. La vista previa no modifica tu colección.' }}
                     </p>
 
                 <div class="mt-5 flex flex-wrap gap-3">
