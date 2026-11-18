@@ -118,3 +118,23 @@ test('consultas repetidas de vista previa reutilizan caché y no saturan BGG', f
     $this->actingAs($this->user)->getJson($this->url)->assertOk();
     $this->actingAs($this->user)->getJson($this->url)->assertOk();
 });
+
+
+test('BGG preview rate limits return HTTP 429', function () {
+    $message = 'BGG está limitando temporalmente las consultas (HTTP 429).';
+
+    $this->mock(BggCollectionService::class)
+        ->shouldReceive('preview')
+        ->once()
+        ->with('clover81')
+        ->andThrow(new RuntimeException($message));
+
+    $this->actingAs($this->user)
+        ->getJson($this->url)
+        ->assertStatus(429)
+        ->assertJsonPath('retry_after_seconds', 900)
+        ->assertJsonPath(
+            'message',
+            app(\App\Services\BggRetryCooldown::class)->message(900)
+        );
+});

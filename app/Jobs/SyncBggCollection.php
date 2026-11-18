@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\GameCollection;
 use App\Services\BggCollectionImporter;
 use App\Services\BggExpansionImporter;
+use App\Services\BggRetryCooldown;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -137,6 +138,14 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
     {
         $message = $exception?->getMessage()
             ?? 'La sincronización ha fallado.';
+
+        if (str_contains($message, '429')) {
+            $collection = GameCollection::find($this->collectionId);
+
+            if ($collection) {
+                app(BggRetryCooldown::class)->register($collection);
+            }
+        }
 
         GameCollection::query()
             ->whereKey($this->collectionId)

@@ -53,6 +53,7 @@ interface Collection {
     bgg_sync_started_at: string | null;
     bgg_last_synced_at: string | null;
     bgg_sync_error: string | null;
+    bgg_retry_until: number | null;
     bgg_sync_games_added: number;
     bgg_sync_expansions_added: number;
 
@@ -319,7 +320,7 @@ const selectedBggCollection = computed(() => {
 watch(
     () => selectedBggCollection.value?.bgg_sync_status,
     status => {
-        if (status === 'pending' || status === 'running') {
+        if (status === 'pending' || status === 'running' || status === 'failed') {
             bggPanelOpen.value = true;
         }
     },
@@ -334,11 +335,57 @@ const bggStatusLabels: Record<string, string> = {
     failed: 'Falló el último intento',
 };
 
+const explainBggError = (message: string): string => {
+    if (!message) return '';
+
+    if (/429|demasiadas peticiones|limitando temporalmente/i.test(message)) {
+        return 'BoardGameGeek está limitando las consultas (HTTP 429). ' +
+            'Es recomendable esperar unos 15 minutos antes de reintentarlo. ' +
+            'BGG no garantiza un plazo exacto.';
+    }
+
+    if (/HTTP 202|sigue preparando la colección/i.test(message)) {
+        return 'BoardGameGeek todavía está preparando tu colección. ' +
+            'Inténtalo más tarde; no se ha eliminado ningún juego.';
+    }
+
+    if (/HTTP 401|HTTP 403|autorización/i.test(message)) {
+        return 'BoardGameGeek ha rechazado la autorización. ' +
+            'Hay que revisar la configuración del acceso a BGG.';
+    }
+
+    if (/timeout|timed out|tiempo de espera|no se pudo conectar/i.test(message)) {
+        return 'No se ha podido completar la conexión con BGG. ' +
+            'Comprueba el servicio e inténtalo más tarde.';
+    }
+
+    return message;
+};
+
+const activeBggSyncError = computed(() => {
+    const saved = selectedBggCollection.value?.bgg_sync_status === 'failed'
+        ? selectedBggCollection.value.bgg_sync_error
+        : null;
+
+    return explainBggError(bggSyncError.value || saved || '');
+});
+
+const bggNow = ref(Date.now());
+
+const bggRetryMinutes = computed(() => {
+    const until = selectedBggCollection.value?.bgg_retry_until;
+
+    if (!until) return 0;
+
+    return Math.max(0, Math.ceil((until * 1000 - bggNow.value) / 60000));
+});
+
 let bggPollTimer: ReturnType<typeof setInterval> | undefined;
 let bggPollInFlight = false;
 
 onMounted(() => {
     bggPollTimer = setInterval(() => {
+        bggNow.value = Date.now();
         const status = selectedBggCollection.value?.bgg_sync_status;
 
         if (
@@ -494,6 +541,7 @@ const executeBggRemoval = (game: {
 const bggRemovingExpansionId = ref<number | null>(null);
 
 const bggChangesBlocked = computed(() =>
+    bggRetryMinutes.value > 0 ||
     bggCollectionId.value === '' ||
     bggSyncing.value ||
     bggRemovingId.value !== null ||
@@ -581,7 +629,7 @@ const executeBggExpansionRemoval = (expansion: {
 };
 
 const loadBggPreview = async () => {
-    if (bggCollectionId.value === '') return;
+    if (bggCollectionId.value === '' || bggRetryMinutes.value > 0) return;
 
     bggPreviewRequest?.abort();
     const request = new AbortController();
@@ -607,6 +655,12 @@ const loadBggPreview = async () => {
         if (request.signal.aborted) return;
 
         if (!response.ok) {
+            if (response.status === 429) {
+                router.reload({
+                    only: ['collections'],
+                });
+            }
+
             bggError.value = response.status === 401
                 ? 'Tu sesión ha caducado. Vuelve a iniciar sesión para consultar BGG.'
                 : (typeof result?.message === 'string' && result.message) || 'No se pudo consultar BGG.';
@@ -631,11 +685,16 @@ const loadBggPreview = async () => {
 };
 
 const showCompletedBggSync = () => {
-    const message = 'Sincronización completada correctamente.';
+    const message =
+        'Sincronización completada. Los juegos nuevos se han procesado. ' +
+        'Para consultar altas y bajas, pulsa «Consultar BGG». ' +
+        'No hacemos otra consulta automáticamente para evitar límites de BGG.';
+
     if (bggSyncMessage.value === message) return;
 
     bggSyncMessage.value = message;
-    void loadBggPreview();
+    bggPreview.value = null;
+    bggError.value = '';
 };
 
 watch(
@@ -1036,11 +1095,17 @@ watch(
 
                     <button
                         type="button"
-                        :disabled="bggLoading || bggCollectionId === ''"
+                        :disabled="bggLoading || bggCollectionId === '' || bggRetryMinutes > 0"
                         class="rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white disabled:opacity-50"
                         @click="loadBggPreview"
                     >
-                        {{ bggLoading ? 'Consultando BGG...' : 'Consultar BGG' }}
+                        {{
+                        bggLoading
+                            ? 'Consultando BGG...'
+                            : bggRetryMinutes > 0
+                                ? `Disponible en ${bggRetryMinutes} min`
+                                : 'Consultar BGG'
+                    }}
                     </button>
                     <span role="status" class="sr-only">
                         <template v-if="bggLoading">
@@ -1061,7 +1126,15 @@ watch(
                         {{
                             bggSyncing
                                 ? 'Enviando sincronización...'
-                                : 'Importar novedades de BGG'
+                                : bggRetryMinutes > 0
+                                    ? `Reintentar en ${bggRetryMinutes} min`
+                                    : selectedBggCollection?.bgg_sync_status === 'pending'
+                                        ? 'Sincronización pendiente'
+                                    : selectedBggCollection?.bgg_sync_status === 'running'
+                                        ? 'Sincronización en curso'
+                                        : selectedBggCollection?.bgg_sync_status === 'failed'
+                                            ? 'Reintentar sincronización'
+                                            : 'Importar novedades de BGG'
                         }}
                     </button>
                 </div>
@@ -1071,7 +1144,18 @@ watch(
                     role="alert"
                     class="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300"
                 >
-                    {{ bggError }}
+                    {{ explainBggError(bggError) }}
+                </p>
+
+                <p
+                    v-if="bggRetryMinutes > 0"
+                    role="status"
+                    class="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm font-medium text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                >
+                    BGG ha limitado temporalmente las consultas.
+                    Podrás volver a consultar o sincronizar en aproximadamente
+                    {{ bggRetryMinutes }} minutos.
+                    El plazo es preventivo y BGG podría seguir limitando las peticiones.
                 </p>
 
                 <!-- MENSAJE DE SINCRONIZACIÓN -->
@@ -1099,7 +1183,7 @@ watch(
 
                 <!-- ERROR DE SINCRONIZACIÓN -->
                 <div
-                    v-if="bggSyncError"
+                    v-if="activeBggSyncError"
                     role="alert"
                     class="mt-4 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-900 shadow-sm dark:border-red-900 dark:bg-red-950/30 dark:text-red-200"
                 >
@@ -1115,7 +1199,7 @@ watch(
                             No se ha podido completar la operación
                         </p>
                         <p class="mt-1 text-sm leading-6">
-                            {{ bggSyncError }}
+                            {{ activeBggSyncError }}
                         </p>
                     </div>
                 </div>
@@ -1158,8 +1242,11 @@ watch(
                         )"
                         class="mt-3 text-sm text-blue-700 dark:text-blue-300"
                     >
-                        Estamos consultando BoardGameGeek.
-                        El estado se actualiza automáticamente.
+                        Hay una sincronización pendiente o en curso.
+                        Para evitar duplicados, no se puede iniciar otra
+                        hasta que termine. El estado se actualiza automáticamente.
+                        Si el proceso se interrumpe, el sistema comprobará
+                        si puede recuperar la sincronización.
                     </p>
 
                     <template

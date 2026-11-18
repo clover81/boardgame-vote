@@ -8,6 +8,7 @@ use App\Models\Game;
 use App\Models\GameCollection;
 use App\Services\BggCollectionService;
 use App\Services\BggSyncRecoveryService;
+use App\Services\BggRetryCooldown;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,7 +29,8 @@ class GameCollectionController extends Controller
 
     public function index(
         Request $request,
-        BggSyncRecoveryService $recovery
+        BggSyncRecoveryService $recovery,
+        BggRetryCooldown $cooldown
     ): Response {
         // Recuperar solicitudes antiguas sin trabajo asociado solo cuando
         // el propietario consulta sus colecciones. No hace falta un cron.
@@ -57,6 +59,7 @@ class GameCollectionController extends Controller
                     'bgg_sync_started_at' => $collection->bgg_sync_started_at,
                     'bgg_last_synced_at' => $collection->bgg_last_synced_at,
                     'bgg_sync_error' => $collection->bgg_sync_error,
+                    'bgg_retry_until' => $cooldown->retryUntil($collection),
                     'bgg_sync_games_added' => (int) $collection->bgg_sync_games_added,
                     'bgg_sync_expansions_added' => (int) $collection->bgg_sync_expansions_added,
 
@@ -288,7 +291,8 @@ class GameCollectionController extends Controller
     public function bggPreview(
         Request $request,
         GameCollection $collection,
-        BggCollectionService $bgg
+        BggCollectionService $bgg,
+        BggRetryCooldown $cooldown
     ): JsonResponse {
         // Solo el propietario puede consultar
         // la sincronización de esta colección.
@@ -309,6 +313,15 @@ class GameCollectionController extends Controller
             ], 422);
         }
 
+        $remaining = $cooldown->secondsRemaining($collection);
+
+        if ($remaining > 0) {
+            return response()->json([
+                'message' => $cooldown->message($remaining),
+                'retry_after_seconds' => $remaining,
+            ], 429);
+        }
+
         try {
             // Una vista previa repetida durante unos minutos no debe
             // multiplicar las peticiones a BGG (que aplica límites).
@@ -317,11 +330,24 @@ class GameCollectionController extends Controller
                 now()->addMinutes(5),
                 fn () => $bgg->preview($username)
             );
-        } catch (RuntimeException $exception) {
+        } catch (\Throwable $exception) {
             report($exception);
 
+            $message = $exception instanceof RuntimeException
+                ? $exception->getMessage()
+                : 'No se pudo conectar con BoardGameGeek. Inténtalo más tarde.';
+
+            if (str_contains($message, '429')) {
+                $seconds = $cooldown->register($collection);
+
+                return response()->json([
+                    'message' => $cooldown->message($seconds),
+                    'retry_after_seconds' => $seconds,
+                ], 429);
+            }
+
             return response()->json([
-                'message' => $exception->getMessage(),
+                'message' => $message,
             ], 503);
         }
 
@@ -351,7 +377,8 @@ class GameCollectionController extends Controller
 
     public function syncBgg(
         Request $request,
-        GameCollection $collection
+        GameCollection $collection,
+        BggRetryCooldown $cooldown
     ): RedirectResponse {
         // Comprobar que la colección pertenece al usuario.
         abort_unless(
@@ -371,6 +398,14 @@ class GameCollectionController extends Controller
         if (config('queue.default') === 'sync') {
             return back()->withErrors([
                 'bgg' => 'Debes configurar una cola de trabajos.',
+            ]);
+        }
+
+        $remaining = $cooldown->secondsRemaining($collection);
+
+        if ($remaining > 0) {
+            return back()->withErrors([
+                'bgg' => $cooldown->message($remaining),
             ]);
         }
 
