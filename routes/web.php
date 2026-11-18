@@ -250,6 +250,11 @@ Route::middleware(Authenticate::class)->group(function () {
         [PollController::class, 'show']
     )->name('polls.show');
 
+    Route::delete(
+        '/polls/{poll}',
+        [PollController::class, 'destroy']
+    )->name('polls.destroy');
+
     Route::patch(
         '/polls/{poll}/voting-mode',
         [PollController::class, 'updateVotingMode']

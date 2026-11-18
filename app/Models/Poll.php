@@ -21,6 +21,7 @@ class Poll extends Model
         'single_choice',
         'ranking_slots',
         'parent_poll_id',
+        'submission_key',
     ];
 
     protected $casts = [

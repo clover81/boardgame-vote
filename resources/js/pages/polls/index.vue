@@ -18,6 +18,10 @@ import {
 import AppLayout from '@/layouts/AppLayout.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 import RollingDicesIcon from '@/components/icons/RollingDicesIcon.vue';
+import {
+    Dialog, DialogContent, DialogDescription,
+    DialogFooter, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
 
 /*
 |--------------------------------------------------------------------------
@@ -225,6 +229,32 @@ const formatDate = (
     ).format(
         new Date(date)
     );
+};
+const pollToDelete = ref<Poll | null>(null);
+const deleteDialogOpen = ref(false);
+const deletingPollId = ref<number | null>(null);
+
+const requestDraftDeletion = (poll: Poll) => {
+    if (poll.status !== 'draft' || deletingPollId.value !== null) return;
+    pollToDelete.value = poll;
+    deleteDialogOpen.value = true;
+};
+
+const confirmDraftDeletion = () => {
+    const poll = pollToDelete.value;
+    if (!poll || deletingPollId.value !== null) return;
+
+    deletingPollId.value = poll.id;
+    router.delete(`/polls/${poll.id}`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            deleteDialogOpen.value = false;
+            pollToDelete.value = null;
+        },
+        onFinish: () => {
+            deletingPollId.value = null;
+        },
+    });
 };
 </script>
 
@@ -568,6 +598,16 @@ const formatDate = (
                             >
                                 <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Registrar partida
                             </Link>
+
+                            <button
+                                v-if="poll.status === 'draft' && !(poll.session_position === 1 && poll.linked_poll_id !== null)"
+                                type="button"
+                                :disabled="deletingPollId !== null"
+                                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-red-300 px-4 py-2.5 text-sm font-bold text-red-700 transition hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:opacity-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+                                @click="requestDraftDeletion(poll)"
+                            >
+                                Eliminar borrador
+                            </button>
                         </div>
                     </div>
                 </article>
@@ -595,6 +635,50 @@ const formatDate = (
                         : 'Prueba con otras palabras o elimina alguno de los filtros aplicados.' }}
                 </p>
             </div>
+            <Dialog v-model:open="deleteDialogOpen">
+                <DialogContent class="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>¿Eliminar este borrador?</DialogTitle>
+                        <DialogDescription class="pt-2">
+                            Vas a eliminar «{{ pollToDelete?.name }}».
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <p class="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+                        Se eliminarán sus candidatos y participantes.
+                        Los juegos del catálogo y las demás votaciones
+                        se conservarán.
+                    </p>
+
+                    <p
+                        v-if="pollToDelete?.session_position === 2"
+                        class="text-sm font-semibold text-zinc-700 dark:text-zinc-200"
+                    >
+                        El primer juego de la sesión no se eliminará.
+                    </p>
+
+                    <DialogFooter class="mt-3 gap-2">
+                        <button
+                            type="button"
+                            :disabled="deletingPollId !== null"
+                            class="rounded-xl border border-zinc-300 px-5 py-3 font-semibold dark:border-zinc-700"
+                            @click="deleteDialogOpen = false"
+                        >
+                            Cancelar
+                        </button>
+
+                        <button
+                            type="button"
+                            :disabled="deletingPollId !== null"
+                            class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white hover:bg-red-700 disabled:opacity-50"
+                            @click="confirmDraftDeletion"
+                        >
+                            {{ deletingPollId !== null ? 'Eliminando...' : 'Sí, eliminar borrador' }}
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             <ScrollToTopProgress compact-on-mobile />
         </div>
     </AppLayout>

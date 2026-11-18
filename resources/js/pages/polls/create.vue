@@ -85,6 +85,8 @@ const props = defineProps<{
 
     games: Game[];
 
+    submissionKey: string;
+
     parentPoll?: {
         id: number;
         name: string;
@@ -120,6 +122,7 @@ const form = useForm({
         ? `${props.parentPoll.name.slice(0, 230)} · Juego 2`
         : 'Partida',
     ranking_slots: null as number | null,
+    submission_key: props.submissionKey,
     create_second_game: false,
     parent_poll_id: props.parentPoll?.id ?? null,
 
@@ -167,6 +170,7 @@ watch(
         form.parent_poll_id = parent?.id ?? null;
         form.create_second_game = false;
         form.ranking_slots = null;
+        form.submission_key = props.submissionKey;
 
         form.collection_ids = parent
             ? parent.collection_ids.filter(id =>

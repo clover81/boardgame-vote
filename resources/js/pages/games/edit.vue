@@ -1083,8 +1083,9 @@ const confirmDeleteGame = () => {
                 </h2>
 
                 <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                    Se eliminarán el juego, sus expansiones, sus partidas registradas
-                    y su participación en votaciones. Esta acción no se puede deshacer.
+                    Solo se puede borrar definitivamente un juego sin partidas
+                    ni participación en votaciones. Si tiene historial, puedes
+                    quitarlo de tus colecciones sin perder datos.
                 </p>
 
                 <p
@@ -1135,9 +1136,9 @@ const confirmDeleteGame = () => {
                     </p>
 
                     <p class="mt-2">
-                        También se eliminarán las expansiones,
-                        las partidas registradas y los datos
-                        asociados a votaciones de este juego.
+                        El borrado se bloqueará si el juego tiene partidas
+                        o aparece en una votación. Al eliminar un juego
+                        sin uso también se eliminarán sus expansiones.
                     </p>
                 </div>
 

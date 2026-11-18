@@ -109,7 +109,7 @@ test('a shared game cannot be deleted globally by an owner', function () {
     $this->assertDatabaseHas('game_collections', ['id' => $this->collection->id]);
 });
 
-test('deletion removes the current users recorded plays and their player links', function () {
+test('deletion protects owned plays and player links', function () {
     $play = Play::create([
         'created_by' => $this->user->id,
         'game_id' => $this->game->id,
@@ -121,98 +121,74 @@ test('deletion removes the current users recorded plays and their player links',
         'name' => 'Ana',
         'is_active' => true,
     ]);
-
     $play->players()->attach($player);
 
     $this->actingAs($this->user)
         ->from($this->editUrl)
         ->delete($this->deleteUrl)
-        ->assertRedirect(route('games.index'))
-        ->assertSessionHasNoErrors();
+        ->assertRedirect($this->editUrl)
+        ->assertSessionHasErrors('game');
 
-    $this->assertDatabaseMissing('games', [
-        'id' => $this->game->id,
-    ]);
-
-    $this->assertDatabaseMissing('plays', [
-        'id' => $play->id,
-    ]);
-
-    $this->assertDatabaseMissing('play_player', [
+    $this->assertDatabaseHas('games', ['id' => $this->game->id]);
+    $this->assertDatabaseHas('plays', ['id' => $play->id]);
+    $this->assertDatabaseHas('play_player', [
         'play_id' => $play->id,
+        'player_id' => $player->id,
     ]);
-
-    $this->assertDatabaseHas('players', [
-        'id' => $player->id,
+    $this->assertDatabaseHas('expansions', [
+        'id' => $this->expansion->id,
     ]);
 });
 
-test('deletion removes this games candidates and votes while preserving the rest of each poll', function ($status) {
+test('deletion protects candidates and votes in every poll state', function ($status) {
     $poll = Poll::create([
         'created_by' => $this->user->id,
         'name' => 'Votación con historial',
         'token' => 'DESTROYTEST',
         'status' => $status,
     ]);
-    $candidate = $poll->candidates()->create(['game_id' => $this->game->id]);
-    $otherGame = Game::create([
-        'name' => 'Heat',
-        'min_players' => 1,
-        'max_players' => 6,
-        'game_mode' => 'competitive',
-    ]);
-    $otherCandidate = $poll->candidates()->create(['game_id' => $otherGame->id]);
-    $participant = $poll->participants()->create(['display_name' => 'Ana']);
-    $vote = $participant->votes()->create([
-        'poll_id' => $poll->id,
-        'poll_candidate_id' => $candidate->id,
-        'position' => 1,
-    ]);
-    $otherVote = $participant->votes()->create([
-        'poll_id' => $poll->id,
-        'poll_candidate_id' => $otherCandidate->id,
-        'position' => 2,
-    ]);
 
-    $this->actingAs($this->user)->from($this->editUrl)->delete($this->deleteUrl)
-        ->assertRedirect(route('games.index'))
-        ->assertSessionHasNoErrors();
-
-    $this->assertDatabaseMissing('games', ['id' => $this->game->id]);
-    $this->assertDatabaseMissing('poll_candidates', ['id' => $candidate->id]);
-    $this->assertDatabaseMissing('votes', ['id' => $vote->id]);
-    $this->assertDatabaseHas('polls', ['id' => $poll->id, 'status' => $status]);
-    $this->assertDatabaseHas('poll_participants', ['id' => $participant->id]);
-    $this->assertDatabaseHas('poll_candidates', ['id' => $otherCandidate->id, 'game_id' => $otherGame->id]);
-    $this->assertDatabaseHas('votes', ['id' => $otherVote->id, 'poll_candidate_id' => $otherCandidate->id]);
-})->with(['draft', 'open', 'closed']);
-
-test('a failure deleting the game rolls back all history and relationship deletions', function () {
-    $poll = Poll::create([
-        'created_by' => $this->user->id,
-        'name' => 'Votación histórica',
-        'token' => 'ROLLBACKTEST',
-        'status' => 'closed',
-    ]);
     $candidate = $poll->candidates()->create([
         'game_id' => $this->game->id,
-        'expansion_id' => $this->expansion->id,
     ]);
-    $participant = $poll->participants()->create(['display_name' => 'Ana']);
-    $participant->votes()->create([
+
+    $participant = $poll->participants()->create([
+        'display_name' => 'Ana',
+    ]);
+
+    if ($status !== 'draft') {
+        $participant->votes()->create([
+            'poll_id' => $poll->id,
+            'poll_candidate_id' => $candidate->id,
+            'position' => 1,
+        ]);
+    }
+
+    $this->actingAs($this->user)
+        ->from($this->editUrl)
+        ->delete($this->deleteUrl)
+        ->assertRedirect($this->editUrl)
+        ->assertSessionHasErrors('game');
+
+    $this->assertDatabaseHas('games', ['id' => $this->game->id]);
+    $this->assertDatabaseHas('poll_candidates', [
+        'id' => $candidate->id,
         'poll_id' => $poll->id,
-        'poll_candidate_id' => $candidate->id,
-        'position' => 1,
     ]);
-    $play = Play::create([
-        'created_by' => $this->user->id,
-        'poll_id' => $poll->id,
-        'game_id' => $this->game->id,
-        'expansion_id' => $this->expansion->id,
-        'played_at' => '2026-10-28',
+    $this->assertDatabaseHas('polls', [
+        'id' => $poll->id,
+        'status' => $status,
     ]);
-    $player = Player::create(['name' => 'Ana', 'is_active' => true]);
-    $play->players()->attach($player);
+
+    if ($status !== 'draft') {
+        $this->assertDatabaseHas('votes', [
+            'poll_participant_id' => $participant->id,
+            'poll_candidate_id' => $candidate->id,
+        ]);
+    }
+})->with(['draft', 'open', 'closed']);
+
+test('a failure deleting an unused game rolls back all changes', function () {
     $tables = ['games', 'poll_candidates', 'votes', 'plays', 'play_player', 'game_ideal_player_counts', 'game_collection_game', 'expansions'];
     $snapshot = fn () => collect($tables)->mapWithKeys(
         fn ($table) => [$table => DB::table($table)->orderBy('id')->get()->toJson()]

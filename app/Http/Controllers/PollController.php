@@ -7,6 +7,7 @@ use App\Models\Game;
 use App\Models\GameCollection;
 use App\Models\Player;
 use App\Models\Poll;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -356,6 +357,7 @@ class PollController extends Controller
                 'games' =>
                 $games,
 
+                'submissionKey' => (string) Str::uuid(),
                 'parentPoll' => $parentPoll
                     ? [
                         'id' => $parentPoll->id,
@@ -395,6 +397,7 @@ class PollController extends Controller
                 'single_choice' => ['sometimes', 'boolean'],
                 'ranking_slots' => ['nullable', 'integer', 'between:1,3'],
                 'create_second_game' => ['sometimes', 'boolean'],
+                'submission_key' => ['nullable', 'uuid'],
                 'parent_poll_id' => [
                     'nullable', 'integer', 'exists:polls,id',
                 ],
@@ -457,6 +460,22 @@ class PollController extends Controller
                     'exists:expansions,id',
                 ],
             ]);
+
+        $submissionKey = $validated['submission_key'] ?? null;
+
+        if ($submissionKey !== null) {
+            $existing = Poll::query()
+                ->where('created_by', $userId)
+                ->where('submission_key', $submissionKey)
+                ->first();
+
+            if ($existing !== null) {
+                return $this->redirectCreatedPoll(
+                    $existing,
+                    !empty($validated['create_second_game'])
+                );
+            }
+        }
 
         /*
          * Normalizamos IDs.
@@ -698,7 +717,8 @@ class PollController extends Controller
             ]);
         }
 
-        $poll = DB::transaction(
+        try {
+            $poll = DB::transaction(
             function () use (
                 $validated,
                 $userId,
@@ -706,7 +726,8 @@ class PollController extends Controller
                 $playerIds,
                 $candidateIds,
                 $parentPollId,
-                $rankingSlots
+                $rankingSlots,
+                $submissionKey
             ) {
                 if ($parentPollId !== null) {
                     $parent = Poll::query()
@@ -723,6 +744,17 @@ class PollController extends Controller
                         $parent->status !== 'draft' ||
                         $parent->secondGamePoll()->exists()
                     ) {
+                        if ($submissionKey !== null) {
+                            $existing = Poll::query()
+                                ->where('created_by', $userId)
+                                ->where('submission_key', $submissionKey)
+                                ->first();
+
+                            if ($existing !== null) {
+                                return $existing;
+                            }
+                        }
+
                         throw ValidationException::withMessages([
                             'parent_poll_id' =>
                                 'La segunda votación ya existe o la primera no está en borrador.',
@@ -761,6 +793,7 @@ class PollController extends Controller
                         'single_choice' => $rankingSlots === 1,
                         'ranking_slots' => $rankingSlots,
                         'parent_poll_id' => $parentPollId,
+                        'submission_key' => $submissionKey,
                     ]);
 
                 /*
@@ -841,8 +874,37 @@ class PollController extends Controller
                 return $poll;
             }
         );
+        } catch (UniqueConstraintViolationException $e) {
+            $existing = $submissionKey === null
+                ? null
+                : Poll::query()
+                    ->where('created_by', $userId)
+                    ->where('submission_key', $submissionKey)
+                    ->first();
 
-        if ($parentPollId === null && !empty($validated['create_second_game'])) {
+            if ($existing === null) {
+                throw $e;
+            }
+
+            $poll = $existing;
+        }
+
+        return $this->redirectCreatedPoll(
+            $poll,
+            $parentPollId === null && !empty($validated['create_second_game'])
+        );
+    }
+
+    private function redirectCreatedPoll(
+        Poll $poll,
+        bool $prepareSecond
+    ): RedirectResponse {
+        if (
+            $prepareSecond &&
+            $poll->parent_poll_id === null &&
+            $poll->status === 'draft' &&
+            $poll->secondGamePoll()->doesntExist()
+        ) {
             return redirect()
                 ->route('polls.create', ['parent_poll_id' => $poll->id])
                 ->with(
@@ -1341,6 +1403,61 @@ class PollController extends Controller
                 $results,
             ]
         );
+    }
+
+    /**
+     * Eliminar exclusivamente borradores sin actividad histórica.
+     * Nunca se elimina automáticamente otro juego de la sesión.
+     */
+    public function destroy(Request $request, Poll $poll): RedirectResponse
+    {
+        abort_unless(
+            (int) $poll->created_by === (int) $request->user()->id,
+            403
+        );
+
+        $blockedReason = DB::transaction(
+            function () use ($poll, $request): ?string {
+                $current = Poll::query()
+                    ->lockForUpdate()
+                    ->findOrFail($poll->id);
+
+                abort_unless(
+                    (int) $current->created_by === (int) $request->user()->id,
+                    403
+                );
+
+                if ($current->status !== 'draft') {
+                    return 'Solo puedes eliminar votaciones en borrador.';
+                }
+
+                if ($current->votes()->exists()) {
+                    return 'Esta votación ya tiene votos y no se puede eliminar.';
+                }
+
+                if ($current->plays()->exists()) {
+                    return 'Esta votación tiene partidas registradas y no se puede eliminar.';
+                }
+
+                if ($current->secondGamePoll()->exists()) {
+                    return 'Primero debes eliminar el segundo juego de esta sesión.';
+                }
+
+                // Las relaciones de participantes, candidatos y
+                // colecciones tienen eliminación en cascada.
+                $current->delete();
+
+                return null;
+            }
+        );
+
+        if ($blockedReason !== null) {
+            return back()->with('error', $blockedReason);
+        }
+
+        return redirect()
+            ->route('polls.index')
+            ->with('success', 'Borrador eliminado correctamente.');
     }
 
     public function updateVotingMode(Request $request, Poll $poll): RedirectResponse

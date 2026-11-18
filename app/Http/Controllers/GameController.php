@@ -955,70 +955,41 @@ class GameController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($game) {
-            /*
-             * 1. Votos asociados a candidatos de este juego.
-             */
-            $candidateIds = DB::table('poll_candidates')
-                ->where('game_id', $game->id)
-                ->pluck('id');
+        // Bloquear el juego durante la comprobación y el borrado.
+        // Ningún historial propio se elimina de forma indirecta.
+        $blockedReason = DB::transaction(function () use ($game): ?string {
+            $current = Game::query()
+                ->lockForUpdate()
+                ->findOrFail($game->id);
 
-            if ($candidateIds->isNotEmpty()) {
-                DB::table('votes')
-                    ->whereIn('poll_candidate_id', $candidateIds)
-                    ->delete();
+            if (DB::table('plays')
+                ->where('game_id', $current->id)
+                ->exists()) {
+                return 'No puedes eliminar este juego porque tiene partidas registradas. Puedes quitarlo de tus colecciones sin perder el historial.';
             }
 
-            /*
-             * 2. Candidatos de votaciones.
-             */
-            DB::table('poll_candidates')
-                ->where('game_id', $game->id)
-                ->delete();
-
-            /*
-             * 3. Partidas y sus relaciones con jugadores.
-             */
-            $playIds = DB::table('plays')
-                ->where('game_id', $game->id)
-                ->pluck('id');
-
-            if ($playIds->isNotEmpty()) {
-                DB::table('play_player')
-                    ->whereIn('play_id', $playIds)
-                    ->delete();
-
-                DB::table('plays')
-                    ->whereIn('id', $playIds)
-                    ->delete();
+            if (DB::table('poll_candidates')
+                ->where('game_id', $current->id)
+                ->exists()) {
+                return 'No puedes eliminar este juego porque aparece en una votación. Puedes quitarlo de tus colecciones sin alterar sus resultados.';
             }
 
-            /*
-             * 4. Jugadores ideales.
-             */
-            DB::table('game_ideal_player_counts')
-                ->where('game_id', $game->id)
-                ->delete();
+            // El juego nunca se ha utilizado: borrado permitido.
+            $current->idealPlayerCounts()->delete();
 
-            /*
-             * 5. Relaciones con colecciones.
-             */
             DB::table('game_collection_game')
-                ->where('game_id', $game->id)
+                ->where('game_id', $current->id)
                 ->delete();
 
-            /*
-             * 6. Expansiones.
-             */
-            DB::table('expansions')
-                ->where('game_id', $game->id)
-                ->delete();
+            $current->expansions()->delete();
+            $current->delete();
 
-            /*
-             * 7. Juego.
-             */
-            $game->delete();
+            return null;
         });
+
+        if ($blockedReason !== null) {
+            return back()->withErrors(['game' => $blockedReason]);
+        }
 
         return redirect()
             ->route('games.index')
