@@ -66,6 +66,47 @@ test('elegir dos juegos abre la configuración del segundo', function () {
     );
 });
 
+test('la sesión recuerda que falta preparar el segundo juego', function () {
+    $this->actingAs($this->owner)
+        ->post(route('polls.store'), [
+            ...$this->payload,
+            'create_second_game' => true,
+        ])->assertSessionHasNoErrors();
+
+    $first = Poll::sole();
+
+    expect($first->planned_second_game)->toBeTrue();
+
+    $this->get(route('polls.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('polls.0.id', $first->id)
+            ->where('polls.0.session_position', 1)
+            ->where('polls.0.linked_poll_id', null)
+        );
+
+    $this->get(route('polls.show', $first))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('poll.planned_second_game', true)
+            ->where('poll.can_add_second_game', true)
+        );
+});
+
+test('una votación de un juego no aparece como sesión incompleta', function () {
+    $this->actingAs($this->owner)
+        ->post(route('polls.store'), $this->payload)
+        ->assertSessionHasNoErrors();
+
+    expect(Poll::sole()->planned_second_game)->toBeFalse();
+
+    $this->get(route('polls.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('polls.0.session_position', null)
+        );
+});
+
 test('las dos votaciones mantienen jugadores y juegos distintos', function () {
     $this->actingAs($this->owner)
         ->post(route('polls.store'), $this->payload)

@@ -22,12 +22,14 @@ class Poll extends Model
         'ranking_slots',
         'parent_poll_id',
         'submission_key',
+        'planned_second_game',
     ];
 
     protected $casts = [
         'single_choice' => 'boolean',
         'ranking_slots' => 'integer',
         'parent_poll_id' => 'integer',
+        'planned_second_game' => 'boolean',
     ];
 
     public static function suggestedRankingSlots(
@@ -38,7 +40,10 @@ class Poll extends Model
             return 1;
         }
 
-        if ($candidateCount >= 6 && $participantCount >= 4) {
+        if (
+            ($candidateCount >= 5 && $participantCount >= 5) ||
+            ($candidateCount >= 6 && $participantCount >= 4)
+        ) {
             return 3;
         }
 

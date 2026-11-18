@@ -123,6 +123,7 @@ interface Poll {
     id: number;
     name: string;
     token: string;
+    session_position: 1 | 2 | null;
 
     status:
         | 'open'
@@ -184,6 +185,7 @@ const voteConnectionError = ref('');
 const voteError = ref<HTMLElement | null>(null);
 const pageVoteError = ref<HTMLElement | null>(null);
 const voteConfirmation = ref<HTMLElement | null>(null);
+const savedVotePanel = ref<HTMLElement | null>(null);
 const voteEditor = ref<HTMLElement | null>(null);
 const confirmationPanel = ref<HTMLElement | null>(null);
 
@@ -204,12 +206,30 @@ const goToConfirmation = () => {
     });
 };
 
+const focusVoteRegion = async (
+    focusTarget: () => HTMLElement | null,
+    scrollTarget: () => HTMLElement | null
+) => {
+    await nextTick();
+
+    focusTarget()?.focus({ preventScroll: true });
+
+    scrollTarget()?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            ? 'auto'
+            : 'smooth',
+        block: 'start',
+    });
+};
+
 const editVote = async () => {
     candidateSearch.value = '';
     lastSelectedCandidateId.value = null;
     voteSaved.value = false;
-    await nextTick();
-    voteEditor.value?.focus();
+    await focusVoteRegion(
+        () => voteEditor.value,
+        () => voteEditor.value
+    );
 };
 
 const candidateSearchInput = ref<HTMLInputElement | null>(null);
@@ -308,6 +328,16 @@ const requiredVoteCount = computed(
 );
 const needsSecondChoice = computed(() => requiredVoteCount.value >= 2);
 const needsThirdChoice = computed(() => requiredVoteCount.value === 3);
+
+const preferencePointsLabel = (position: 1 | 2 | 3): string => {
+    const points = props.poll.ranking_slots !== null
+        ? Math.max(0, props.poll.ranking_slots - position + 1)
+        : props.poll.single_choice
+            ? 1
+            : position === 1 ? 2 : position === 2 ? 1 : 0;
+
+    return `${points} ${points === 1 ? 'punto' : 'puntos'}`;
+};
 
 watch(requiredVoteCount, count => {
     if (count < 2) form.second_candidate_id = null;
@@ -481,8 +511,10 @@ const cancelVoteEdit = async () => {
     voteConnectionError.value = '';
     voteSaved.value = true;
 
-    await nextTick();
-    voteConfirmation.value?.focus();
+    await focusVoteRegion(
+        () => voteConfirmation.value,
+        () => savedVotePanel.value
+    );
 };
 
 const submit = () => {
@@ -514,8 +546,10 @@ const submit = () => {
 
             onSuccess: async () => {
                 voteSaved.value = true;
-                await nextTick();
-                voteConfirmation.value?.focus();
+                await focusVoteRegion(
+                    () => voteConfirmation.value,
+                    () => savedVotePanel.value
+                );
             },
         }
     );
@@ -612,6 +646,20 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
             <div
                 class="mx-auto max-w-5xl"
             >
+                <div
+                    v-if="poll.session_position !== null"
+                    class="mb-3 flex flex-wrap items-center gap-2"
+                >
+                    <span
+                        class="inline-flex rounded-full border border-white/40 bg-white/15 px-3 py-1 text-xs font-bold text-white"
+                    >
+                        Juego {{ poll.session_position }} de 2
+                    </span>
+                    <span class="text-xs font-medium text-violet-100 sm:text-sm">
+                        Cada juego se vota por separado
+                    </span>
+                </div>
+
                 <h1 class="break-words text-2xl font-bold sm:text-3xl">
                     {{ poll.name }}
                 </h1>
@@ -619,7 +667,14 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                 <p
                     class="mt-2 text-violet-100"
                 >
-                    <template v-if="poll.status === 'open'">
+                    <template v-if="poll.status === 'open' && voteSaved">
+                        {{
+                            needsSecondChoice
+                                ? 'Tus preferencias ya están guardadas.'
+                                : 'Tu voto ya está guardado.'
+                        }}
+                    </template>
+                    <template v-else-if="poll.status === 'open'">
                         {{
                             needsThirdChoice
                                 ? 'Elige tres juegos distintos: 3, 2 y 1 puntos.'
@@ -702,6 +757,15 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                     >
                         <p class="font-black">
                             🤝 Empate en primera posición
+                        </p>
+
+                        <p class="mt-2 break-words text-sm font-bold">
+                            {{
+                                results
+                                    .filter(result => result.is_top_tie)
+                                    .map(result => result.game.name)
+                                    .join(' · ')
+                            }}
                         </p>
 
                         <p class="mt-1 text-sm">
@@ -851,7 +915,8 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
 
             <section
                 v-if="poll.status === 'open' && voteSaved && selectedParticipant"
-                class="rounded-3xl border border-green-200 bg-white p-5 text-center shadow-sm sm:p-6"
+                ref="savedVotePanel"
+                class="scroll-mt-6 rounded-3xl border border-green-200 bg-white p-5 text-center shadow-sm sm:p-6"
             >
                 <div
                     class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#CCFF00] text-3xl"
@@ -874,6 +939,14 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                     </strong>.
                 </p>
 
+                <p class="mt-3 text-sm text-zinc-600">
+                    {{
+                        needsSecondChoice
+                            ? 'Tus preferencias están guardadas. Puedes modificarlas mientras la votación siga abierta.'
+                            : 'Tu voto está guardado. Puedes modificarlo mientras la votación siga abierta.'
+                    }}
+                </p>
+
                 <div
                     class="mt-6 grid gap-3 text-left"
                     :class="needsThirdChoice ? 'sm:grid-cols-3' : needsSecondChoice ? 'sm:grid-cols-2' : ''"
@@ -885,6 +958,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                             class="text-xs font-black uppercase text-zinc-500"
                         >
                             {{ needsSecondChoice ? '🥇 Primera opción' : 'Mi voto' }}
+                            · {{ preferencePointsLabel(1) }}
                         </p>
 
                         <p class="mt-1 min-w-0 wrap-anywhere font-black">
@@ -899,7 +973,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                         <p
                             class="text-xs font-black uppercase text-zinc-500"
                         >
-                            🥈 Segunda opción
+                            🥈 Segunda opción · {{ preferencePointsLabel(2) }}
                         </p>
 
                         <p class="mt-1 min-w-0 wrap-anywhere font-black">
@@ -909,7 +983,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
 
                     <div v-if="needsThirdChoice" class="rounded-2xl bg-sky-50 p-4">
                         <p class="text-xs font-black uppercase text-zinc-500">
-                            🥉 Tercera opción
+                            🥉 Tercera opción · {{ preferencePointsLabel(3) }}
                         </p>
                         <p class="mt-1 min-w-0 wrap-anywhere font-black">
                             {{ selectedThirdGame?.name }}
@@ -965,11 +1039,65 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                             v-if="hasPreviousVote"
                             class="mt-1 text-xs font-semibold text-orange-600"
                         >
-                            Estás modificando tus votos anteriores.
+                            {{
+                                needsSecondChoice
+                                    ? 'Tus votos anteriores siguen guardados hasta que confirmes los cambios.'
+                                    : 'Tu voto anterior sigue guardado hasta que confirmes los cambios.'
+                            }}
                         </p>
                     </div>
 
                 </div>
+
+                <!-- Los participantes son comunes a todos los candidatos.
+                     Su historial individual sigue en el desplegable de cada juego. -->
+                <section
+                    v-if="poll.participants.length"
+                    aria-label="Jugadores de esta votación"
+                    class="mb-4 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-4"
+                >
+                    <p class="text-xs font-bold uppercase tracking-wide text-zinc-600">
+                        <UsersRound
+                            class="mr-1 inline-block size-4 align-[-0.15em] text-[#5200FF]"
+                            :stroke-width="2.2"
+                            aria-hidden="true"
+                        />
+                        Jugadores de hoy ({{ poll.participants.length }})
+                    </p>
+
+                    <div class="mt-2 flex flex-wrap gap-1.5">
+                        <span
+                            v-for="participant in poll.participants"
+                            :key="participant.id"
+                            class="max-w-full break-words rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700"
+                        >
+                            <span
+                                :class="[
+                                    'inline-flex items-center gap-1.5',
+                                    publicPlayerNameColor(
+                                        participant.display_name,
+                                        participant.color
+                                    )
+                                ]"
+                            >
+                                <MeepleIcon
+                                    :class="[
+                                        'size-3.5 shrink-0',
+                                        playerMeepleColor(
+                                            participant.display_name,
+                                            participant.color
+                                        )
+                                    ]"
+                                    aria-hidden="true"
+                                />
+                                {{ participant.display_name }}
+                            </span>
+                            <span v-if="participant.id === currentParticipantId">
+                                (tú)
+                            </span>
+                        </span>
+                    </div>
+                </section>
 
                 <!-- JUEGOS -->
 
@@ -1131,22 +1259,6 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                             <p class="whitespace-pre-line break-words text-zinc-700">{{ candidate.note }}</p>
                         </div>
 
-                        <!-- Los jugadores del grupo son visibles sin desplegar nada. -->
-                        <div class="border-t border-zinc-100 px-3 py-3 sm:px-4 lg:mt-auto lg:min-h-[5.75rem]">
-                            <p class="text-xs font-bold uppercase tracking-wide text-zinc-500">
-                                <UsersRound class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9]" :stroke-width="2.2" role="img" aria-label="Jugadores" /> Jugadores de hoy ({{ candidate.history.participants.length }})
-                            </p>
-                            <div class="mt-2 flex flex-wrap gap-1.5">
-                                <span
-                                    v-for="participant in candidate.history.participants"
-                                    :key="participant.participant_id"
-                                    class="max-w-full break-words rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700"
-                                >
-                                    <span :class="['inline-flex items-center gap-1.5', publicPlayerNameColor(participant.display_name, colorForParticipant(participant.participant_id))]"><MeepleIcon :class="['h-3.5 w-3.5 shrink-0', playerMeepleColor(participant.display_name, colorForParticipant(participant.participant_id))]" />{{ participant.display_name }}</span><template v-if="participant.participant_id === currentParticipantId"> (tú)</template>
-                                </span>
-                            </div>
-                        </div>
-
                         <!-- Los botones quedan antes de las secciones secundarias. -->
                         <div
                             class="grid gap-2 px-3 pb-3 sm:px-4"
@@ -1156,39 +1268,54 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                 type="button"
                                 :disabled="form.processing"
                                 :aria-pressed="form.first_candidate_id === candidate.id"
-                                class="min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-bold transition-[background-color,border-color,box-shadow,transform] duration-200 motion-safe:enabled:hover:-translate-y-0.5 enabled:hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5200FF] focus-visible:ring-offset-2 motion-safe:enabled:active:scale-[0.98] disabled:opacity-75 disabled:cursor-wait sm:text-base"
+                                class="min-h-14 rounded-xl border-2 text-center px-2 py-3 text-sm font-bold transition-[background-color,border-color,box-shadow,transform] duration-200 motion-safe:enabled:hover:-translate-y-0.5 enabled:hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5200FF] focus-visible:ring-offset-2 motion-safe:enabled:active:scale-[0.98] disabled:opacity-75 disabled:cursor-wait sm:text-base"
                                 :class="form.first_candidate_id === candidate.id
                                     ? 'border-[#9bcb00] bg-[#CCFF00] text-black'
                                     : 'border-zinc-200 bg-white text-zinc-900 enabled:hover:border-[#9bcb00] enabled:hover:bg-lime-50'"
                                 @click="selectFirst(candidate.id)"
                             >
-                                {{ needsSecondChoice ? '🥇 1.ª opción' : '✓ Mi voto' }}
+                                <span class="block text-xs font-bold leading-tight sm:text-sm">
+                                    {{ needsSecondChoice ? '🥇 1.ª opción' : '✓ Mi voto' }}
+                                </span>
+                                <span class="mt-1 block text-[11px] font-semibold leading-tight opacity-80 sm:text-xs">
+                                    {{ preferencePointsLabel(1) }}
+                                </span>
                             </button>
                             <button
                                 v-if="needsSecondChoice"
                                 type="button"
                                 :disabled="form.processing"
                                 :aria-pressed="form.second_candidate_id === candidate.id"
-                                class="min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-bold transition-[background-color,border-color,box-shadow,transform] duration-200 motion-safe:enabled:hover:-translate-y-0.5 enabled:hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5200FF] focus-visible:ring-offset-2 motion-safe:enabled:active:scale-[0.98] disabled:opacity-75 disabled:cursor-wait sm:text-base"
+                                class="min-h-14 rounded-xl border-2 text-center px-2 py-3 text-sm font-bold transition-[background-color,border-color,box-shadow,transform] duration-200 motion-safe:enabled:hover:-translate-y-0.5 enabled:hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5200FF] focus-visible:ring-offset-2 motion-safe:enabled:active:scale-[0.98] disabled:opacity-75 disabled:cursor-wait sm:text-base"
                                 :class="form.second_candidate_id === candidate.id
                                     ? 'border-[#FF6B00] bg-orange-100 text-orange-950'
                                     : 'border-zinc-200 bg-white text-zinc-900 enabled:hover:border-orange-400 enabled:hover:bg-orange-50'"
                                 @click="selectSecond(candidate.id)"
                             >
-                                🥈 2.ª opción
+                                <span class="block text-xs font-bold leading-tight sm:text-sm">
+                                    🥈 2.ª opción
+                                </span>
+                                <span class="mt-1 block text-[11px] font-semibold leading-tight opacity-80 sm:text-xs">
+                                    {{ preferencePointsLabel(2) }}
+                                </span>
                             </button>
                             <button
                                 v-if="needsThirdChoice"
                                 type="button"
                                 :disabled="form.processing"
                                 :aria-pressed="form.third_candidate_id === candidate.id"
-                                class="min-h-12 rounded-xl border-2 px-1 py-3 text-xs font-bold transition hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 disabled:opacity-75 sm:text-sm"
+                                class="min-h-14 rounded-xl border-2 text-center px-1 py-3 text-xs font-bold transition hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 disabled:opacity-75 sm:text-sm"
                                 :class="form.third_candidate_id === candidate.id
                                     ? 'border-sky-500 bg-sky-100 text-sky-950'
                                     : 'border-zinc-200 bg-white text-zinc-900 hover:border-sky-400 hover:bg-sky-50'"
                                 @click="selectThird(candidate.id)"
                             >
-                                🥉 3.ª opción
+                                <span class="block text-xs font-bold leading-tight sm:text-sm">
+                                    🥉 3.ª opción
+                                </span>
+                                <span class="mt-1 block text-[11px] font-semibold leading-tight opacity-80 sm:text-xs">
+                                    {{ preferencePointsLabel(3) }}
+                                </span>
                             </button>
                         </div>
 
@@ -1279,7 +1406,8 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                     >
                         <p class="min-w-0 wrap-anywhere rounded-xl bg-lime-100 px-3 py-2.5 font-medium" :title="selectedFirstGame?.name ?? ''">
                             <template v-if="selectedFirstGame">
-                                {{ needsSecondChoice ? '🥇 Primera opción:' : 'Mi voto:' }}
+                                {{ needsSecondChoice ? '🥇 Primera opción' : 'Mi voto' }}
+                                ({{ preferencePointsLabel(1) }}):
                                 {{ selectedFirstGame.name }}
                             </template>
                             <template v-else>
@@ -1292,7 +1420,8 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                             :title="selectedSecondGame?.name ?? ''"
                         >
                             <template v-if="selectedSecondGame">
-                                🥈 Segunda opción: {{ selectedSecondGame.name }}
+                                🥈 Segunda opción ({{ preferencePointsLabel(2) }}):
+                                {{ selectedSecondGame.name }}
                             </template>
                             <template v-else>
                                 Elige segunda opción
@@ -1304,7 +1433,8 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                             :title="selectedThirdGame?.name ?? ''"
                         >
                             <template v-if="selectedThirdGame">
-                                🥉 Tercera opción: {{ selectedThirdGame.name }}
+                                🥉 Tercera opción ({{ preferencePointsLabel(3) }}):
+                                {{ selectedThirdGame.name }}
                             </template>
                             <template v-else>
                                 Elige tercera opción

@@ -54,7 +54,10 @@ class PollController extends Controller
                     ->where('created_by', $userId),
                 'secondGamePoll' => fn ($query) => $query
                     ->where('created_by', $userId)
-                    ->select(['id', 'parent_poll_id']),
+                    ->select(['id', 'parent_poll_id', 'status']),
+                'firstGamePoll' => fn ($query) => $query
+                    ->where('created_by', $userId)
+                    ->select(['id', 'status']),
             ])
             ->when($collectionId, fn ($query, $collectionId) => $query
                 ->whereHas('gameCollections', fn ($collectionQuery) => $collectionQuery
@@ -79,10 +82,18 @@ class PollController extends Controller
             'status' => $poll->status,
             'session_position' => $poll->parent_poll_id !== null
                 ? 2
-                : ($poll->secondGamePoll !== null ? 1 : null),
+                : (
+                    $poll->secondGamePoll !== null ||
+                    ($poll->planned_second_game && $poll->status === 'draft')
+                        ? 1
+                        : null
+                ),
             'linked_poll_id' => $poll->parent_poll_id !== null
                 ? (int) $poll->parent_poll_id
                 : $poll->secondGamePoll?->id,
+            'linked_poll_status' => $poll->parent_poll_id !== null
+                ? $poll->firstGamePoll?->status
+                : $poll->secondGamePoll?->status,
             'participants_count' => $poll->participants_count,
             'candidates_count' => $poll->candidates_count,
             'has_registered_play' => in_array($poll->id, $playedPollIds, true),
@@ -594,6 +605,8 @@ class PollController extends Controller
                     'is_active',
                     true
                 )
+                ->where('min_players', '<=', $playerIds->count())
+                ->where('max_players', '>=', $playerIds->count())
                 ->whereIn(
                     'id',
                     $candidateIds
@@ -630,7 +643,7 @@ class PollController extends Controller
             return back()
                 ->withErrors([
                     'candidate_ids' =>
-                        'Algún juego candidato no pertenece a las colecciones seleccionadas.',
+                        'Algún juego candidato no está disponible para las colecciones o el número de jugadores seleccionados.',
                 ])
                 ->withInput();
         }
@@ -794,6 +807,9 @@ class PollController extends Controller
                         'ranking_slots' => $rankingSlots,
                         'parent_poll_id' => $parentPollId,
                         'submission_key' => $submissionKey,
+                        'planned_second_game' =>
+                            $parentPollId === null
+                            && !empty($validated['create_second_game']),
                     ]);
 
                 /*
@@ -1126,8 +1142,13 @@ class PollController extends Controller
                 ->where('created_by', request()->user()->id)
                 ->pluck('id');
 
+            $participantCount = $poll->participants->count();
+
             $availableGames = Game::query()
                 ->where('is_active', true)
+                ->when($participantCount >= 2, fn ($query) => $query
+                    ->where('min_players', '<=', $participantCount)
+                    ->where('max_players', '>=', $participantCount))
                 ->whereNotIn('id', $candidateGameIds)
                 ->whereHas('collections', fn ($query) => $query
                     ->where('game_collections.created_by', request()->user()->id)
@@ -1140,8 +1161,7 @@ class PollController extends Controller
             'polls/show',
             [
                 'canAddCandidates' => $canAddCandidates,
-                'canChangeVotingMode' => $canAddCandidates
-                    && $poll->ranking_slots === null,
+                'canChangeVotingMode' => $canAddCandidates,
                 'availableGames' => $availableGames,
                 'poll' => [
                     'id' =>
@@ -1157,6 +1177,7 @@ class PollController extends Controller
                     $poll->status,
 
                     'is_second_game' => $poll->parent_poll_id !== null,
+                    'planned_second_game' => (bool) $poll->planned_second_game,
 
                     'linked_poll' => $linkedPoll
                         ? [
@@ -1455,32 +1476,90 @@ class PollController extends Controller
             return back()->with('error', $blockedReason);
         }
 
+        $filters = collect($request->query())
+            ->only(['search', 'collection_id', 'status'])
+            ->filter(fn ($value) => is_string($value) && $value !== '')
+            ->all();
+
         return redirect()
-            ->route('polls.index')
+            ->route('polls.index', $filters)
             ->with('success', 'Borrador eliminado correctamente.');
     }
 
     public function updateVotingMode(Request $request, Poll $poll): RedirectResponse
     {
         abort_unless((int) $poll->created_by === (int) $request->user()->id, 403);
-        abort_if($poll->ranking_slots !== null, 409,
-            'El sistema nuevo de puntuación no utiliza el selector antiguo.');
 
-        $validated = $request->validate(['single_choice' => ['required', 'boolean']]);
+        $validated = $request->validate([
+            'ranking_slots' => [
+                'sometimes', 'required', 'integer', 'between:1,3',
+                'prohibits:single_choice',
+            ],
+            'single_choice' => [
+                'sometimes', 'required', 'boolean',
+                'prohibits:ranking_slots',
+            ],
+        ]);
 
-        return DB::transaction(function () use ($poll, $validated): RedirectResponse {
+        if (
+            !array_key_exists('ranking_slots', $validated)
+            && !array_key_exists('single_choice', $validated)
+        ) {
+            return back()->withErrors([
+                'poll' => 'Selecciona el sistema de puntuación.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($poll, $request, $validated): RedirectResponse {
             $current = Poll::query()->lockForUpdate()->findOrFail($poll->id);
 
-            if (! in_array($current->status, ['draft', 'open'], true) || $current->votes()->exists()) {
+            abort_unless(
+                (int) $current->created_by === (int) $request->user()->id,
+                403
+            );
+
+            // El voto público también bloquea la fila de la votación.
+            // Así no cambiamos las reglas mientras alguien está votando.
+            if (
+                !in_array($current->status, ['draft', 'open'], true)
+                || $current->votes()->exists()
+            ) {
                 return back()->withErrors([
-                    'poll' => 'Solo puedes cambiar el modo de una votación sin votos que esté en borrador o abierta.',
+                    'poll' => 'Solo puedes cambiar la puntuación antes de recibir el primer voto.',
                 ]);
             }
 
-            $current->update(['single_choice' => $validated['single_choice']]);
+            if (array_key_exists('ranking_slots', $validated)) {
+                $requested = (int) $validated['ranking_slots'];
+                $candidateCount = $current->candidates()->count();
+                $maximum = max(1, min(3, $candidateCount - 1));
 
-            return redirect()->route('polls.show', $this->pollReturnParameters($current))
-                ->with('success', 'Modo de votación actualizado.');
+                if ($candidateCount === 0 || $requested > $maximum) {
+                    return back()->withErrors([
+                        'poll' => 'El número de preferencias supera el permitido para los juegos candidatos.',
+                    ]);
+                }
+
+                $current->update([
+                    'ranking_slots' => $requested,
+                    'single_choice' => $requested === 1,
+                ]);
+            } else {
+                // Mantener la compatibilidad con peticiones antiguas.
+                if ($current->ranking_slots !== null) {
+                    return back()->withErrors([
+                        'poll' => 'Esta votación utiliza el selector de preferencias.',
+                    ]);
+                }
+
+                $current->update([
+                    'single_choice' => (bool) $validated['single_choice'],
+                ]);
+            }
+
+            return redirect()
+                ->route('polls.show', $this->pollReturnParameters($current))
+                ->with('success', 'Sistema de puntuación actualizado.');
         });
     }
 
@@ -1495,51 +1574,76 @@ class PollController extends Controller
         $userId = (int) $request->user()->id;
         abort_unless((int) $poll->created_by === $userId, 403);
 
-        if (!in_array($poll->status, ['draft', 'open'], true)) {
-            return back()->withErrors([
-                'game_id' => 'No puedes añadir candidatos a una votación cerrada.',
+        // Mismo bloqueo que utiliza el guardado de votos.
+        return DB::transaction(function () use ($poll, $request, $userId): RedirectResponse {
+            $current = Poll::query()
+                ->whereKey($poll->id)
+                ->where('created_by', $userId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (! in_array($current->status, ['draft', 'open'], true)) {
+                return back()->withErrors([
+                    'game_id' => 'No puedes añadir candidatos a una votación cerrada.',
+                ]);
+            }
+
+            if ($current->votes()->exists()) {
+                return back()->withErrors([
+                    'game_id' => 'Ya se han recibido votos. No puedes añadir candidatos.',
+                ]);
+            }
+
+            $validated = $request->validate([
+                'game_id' => ['required', 'integer', Rule::exists('games', 'id')],
             ]);
-        }
 
-        // No se alteran las opciones de una votación una vez emitidos votos.
-        if ($poll->votes()->exists()) {
-            return back()->withErrors([
-                'game_id' => 'Ya se han recibido votos. No puedes añadir candidatos.',
-            ]);
-        }
-
-        $validated = $request->validate([
-            'game_id' => ['required', 'integer', Rule::exists('games', 'id')],
-        ]);
-
-        $ownedCollectionIds = $poll->gameCollections()
-            ->where('game_collections.created_by', $userId)
-            ->pluck('game_collections.id');
-
-        $game = Game::query()
-            ->whereKey((int) $validated['game_id'])
-            ->where('is_active', true)
-            ->whereHas('collections', fn ($query) => $query
+            $ownedCollectionIds = $current->gameCollections()
                 ->where('game_collections.created_by', $userId)
-                ->whereIn('game_collections.id', $ownedCollectionIds))
-            ->first();
+                ->pluck('game_collections.id');
 
-        if (!$game) {
-            return back()->withErrors([
-                'game_id' => 'El juego no pertenece a las colecciones de esta votación.',
-            ]);
-        }
+            $game = Game::query()
+                ->whereKey((int) $validated['game_id'])
+                ->where('is_active', true)
+                ->whereHas('collections', fn ($query) => $query
+                    ->where('game_collections.created_by', $userId)
+                    ->whereIn('game_collections.id', $ownedCollectionIds))
+                ->first();
 
-        if ($poll->candidates()->where('game_id', $game->id)->exists()) {
-            return back()->withErrors([
-                'game_id' => 'Este juego ya está incluido en la votación.',
-            ]);
-        }
+            if (!$game) {
+                return back()->withErrors([
+                    'game_id' => 'El juego no pertenece a las colecciones de esta votación.',
+                ]);
+            }
 
-        $poll->candidates()->create(['game_id' => $game->id]);
+            // Si ya hay participantes suficientes, el juego
+            // debe admitir el número actual de jugadores.
+            $participantCount = $current->participants()->count();
 
-        return redirect()->route('polls.show', $this->pollReturnParameters($poll))
-            ->with('success', 'Juego añadido a la votación.');
+            if (
+                $participantCount >= 2 &&
+                (
+                    $participantCount < (int) $game->min_players ||
+                    $participantCount > (int) $game->max_players
+                )
+            ) {
+                return back()->withErrors([
+                    'game_id' => 'Este juego no admite el número de jugadores de la votación.',
+                ]);
+            }
+
+            if ($current->candidates()->where('game_id', $game->id)->exists()) {
+                return back()->withErrors([
+                    'game_id' => 'Este juego ya está incluido en la votación.',
+                ]);
+            }
+
+            $current->candidates()->create(['game_id' => $game->id]);
+
+            return redirect()
+                ->route('polls.show', $this->pollReturnParameters($current))
+                ->with('success', 'Juego añadido a la votación.');
+        });
     }
 
     /*
@@ -2040,82 +2144,80 @@ class PollController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function close(
-        Poll $poll
-    ): RedirectResponse {
-        /*
-         * Solo el propietario.
-         */
+    public function close(Poll $poll): RedirectResponse
+    {
         abort_unless(
-            $poll->created_by ===
-                request()->user()->id,
+            (int) $poll->created_by === (int) request()->user()->id,
             403
         );
 
-        /*
-         * Solo podemos cerrar
-         * una votación abierta.
-         */
-        if (
-            $poll->status !== 'open'
-        ) {
-            return back();
-        }
+        // Compartimos el bloqueo con el guardado de votos:
+        // un voto y un cierre no pueden completarse a la vez.
+        return DB::transaction(function () use ($poll): RedirectResponse {
+            $current = Poll::query()
+                ->lockForUpdate()
+                ->findOrFail($poll->id);
 
-        $poll->load([
-            'participants.votes',
-            'candidates',
-        ]);
-
-        $candidateCount = $poll->candidates->count();
-        $requiredVoteCount = $poll->requiredVoteCount($candidateCount);
-
-        if ($requiredVoteCount === 0) {
-            return back()->withErrors([
-                'poll' => 'La votación no tiene juegos candidatos.',
-            ]);
-        }
-
-        $completedVotes = $poll->participants
-            ->filter(function ($participant) use ($requiredVoteCount) {
-                $positions = $participant->votes
-                    ->pluck('position')
-                    ->map(fn ($position) => (int) $position)
-                    ->unique();
-
-                for ($position = 1; $position <= $requiredVoteCount; $position++) {
-                    if (!$positions->contains($position)) {
-                        return false;
-                    }
-                }
-
-                return true;
-            })
-            ->count();
-
-        if (
-            $completedVotes === 0
-        ) {
-            return back()
-                ->withErrors([
-                    'poll' =>
-                    'Todavía no ha completado su voto ningún participante.',
-                ]);
-        }
-
-        $poll->update([
-            'status' => 'closed',
-        ]);
-
-        return redirect()
-            ->route(
-                'polls.show',
-                $this->pollReturnParameters($poll)
-            )
-            ->with(
-                'success',
-                'Votación cerrada. Ya puedes ver los resultados.'
+            abort_unless(
+                (int) $current->created_by === (int) request()->user()->id,
+                403
             );
+
+            if ($current->status !== 'open') {
+                return back();
+            }
+
+            $current->load([
+                'participants.votes',
+                'candidates',
+            ]);
+
+            $required = $current->requiredVoteCount(
+                $current->candidates->count()
+            );
+
+            if ($required === 0) {
+                return back()->withErrors([
+                    'poll' => 'La votación no tiene juegos candidatos.',
+                ]);
+            }
+
+            $completed = $current->participants
+                ->filter(function ($participant) use ($required): bool {
+                    $positions = $participant->votes
+                        ->pluck('position')
+                        ->map(fn ($position) => (int) $position)
+                        ->unique();
+
+                    for ($position = 1; $position <= $required; $position++) {
+                        if (! $positions->contains($position)) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                })
+                ->count();
+
+            if ($completed === 0) {
+                return back()->withErrors([
+                    'poll' =>
+                        'Todavía no ha completado su voto ningún participante.',
+                ]);
+            }
+
+            $current->update(['status' => 'closed']);
+
+            return redirect()
+                ->route(
+                    'polls.show',
+                    $this->pollReturnParameters($current)
+                )
+                ->with(
+                    'success',
+                    'Votación cerrada. Ya puedes ver los resultados.'
+                );
+        });
     }
 
     private function pollReturnParameters(Poll $poll): array

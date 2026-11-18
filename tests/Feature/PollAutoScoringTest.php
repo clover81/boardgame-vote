@@ -59,7 +59,8 @@ test('la puntuacion automatica depende de jugadores y candidatos', function (
 })->with([
     'dos candidatos' => [4, 2, 1],
     'tres candidatos' => [4, 3, 2],
-    'cinco candidatos' => [5, 5, 2],
+    'cinco candidatos y cinco jugadores' => [5, 5, 3],
+    'cinco candidatos y cuatro jugadores' => [4, 5, 2],
     'seis candidatos y tres personas' => [3, 6, 2],
     'seis candidatos y cuatro personas' => [4, 6, 3],
     'siete candidatos y cinco personas' => [5, 7, 3],

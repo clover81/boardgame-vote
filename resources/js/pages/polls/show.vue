@@ -7,7 +7,7 @@ import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, CalendarHeart, User
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 
 
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import {
     Head,
     Link,
@@ -158,6 +158,7 @@ interface Poll {
     ranking_slots: number | null;
 
     is_second_game: boolean;
+    planned_second_game: boolean;
     can_add_second_game: boolean;
     linked_poll: {
         id: number;
@@ -201,6 +202,27 @@ const withPollReturn = (path: string) => backToPolls.value === '/polls'
     : `${path}?back=${encodeURIComponent(backToPolls.value)}`;
 
 const changingVotingMode = ref(false);
+
+const maximumRankingSlots = computed(() =>
+    Math.max(1, Math.min(3, props.poll.candidates.length - 1))
+);
+
+const selectedRankingSlots = ref<number>(
+    props.poll.required_vote_count || 1
+);
+
+// Al navegar entre juegos vinculados, actualizar el selector.
+watch(
+    () => [
+        props.poll.id,
+        props.poll.required_vote_count,
+        props.poll.candidates.length,
+    ],
+    () => {
+        selectedRankingSlots.value = props.poll.required_vote_count || 1;
+    }
+);
+
 const refreshingVotes = ref(false);
 
 const refreshVotes = () => {
@@ -217,7 +239,7 @@ const changeVotingMode = () => {
 
     router.patch(
         withPollReturn(`/polls/${props.poll.id}/voting-mode`),
-        { single_choice: !props.poll.single_choice },
+        { ranking_slots: selectedRankingSlots.value },
         {
             preserveScroll: true,
             onStart: () => { changingVotingMode.value = true; },
@@ -264,7 +286,16 @@ const resultText = computed(() => {
 
     if (!results.length) return 'La votación terminó sin votos.';
 
-    const lines: string[] = [];
+    const sessionLabel = props.poll.is_second_game
+        ? 'Juego 2 de 2'
+        : props.poll.linked_poll
+            ? 'Juego 1 de 2'
+            : null;
+
+    const lines: string[] = [
+        `🎲 ${props.poll.name}${sessionLabel ? ' · ' + sessionLabel : ''}`,
+        '',
+    ];
 
     if (winner) {
         lines.push(`🏆 ${winner.game.name} gana con ${score(winner.points)}`);
@@ -376,7 +407,7 @@ const markGameImageFailed = (gameId: number) => {
 
 const pollError = computed(() => {
     const errors = page.props.errors as Record<string, string>;
-    return errors.poll ?? errors.play ?? null;
+    return errors.poll ?? errors.play ?? errors.ranking_slots ?? null;
 });
 
 const resultExpansion = (candidateId: number): Expansion | null => {
@@ -566,31 +597,103 @@ const modeLabel = (
                         {{ poll.name }}
                     </h1>
 
-                    <div
-                        v-if="poll.linked_poll || poll.can_add_second_game"
-                        class="mt-4 rounded-xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-900 dark:bg-violet-950/20"
+                    <section
+                        v-if="poll.linked_poll || poll.can_add_second_game || poll.planned_second_game"
+                        aria-label="Información de la sesión"
+                        class="mt-4 rounded-2xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-900 dark:bg-violet-950/20"
                     >
-                        <p class="text-sm font-bold text-[#5200FF] dark:text-[#CCFF00]">
-                            {{ poll.is_second_game ? 'Juego 2 de 2' : poll.linked_poll ? 'Juego 1 de 2' : 'Sesión de un juego' }}
+                        <div class="flex flex-wrap items-start justify-between gap-2">
+                            <p class="text-sm font-black text-[#5200FF] dark:text-[#CCFF00]">
+                                {{
+                                    poll.is_second_game
+                                        ? 'Juego 2 de 2'
+                                        : poll.linked_poll || poll.planned_second_game
+                                            ? 'Juego 1 de 2'
+                                            : 'Votación individual'
+                                }}
+                            </p>
+
+                            <span
+                                v-if="poll.linked_poll"
+                                class="rounded-full px-3 py-1 text-xs font-bold"
+                                :class="{
+                                    'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200':
+                                        poll.linked_poll.status === 'draft',
+                                    'bg-[#CCFF00] text-black':
+                                        poll.linked_poll.status === 'open',
+                                    'bg-violet-200 text-violet-900 dark:bg-violet-900 dark:text-violet-100':
+                                        poll.linked_poll.status === 'closed',
+                                }"
+                            >
+                                Otro juego: {{ statusLabel(poll.linked_poll.status) }}
+                            </span>
+
+                            <span
+                                v-else-if="poll.planned_second_game && poll.can_add_second_game"
+                                class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+                            >
+                                Juego 2 pendiente
+                            </span>
+                        </div>
+
+                        <template v-if="poll.linked_poll">
+                            <p class="mt-3 break-words text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                                {{ poll.is_second_game ? 'Juego 1' : 'Juego 2' }}:
+                                {{ poll.linked_poll.name }}
+                            </p>
+
+                            <p class="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+                                Los participantes, candidatos, votos y resultados
+                                se gestionan por separado en cada juego.
+                            </p>
+
+                            <Link
+                                :href="withPollReturn(`/polls/${poll.linked_poll.id}`)"
+                                class="mt-3 inline-flex min-h-11 max-w-full items-center rounded-xl border border-violet-300 bg-white px-4 py-2.5 text-sm font-bold text-[#5200FF] transition hover:bg-violet-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-violet-700 dark:bg-zinc-900 dark:text-violet-200 dark:hover:bg-violet-950"
+                            >
+                                {{ poll.is_second_game ? 'Ver juego 1' : 'Ver juego 2' }}
+                            </Link>
+                        </template>
+
+                        <template v-else-if="poll.can_add_second_game">
+                            <p class="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-300">
+                                {{
+                                    poll.planned_second_game
+                                        ? 'El primer juego está preparado. Falta configurar la segunda votación.'
+                                        : 'Puedes añadir una segunda votación independiente antes de abrir esta.'
+                                }}
+                            </p>
+
+                            <p
+                                v-if="poll.planned_second_game"
+                                class="mt-2 text-sm font-semibold text-amber-800 dark:text-amber-200"
+                            >
+                                Prepara el segundo juego antes de abrir el primero.
+                                Después de abrirlo, ya no podrás añadirlo.
+                            </p>
+
+                            <Link
+                                :href="`/polls/create?parent_poll_id=${poll.id}`"
+                                class="mt-3 inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-black transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                                :class="poll.planned_second_game
+                                    ? 'bg-[#CCFF00] text-black hover:bg-lime-300'
+                                    : 'border border-violet-300 bg-white text-[#5200FF] hover:bg-violet-100 dark:border-violet-700 dark:bg-zinc-900 dark:text-violet-200 dark:hover:bg-violet-950'"
+                            >
+                                {{ poll.planned_second_game
+                                    ? 'Preparar juego 2'
+                                    : 'Añadir un segundo juego' }}
+                            </Link>
+                        </template>
+
+                        <p
+                            v-else-if="poll.planned_second_game"
+                            class="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300"
+                        >
+                            El segundo juego quedó sin configurar. Esta votación
+                            ya no está en borrador, por lo que no se puede
+                            añadir una segunda votación a la sesión.
                         </p>
-
-                        <Link
-                            v-if="poll.linked_poll"
-                            :href="withPollReturn(`/polls/${poll.linked_poll.id}`)"
-                            class="mt-2 inline-block font-semibold text-[#5200FF] underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-[#CCFF00]"
-                        >
-                            {{ poll.is_second_game ? 'Ver primera votación' : 'Ver segunda votación' }}:
-                            {{ poll.linked_poll.name }}
-                        </Link>
-
-                        <Link
-                            v-else-if="poll.can_add_second_game"
-                            :href="`/polls/create?parent_poll_id=${poll.id}`"
-                            class="mt-2 inline-block font-semibold text-[#5200FF] underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-[#CCFF00]"
-                        >
-                            + Preparar un segundo juego
-                        </Link>
-                    </div>
+                    </section>
 
                     <div
                         class="mt-3 flex flex-wrap gap-3"
@@ -647,14 +750,54 @@ const modeLabel = (
                                     ? 'Un voto por persona'
                                     : 'Primera y segunda opción' }}
                         </span>
+
+                    </div>
+
+                    <div
+                        v-if="canChangeVotingMode"
+                        class="mt-4 flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:flex-row sm:items-end"
+                    >
+                        <div class="min-w-0 flex-1">
+                            <label
+                                for="poll-ranking-mode"
+                                class="block text-sm font-bold text-zinc-900 dark:text-zinc-100"
+                            >
+                                Preferencias por jugador
+                            </label>
+                            <p class="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                                Puedes cambiar la puntuación mientras nadie haya votado.
+                            </p>
+                            <select
+                                id="poll-ranking-mode"
+                                v-model.number="selectedRankingSlots"
+                                class="mt-2 min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                            >
+                                <option
+                                    v-for="slots in maximumRankingSlots"
+                                    :key="slots"
+                                    :value="slots"
+                                >
+                                    {{
+                                        slots === 1
+                                            ? '1 preferencia · 1 punto'
+                                            : slots === 2
+                                                ? '2 preferencias · 2 y 1 puntos'
+                                                : '3 preferencias · 3, 2 y 1 puntos'
+                                    }}
+                                </option>
+                            </select>
+                        </div>
+
                         <button
-                            v-if="canChangeVotingMode"
                             type="button"
-                            :disabled="changingVotingMode"
-                            class="min-h-9 rounded-full border border-violet-300 px-3 py-1 text-sm font-semibold text-[#5200FF] hover:bg-violet-50 disabled:opacity-50 dark:border-violet-700 dark:text-violet-200 dark:hover:bg-violet-950"
+                            :disabled="
+                                changingVotingMode ||
+                                selectedRankingSlots === poll.required_vote_count
+                            "
+                            class="min-h-11 rounded-xl bg-[#5200FF] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-40"
                             @click="changeVotingMode"
                         >
-                            {{ poll.single_choice ? 'Cambiar a primera y segunda opción' : 'Cambiar a voto único' }}
+                            {{ changingVotingMode ? 'Guardando…' : 'Guardar puntuación' }}
                         </button>
                     </div>
 
@@ -687,22 +830,6 @@ const modeLabel = (
                         </span>
                     </div>
 
-                    <p
-                        v-if="
-                            poll.status === 'open'
-                        "
-                        class="mt-4 text-sm font-semibold text-zinc-600 dark:text-zinc-300"
-                    >
-
-                        {{
-                            poll.voted_participants_count
-                        }}
-                        /
-                        {{
-                            poll.participants_count
-                        }}
-                        participantes han votado
-                    </p>
                 </div>
 
                 <!-- ================================================== -->
@@ -1353,6 +1480,15 @@ const modeLabel = (
                             🤝 Empate en primera posición
                         </p>
 
+                        <p class="mt-2 break-words text-sm font-bold">
+                            {{
+                                results
+                                    .filter(result => result.is_top_tie)
+                                    .map(result => result.game.name)
+                                    .join(' · ')
+                            }}
+                        </p>
+
                         <p class="mt-1 text-sm">
                             {{ poll.single_choice
                                 ? 'Hay varios juegos con el mismo número de votos.'
@@ -1586,7 +1722,7 @@ const modeLabel = (
                     </Link>
                 </div>
             </section>
-            <ScrollToTopProgress :hide-on-mobile="addCandidateOpen" compact-on-mobile />
+            <ScrollToTopProgress :remember-position="false" :hide-on-mobile="addCandidateOpen" compact-on-mobile />
         </div>
         <Dialog v-model:open="closePollDialogOpen">
             <DialogContent class="sm:max-w-md" @close-auto-focus="restoreClosePollFocus">

@@ -71,7 +71,7 @@ test('poll store rejects inactive games and games outside selected collections b
 
     $this->actingAs($this->user)->post(route('polls.store'), $this->payload)
         ->assertSessionHasErrors([
-            'candidate_ids' => 'Algún juego candidato no pertenece a las colecciones seleccionadas.',
+            'candidate_ids' => 'Algún juego candidato no está disponible para las colecciones o el número de jugadores seleccionados.',
         ]);
 
     $this->assertDatabaseCount('polls', 0);

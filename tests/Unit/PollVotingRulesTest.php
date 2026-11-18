@@ -11,7 +11,7 @@ test('el sistema recomienda las preferencias según jugadores y candidatos', fun
 })->with([
     'dos juegos' => [4, 2, 1],
     'tres juegos' => [4, 3, 2],
-    'cinco juegos' => [6, 5, 2],
+    'cinco juegos' => [6, 5, 3],
     'seis juegos y tres personas' => [3, 6, 2],
     'seis juegos y cuatro personas' => [4, 6, 3],
     'ocho juegos y cinco personas' => [5, 8, 3],

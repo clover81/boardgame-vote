@@ -233,7 +233,10 @@ const suggestedRankingSlots = computed(() => {
     const participants = form.player_ids.length;
 
     if (candidates <= 2) return 1;
-    if (candidates >= 6 && participants >= 4) return 3;
+    if (
+        (candidates >= 5 && participants >= 5) ||
+        (candidates >= 6 && participants >= 4)
+    ) return 3;
     return 2;
 });
 
@@ -273,7 +276,8 @@ const canCreatePoll = computed(() => {
         form.name.trim().length > 0 &&
         form.collection_ids.length >= 1 &&
         form.player_ids.length >= 2 &&
-        form.candidate_ids.length >= 1
+        form.candidate_ids.length >= 1 &&
+        unavailableCandidateGames.value.length === 0
     );
 });
 
@@ -486,11 +490,9 @@ const idealGames = computed(() => {
 
     return availableGames.value.filter(
         (game) =>
-            game
-                .ideal_player_counts
-                .includes(
-                    playerCount.value
-                )
+            game.ideal_player_counts.includes(playerCount.value) &&
+            playerCount.value >= game.min_players &&
+            playerCount.value <= game.max_players
     );
 });
 
@@ -525,6 +527,19 @@ const otherGames = computed(() => {
                 supports
             );
         }
+    );
+});
+
+// Los candidatos elegidos se conservan al modificar jugadores
+// o colecciones, aunque temporalmente no sean compatibles.
+const unavailableCandidateGames = computed(() => {
+    const availableIds = new Set(
+        [...idealGames.value, ...otherGames.value]
+            .map(game => game.id)
+    );
+
+    return selectedCandidateGames.value.filter(
+        game => !availableIds.has(game.id)
     );
 });
 
@@ -919,23 +934,9 @@ watch(
         () => [...form.collection_ids],
     ],
     () => {
-        // No seleccionamos automáticamente los juegos ideales.
-        // Conservamos los candidatos elegidos manualmente
-        // mientras sigan disponibles para la nueva combinación.
-        const availableIds = new Set(
-            [
-                ...idealGames.value,
-                ...otherGames.value,
-            ].map((game) => game.id)
-        );
-
-        form.candidate_ids = form.candidate_ids.filter(
-            (id) => availableIds.has(id)
-        );
-
-        // El watch de candidate_ids borra solo los datos de juegos
-        // descartados. Los candidatos que siguen válidos conservan
-        // su nota y su expansión prevista.
+        // Actualizamos la presentación, pero no eliminamos candidatos.
+        // Las notas y expansiones permanecen hasta que el usuario
+        // quite manualmente el juego.
         showOtherGames.value = false;
     }
 );
@@ -1425,6 +1426,63 @@ const submit = () => {
 
                     <InputError :message="form.errors.player_ids" />
                 </section>
+
+                <div
+                    v-if="unavailableCandidateGames.length"
+                    role="status"
+                    class="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100 sm:p-5"
+                >
+                    <p class="font-bold">
+                        Hay {{ unavailableCandidateGames.length }}
+                        {{ unavailableCandidateGames.length === 1
+                            ? 'juego seleccionado que necesita revisión'
+                            : 'juegos seleccionados que necesitan revisión' }}.
+                    </p>
+
+                    <p class="mt-2 text-sm leading-6">
+                        No hemos eliminado ninguno. Sus notas y expansiones
+                        siguen guardadas en este formulario.
+                        Puedes ajustar jugadores o colecciones para recuperarlos,
+                        o quitarlos manualmente.
+                    </p>
+
+                    <ul class="mt-3 space-y-2">
+                        <li
+                            v-for="game in unavailableCandidateGames"
+                            :key="game.id"
+                            class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-white/80 p-3 dark:border-amber-900 dark:bg-zinc-900"
+                        >
+                            <div class="min-w-0 flex-1">
+                                <p class="break-words text-sm font-bold">
+                                    {{ game.name }}
+                                </p>
+
+                                <p class="mt-1 text-xs">
+                                    {{
+                                        playerCount < 2
+                                            ? 'Selecciona al menos dos jugadores.'
+                                            : !game.collection_ids.some(id =>
+                                                form.collection_ids.includes(id))
+                                                ? 'Fuera de las colecciones seleccionadas.'
+                                                : 'No compatible con el número actual de jugadores.'
+                                    }}
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="min-h-11 shrink-0 rounded-xl border border-amber-400 px-4 py-2 text-sm font-bold hover:bg-amber-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600 dark:hover:bg-amber-900/40"
+                                @click="removeCandidate(game.id, $event)"
+                            >
+                                Quitar
+                            </button>
+                        </li>
+                    </ul>
+
+                    <p class="mt-3 text-sm font-semibold">
+                        Resuelve estas incompatibilidades antes de crear la votación.
+                    </p>
+                </div>
 
                 <!-- ================================================== -->
                 <!-- CANDIDATOS                                         -->

@@ -292,6 +292,10 @@ class PublicPollController extends Controller
                     'status' =>
                     $poll->status,
 
+                    'session_position' => $poll->parent_poll_id !== null
+                        ? 2
+                        : ($poll->secondGamePoll()->exists() ? 1 : null),
+
                     'single_choice' => (bool) $poll->single_choice,
                     'ranking_slots' => $poll->ranking_slots,
                     'required_vote_count' => $poll->requiredVoteCount($poll->candidates->count()),

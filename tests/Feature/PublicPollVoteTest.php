@@ -50,6 +50,49 @@ beforeEach(function () {
     $this->originalVotes = $this->participant->votes()->orderBy('position')->get()->toArray();
 });
 
+test('la votación pública distingue los dos juegos de la sesión', function () {
+    $this->withoutVite();
+
+    // Una votación individual no debe mostrar "Juego 1 de 2".
+    $this->get($this->publicUrl)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('vote/show')
+            ->where('poll.session_position', null)
+        );
+
+    $second = Poll::create([
+        'created_by' => $this->poll->created_by,
+        'name' => 'Juego 2',
+        'token' => 'PUBLICGAME2',
+        'status' => 'open',
+        'parent_poll_id' => $this->poll->id,
+    ]);
+
+    $second->candidates()->create([
+        'game_id' => $this->candidates[0]->game_id,
+    ]);
+
+    $participant = $second->participants()->create([
+        'display_name' => 'Ana',
+    ]);
+
+    $this->get($this->publicUrl)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('poll.session_position', 1)
+        );
+
+    $this->get(route('vote.participant.show', [
+        'token' => $second->token,
+        'voteToken' => $participant->vote_token,
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('poll.session_position', 2)
+        );
+});
+
 test('a public vote stores both choices with the poll and participant IDs', function () {
     $this->participant->votes()->delete();
 
