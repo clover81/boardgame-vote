@@ -1097,12 +1097,12 @@ watch(
                     <button
                         type="button"
                         :disabled="bggLoading || bggCollectionId === '' || bggRetryMinutes > 0"
-                        class="rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white disabled:opacity-50"
+                        class="w-full min-w-0 rounded-xl bg-[#5200FF] px-5 py-3 text-center font-bold whitespace-nowrap text-white disabled:opacity-50 sm:w-52 sm:shrink-0"
                         @click="loadBggPreview"
                     >
                         {{
                         bggLoading
-                            ? 'Consultando BGG...'
+                            ? 'Consultando...'
                             : bggRetryMinutes > 0
                                 ? `Disponible en ${bggRetryMinutes} min`
                                 : 'Consultar BGG'
@@ -1292,15 +1292,6 @@ watch(
                         </p>
                     </details>
                 </div>
-
-                <p
-                    v-if="bggLoading && bggPreview"
-                    role="status"
-                    class="mt-4 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-medium text-violet-900 dark:border-violet-800 dark:bg-violet-950/30 dark:text-violet-200"
-                >
-                    Actualizando la información de BGG...
-                    Los resultados anteriores permanecen visibles.
-                </p>
 
                 <div v-if="bggPreview" class="mt-7">
                     <p class="mb-4 text-sm text-zinc-500">
