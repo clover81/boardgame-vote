@@ -86,6 +86,21 @@ const normalizeText = (text: string): string =>
         .toLocaleLowerCase()
         .trim();
 
+// Normalizar cada juego una sola vez, únicamente cuando se busque.
+const normalizedGameSearch = computed(() =>
+    new Map<number, { name: string; text: string }>(
+        props.games.map(game => [
+            game.id,
+            {
+                name: normalizeText(game.name),
+                text: normalizeText(
+                    `${game.name} ${game.short_description ?? ''}`
+                ),
+            },
+        ]),
+    ),
+);
+
 const filteredGames = computed(() => {
     const terms = normalizeText(search.value).split(/\s+/).filter(Boolean);
     const players = Number(playerCount.value);
@@ -135,23 +150,25 @@ const filteredGames = computed(() => {
 
     if (!terms.length) return candidates;
 
+    const normalizedData = normalizedGameSearch.value;
+
     // Primero títulos que empiezan por lo escrito; después títulos que lo contienen.
     const prefix = terms.join(' ');
     const prefixMatches = candidates.filter(game =>
-        normalizeText(game.name).startsWith(prefix)
+        (normalizedData.get(game.id)?.name ?? '').startsWith(prefix)
     );
     if (prefixMatches.length) return prefixMatches;
 
     const titleMatches = candidates.filter(game =>
-        terms.every(term => normalizeText(game.name).includes(term))
+        terms.every(term =>
+            (normalizedData.get(game.id)?.name ?? '').includes(term)
+        )
     );
     if (titleMatches.length) return titleMatches;
 
     // Sin títulos coincidentes, se conserva la búsqueda por temática.
     return candidates.filter(game => {
-        const searchable = normalizeText(
-            `${game.name} ${game.short_description ?? ''}`
-        );
+        const searchable = normalizedData.get(game.id)?.text ?? '';
         return terms.every(term => searchable.includes(term));
     });
 });
@@ -521,19 +538,35 @@ const formatDuration = (game: Game) => {
     return `${game.min_playtime}–${game.max_playtime} min`;
 };
 
+// Evitar analizar varias veces las mismas direcciones externas.
+const externalUrlCache = new Map<string, string | undefined>();
+
 const externalUrl = (url: string | null): string | undefined => {
     if (!url) return undefined;
 
+    if (externalUrlCache.has(url)) {
+        return externalUrlCache.get(url);
+    }
+
+    let safeUrl: string | undefined;
+
     try {
         const parsed = new URL(url);
-
-        return ['http:', 'https:'].includes(parsed.protocol)
+        safeUrl = ['http:', 'https:'].includes(parsed.protocol)
             ? parsed.href
             : undefined;
     } catch {
-        return undefined;
+        safeUrl = undefined;
     }
+
+    externalUrlCache.set(url, safeUrl);
+    return safeUrl;
 };
+
+const complexityFormatter = new Intl.NumberFormat('es-ES', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+});
 </script>
 
 <template>
@@ -843,7 +876,7 @@ const externalUrl = (url: string | null): string | undefined => {
                 class="grid gap-4 min-[480px]:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4"
             >
                 <article
-                    v-for="game in sortedGames"
+                    v-for="(game, index) in sortedGames"
                     :key="game.id"
                     class="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#5200FF] hover:shadow-xl"
                 >
@@ -864,7 +897,8 @@ const externalUrl = (url: string | null): string | undefined => {
                             :src="game.image_url"
                             @error="markCoverAsBroken(game.id)"
                             :alt="`Portada de ${game.name}`"
-                            loading="lazy"
+                            :loading="index === 0 ? 'eager' : 'lazy'"
+                            :fetchpriority="index === 0 ? 'high' : 'auto'"
                             class="h-full w-full object-contain drop-shadow-xl transition-transform duration-500 group-hover:scale-105"
                         />
 
@@ -952,7 +986,7 @@ const externalUrl = (url: string | null): string | undefined => {
                             <span v-if="game.complexity !== null" class="inline-flex items-center gap-1.5 whitespace-nowrap" title="Dificultad sobre 5">
                                 <BrainCog class="size-4 shrink-0 text-pink-600" :stroke-width="2" aria-hidden="true" />
                                 <span class="sr-only">Dificultad:</span>
-                                {{ Number(game.complexity).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}/5
+                                {{ complexityFormatter.format(Number(game.complexity)) }}/5
                             </span>
                         </div>
 
