@@ -2,7 +2,7 @@
 import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
 import { playerNameColor } from '@/lib/player-colors';
 import MeepleIcon from '@/components/icons/MeepleIcon.vue';
-import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, CalendarHeart, UsersRound, HourglassCog, Swords, BrainCog, NotebookPen } from '@lucide/vue';
+import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, CalendarHeart, UsersRound, HourglassCog, Swords, BrainCog, NotebookPen, Share2, Trophy } from '@lucide/vue';
 
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 
@@ -308,6 +308,18 @@ const resultText = computed(() => {
         if (result === winner || result.is_top_tie) continue;
         lines.push(`${result.rank}. ${result.game.name} · ${score(result.points)}`);
     }
+
+    // Cada jugador conserva su propio enlace personal.
+    // No compartimos tokens privados en el mensaje grupal.
+    const gamesReminder = winner
+        ? 'el ganador y los demás juegos'
+        : 'todos los juegos candidatos';
+
+    lines.push(
+        '',
+        '🎬 Tutoriales para la partida:',
+        `Desde vuestro enlace personal de votación (el mismo que usasteis para votar) podéis consultar ${gamesReminder}, ver sus vídeos disponibles o buscar los que falten en YouTube. `
+    );
 
     return lines.join('\n');
 });
@@ -1433,12 +1445,20 @@ const modeLabel = (
                 <div v-if="results.length" class="mb-5">
                     <button
                         type="button"
-                        class="min-h-11 w-full rounded-xl bg-[#5200FF] px-4 py-2 text-sm font-bold text-white hover:bg-[#4100cc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 sm:w-auto"
+                        class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#5200FF] px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#4100cc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 disabled:opacity-60 sm:w-auto"
                         :disabled="sharingResults"
                         @click="shareResults"
                     >
-                        {{ sharingResults ? 'Compartiendo…' : 'Compartir resultado' }}
+                        <Share2
+                            class="size-4 shrink-0"
+                            :stroke-width="2.2"
+                            aria-hidden="true"
+                        />
+                        <span>{{ sharingResults ? 'Compartiendo…' : 'Compartir resultado' }}</span>
                     </button>
+                    <p class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                        El mensaje también recordará dónde encontrar los tutoriales.
+                    </p>
                     <p role="status" class="text-sm text-zinc-600 dark:text-zinc-300">
                         {{ resultShareMessage }}
                     </p>
@@ -1460,14 +1480,18 @@ const modeLabel = (
                 >
                     <div
                         v-if="poll.has_clear_winner"
-                        class="rounded-2xl bg-[#CCFF00] p-5 text-black"
+                        class="rounded-2xl border border-lime-200 bg-[#F7FAED] p-5 text-zinc-900 shadow-sm dark:border-lime-900 dark:bg-lime-950/30 dark:text-zinc-100"
                     >
-                        <p class="text-xs font-black uppercase">
+                        <p class="inline-flex items-center gap-2 rounded-full border border-lime-300 bg-lime-100 px-3 py-1.5 text-xs font-black uppercase text-lime-950 dark:border-lime-700 dark:bg-lime-900/60 dark:text-lime-100">
+                            <Trophy
+                                class="size-4 shrink-0"
+                                :stroke-width="2.2"
+                                aria-hidden="true"
+                            />
                             Ganador
                         </p>
 
-                        <p class="mt-1 text-xl font-black">
-                            🏆
+                        <p class="mt-3 break-words text-xl font-black">
                             {{ results[0].game.name }}
                         </p>
                     </div>

@@ -1062,12 +1062,14 @@ const myChoiceLabel = (candidateId: number): string | null => {
             <section
                 v-if="poll.status === 'open' && voteSaved && selectedParticipant"
                 ref="savedVotePanel"
-                class="scroll-mt-6 rounded-3xl border border-green-200 bg-white p-5 text-center shadow-sm sm:p-6"
+                class="mx-auto max-w-3xl scroll-mt-6 rounded-3xl border border-lime-200 bg-white p-5 text-center shadow-sm sm:p-6"
             >
                 <div
-                    class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#CCFF00] text-3xl"
+                    class="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-lime-200 bg-lime-100"
                 >
-                    ✓
+                    <span class="text-3xl font-bold text-[#5200FF]" aria-hidden="true">
+                        ✓
+                    </span>
                 </div>
 
                 <h2
@@ -1893,6 +1895,6 @@ const myChoiceLabel = (candidateId: number): string | null => {
                 </div>
             </template>
         </div>
-        <ScrollToTopProgress :remember-position="false" compact-on-mobile />
+        <ScrollToTopProgress :remember-position="false" compact-on-mobile hide-near-bottom />
     </main>
 </template>
