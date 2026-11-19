@@ -2,7 +2,7 @@
 import { playerMeepleColor, playerNameColor } from '@/lib/player-colors';
 import MeepleIcon from '@/components/icons/MeepleIcon.vue';
 import YoutubeLogoIcon from '@/components/icons/YoutubeLogoIcon.vue';
-import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, UsersRound, HourglassCog, Swords, BrainCog, NotebookPen } from '@lucide/vue';
+import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, UsersRound, HourglassCog, Swords, BrainCog, NotebookPen , Trophy, Medal, CircleStar, SquareStar} from '@lucide/vue';
 
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 
@@ -138,9 +138,23 @@ interface Poll {
     candidates: Candidate[];
 }
 
+interface LinkedSession {
+    name: string;
+    status: 'open' | 'closed';
+    session_position: 1 | 2;
+    candidates: Array<{
+        id: number;
+        is_winner: boolean;
+        note: string | null;
+        expansion_name: string | null;
+        game: Pick<Game, 'name' | 'image_url' | 'min_players' | 'max_players' | 'min_playtime' | 'max_playtime' | 'short_description' | 'youtube_url' | 'bgg_url'>;
+    }>;
+}
+
 const props = defineProps<{
     poll: Poll;
     results: Result[];
+    linkedSession: LinkedSession | null;
     currentParticipantId: number;
     voteToken: string;
 }>();
@@ -628,6 +642,57 @@ const externalUrl = (url: string | null): string | undefined => {
 };
 
 const hasRecordedVotes = computed(() => props.results.some(result => result.points > 0));
+
+// Los juegos siguen accesibles después de votar y al cerrar la sesión.
+const sessionCandidates = computed(() => {
+    const ranks = new Map(
+        props.results.map(result => [result.candidate_id, result.rank])
+    );
+
+    return [...props.poll.candidates].sort((a, b) => {
+        if (props.poll.status === 'closed') {
+            const aRank = ranks.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+            const bRank = ranks.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+            if (aRank !== bRank) return aRank - bRank;
+        }
+
+        return a.game.name.localeCompare(b.game.name, 'es', {
+            sensitivity: 'base',
+        });
+    });
+});
+
+const sessionResult = (candidateId: number): Result | undefined =>
+    props.results.find(result => result.candidate_id === candidateId);
+
+const winningGame = computed(() => {
+    const winner = props.results.find(result => result.is_winner);
+    return winner
+        ? props.poll.candidates.find(candidate => candidate.id === winner.candidate_id)?.game
+        : undefined;
+});
+
+// Si no hay tutorial guardado, enlazamos a una búsqueda de YouTube,
+// identificada claramente como búsqueda, nunca como vídeo verificado.
+const tutorialUrl = (game: Pick<Game, 'name' | 'youtube_url'>): string =>
+    externalUrl(game.youtube_url) ??
+    `https://www.youtube.com/results?search_query=${encodeURIComponent(
+        `tutorial juego de mesa ${game.name} español`
+    )}`;
+
+const myChoiceLabel = (candidateId: number): string | null => {
+    const position = selectedParticipant.value?.votes.find(
+        vote => vote.candidate_id === candidateId
+    )?.position;
+
+    if (position === 1) {
+        return needsSecondChoice.value ? 'Tu primera opción' : '✓ Tu voto';
+    }
+    if (position === 2) return 'Tu segunda opción';
+    if (position === 3) return 'Tu tercera opción';
+
+    return null;
+};
 </script>
 
 <template>
@@ -718,6 +783,15 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                     Resultado de la votación
                 </h2>
 
+                <a
+                    v-if="!poll.has_clear_winner"
+                    href="#session-games"
+                    class="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-violet-200 bg-white px-4 py-2.5 text-sm font-bold text-[#5200FF] shadow-sm hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                >
+                    <YoutubeLogoIcon class="size-5 shrink-0" aria-hidden="true" />
+                    Ver juegos y tutoriales
+                </a>
+
                 <p
                     v-if="hasRecordedVotes"
                     class="mt-2 text-zinc-500"
@@ -739,16 +813,75 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                 >
                     <div
                         v-if="poll.has_clear_winner"
-                        class="rounded-2xl bg-[#CCFF00] p-5 text-black"
+                        class="overflow-hidden rounded-2xl border border-lime-200 bg-[#F7FAED] p-4 text-zinc-900 shadow-sm sm:p-5"
                     >
-                        <p class="text-xs font-black uppercase">
-                            Ganador
+                        <span
+                            class="inline-flex items-center rounded-full border border-lime-300 bg-lime-100 px-3 py-1.5 text-xs font-black text-lime-950"
+                        >
+                            <Trophy class="mr-1 inline-block size-4 shrink-0 align-[-0.15em]" :stroke-width="2.2" aria-hidden="true" /> Juego ganador
+                        </span>
+
+                        <div class="mt-4 flex min-w-0 items-start gap-4 sm:gap-5">
+                            <img
+                                v-if="winningGame?.image_url && !brokenCoverIds.includes(results[0].candidate_id)"
+                                :src="winningGame.image_url"
+                                :alt="`Portada de ${winningGame.name}`"
+                                loading="lazy"
+                                class="h-28 w-20 shrink-0 rounded-lg border border-zinc-200/70 object-contain shadow-sm sm:h-36 sm:w-28"
+                                @error="markCoverAsBroken(results[0].candidate_id)"
+                            />
+
+                            <div class="min-w-0 flex-1">
+                                <h3 class="break-words text-xl font-black leading-snug sm:text-2xl">
+                                    {{ results[0].game.name }}
+                                </h3>
+
+                                <div
+                                    v-if="winningGame"
+                                    class="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-medium text-zinc-600 sm:text-sm"
+                                >
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <UsersRound class="size-4 text-[#5200FF]" aria-hidden="true" />
+                                        {{ winningGame.min_players }}–{{ winningGame.max_players }} jugadores
+                                    </span>
+                                    <span
+                                        v-if="winningGame.min_playtime"
+                                        class="inline-flex items-center gap-1.5"
+                                    >
+                                        <HourglassCog class="size-4 text-blue-700" aria-hidden="true" />
+                                        {{ winningGame.min_playtime }}<template v-if="winningGame.max_playtime && winningGame.max_playtime !== winningGame.min_playtime">–{{ winningGame.max_playtime }}</template> min
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p
+                            v-if="winningGame?.short_description"
+                            class="mt-4 line-clamp-3 text-sm leading-relaxed text-zinc-700 sm:text-base"
+                        >
+                            {{ winningGame.short_description }}
                         </p>
 
-                        <p class="mt-1 text-xl font-black">
-                            🏆
-                            {{ results[0].game.name }}
-                        </p>
+                        <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+                            <a
+                                v-if="winningGame"
+                                :href="tutorialUrl(winningGame)"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#5200FF] px-4 py-3 text-center text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#4100CC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                            >
+                                <YoutubeLogoIcon class="size-5 shrink-0" aria-hidden="true" />
+                                {{ externalUrl(winningGame.youtube_url) ? 'Ver tutorial del ganador' : 'Buscar tutorial del ganador' }}
+                            </a>
+
+                            <a
+                                href="#session-games"
+                                class="inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-center text-sm font-bold text-[#5200FF] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                            >
+                                Ver todos los juegos
+                                <span class="ml-2" aria-hidden="true">↓</span>
+                            </a>
+                        </div>
                     </div>
 
                     <div
@@ -756,7 +889,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                         class="rounded-2xl bg-orange-100 p-5 text-orange-900"
                     >
                         <p class="font-black">
-                            🤝 Empate en primera posición
+                            <CircleStar class="mr-1 inline-block size-4 shrink-0 align-[-0.15em]" :stroke-width="2.2" aria-hidden="true" /> Empate en primera posición
                         </p>
 
                         <p class="mt-2 break-words text-sm font-bold">
@@ -776,10 +909,22 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                     </div>
                 </div>
 
-                <div
+                <details
                     v-if="hasRecordedVotes"
-                    class="mt-7 space-y-4"
+                    :open="results.length <= 4"
+                    class="group mt-7"
                 >
+                    <summary class="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 font-bold text-[#5200FF] shadow-sm hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] [&::-webkit-details-marker]:hidden">
+                        <span class="inline-flex min-w-0 items-center gap-2">
+                            <Medal class="size-5 shrink-0" :stroke-width="2" aria-hidden="true" />
+                            <span>Clasificación completa ({{ results.length }} juegos)</span>
+                        </span>
+                        <span
+                            aria-hidden="true"
+                            class="shrink-0 text-xl transition-transform group-open:rotate-180"
+                        >⌄</span>
+                    </summary>
+                    <div class="mt-4 space-y-4">
                     <article
                         v-for="result in results"
                         :key="
@@ -804,11 +949,11 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                             }"
                         >
                             <span v-if="result.is_winner">
-                                🥇
+                                <Medal class="inline-block size-4 text-[#5200FF]" :stroke-width="2" aria-hidden="true" />
                             </span>
 
                             <span v-else-if="result.is_top_tie">
-                                🤝
+                                <CircleStar class="inline-block size-4 text-[#5200FF]" :stroke-width="2" aria-hidden="true" />
                             </span>
 
                             <span v-else>
@@ -864,7 +1009,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                 v-if="!poll.single_choice"
                                 class="mt-1 text-sm text-zinc-500"
                             >
-                                🥇
+                                <Medal class="inline-block size-4 text-[#5200FF]" :stroke-width="2" aria-hidden="true" />
                                 {{
                                     result.first_votes
                                 }}
@@ -872,13 +1017,13 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
 
                                 ·
 
-                                🥈
+                                <Medal class="inline-block size-4 text-[#5200FF]" :stroke-width="2" aria-hidden="true" />
                                 {{
                                     result.second_votes
                                 }}
                                 segundas
                                 <template v-if="needsThirdChoice">
-                                    · 🥉 {{ result.third_votes }} terceras
+                                    · 3.ª: {{ result.third_votes }} terceras
                                 </template>
                             </p>
                         </div>
@@ -903,7 +1048,8 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                             </p>
                         </div>
                     </article>
-                </div>
+                    </div>
+                </details>
 
                 <div
                     v-else
@@ -947,6 +1093,12 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                     }}
                 </p>
 
+                <p class="mt-4 rounded-xl bg-violet-50 px-3 py-2.5 text-sm text-violet-900">
+                    Guarda esta página en favoritos para consultar los juegos
+                    y sus tutoriales cuando se cierre la votación.
+                    Este enlace es personal: no lo compartas.
+                </p>
+
                 <div
                     class="mt-6 grid gap-3 text-left"
                     :class="needsThirdChoice ? 'sm:grid-cols-3' : needsSecondChoice ? 'sm:grid-cols-2' : ''"
@@ -957,7 +1109,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                         <p
                             class="text-xs font-black uppercase text-zinc-500"
                         >
-                            {{ needsSecondChoice ? '🥇 Primera opción' : 'Mi voto' }}
+                            {{ needsSecondChoice ? 'Primera opción' : 'Mi voto' }}
                             · {{ preferencePointsLabel(1) }}
                         </p>
 
@@ -973,7 +1125,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                         <p
                             class="text-xs font-black uppercase text-zinc-500"
                         >
-                            🥈 Segunda opción · {{ preferencePointsLabel(2) }}
+                            Segunda opción · {{ preferencePointsLabel(2) }}
                         </p>
 
                         <p class="mt-1 min-w-0 wrap-anywhere font-black">
@@ -983,7 +1135,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
 
                     <div v-if="needsThirdChoice" class="rounded-2xl bg-sky-50 p-4">
                         <p class="text-xs font-black uppercase text-zinc-500">
-                            🥉 Tercera opción · {{ preferencePointsLabel(3) }}
+                            Tercera opción · {{ preferencePointsLabel(3) }}
                         </p>
                         <p class="mt-1 min-w-0 wrap-anywhere font-black">
                             {{ selectedThirdGame?.name }}
@@ -994,6 +1146,14 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                 <div
                     class="mt-6 grid gap-3"
                 >
+                    <a
+                        href="#session-games"
+                        class="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#5200FF] px-4 py-3 text-center font-bold text-white hover:bg-[#4100cc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                    >
+                        <YoutubeLogoIcon class="size-5 shrink-0" aria-hidden="true" />
+                        Ver juegos y tutoriales
+                    </a>
+
                     <button
                         type="button"
                         class="rounded-xl border border-zinc-300 px-4 py-3 font-bold transition-[border-color,color,box-shadow] duration-200 hover:border-violet-500 hover:text-[#5200FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5200FF] focus-visible:ring-offset-2"
@@ -1002,6 +1162,258 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                         {{ needsSecondChoice ? 'Modificar mis votos' : 'Modificar mi voto' }}
                     </button>
 
+                </div>
+            </section>
+
+            <!-- ================================================= -->
+            <!-- CONSULTAR JUEGOS DESPUÉS DE VOTAR O CERRAR        -->
+            <!-- ================================================= -->
+
+            <section
+                v-if="poll.status === 'closed' || voteSaved"
+                id="session-games"
+                aria-labelledby="session-games-title"
+                class="mt-8 scroll-mt-6"
+            >
+                <div class="mb-5">
+                    <h2
+                        id="session-games-title"
+                        class="text-xl font-black sm:text-2xl"
+                    >
+                        Juegos y tutoriales de esta votación
+                    </h2>
+
+                    <p class="mt-2 text-sm text-zinc-600">
+                        {{
+                            poll.status === 'closed'
+                                ? 'Consulta el juego ganador y todos los propuestos. Puedes volver a este enlace cuando quieras.'
+                                : 'Tu voto está guardado. Puedes consultar los juegos y aprender sus reglas sin cambiar tu elección.'
+                        }}
+                    </p>
+                </div>
+
+                <div class="grid items-stretch gap-4 sm:grid-cols-2">
+                    <article
+                        v-for="candidate in sessionCandidates"
+                        :key="candidate.id"
+                        class="flex min-w-0 flex-col rounded-2xl border-2 bg-white p-4 shadow-sm"
+                        :class="
+                            sessionResult(candidate.id)?.is_winner
+                                ? 'border-[#9BCB00] ring-1 ring-[#CCFF00]'
+                                : 'border-zinc-200'
+                        "
+                    >
+                        <div class="flex min-w-0 items-start gap-3">
+                            <div class="flex h-28 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-zinc-100 p-1">
+                                <img
+                                    v-if="candidate.game.image_url && !brokenCoverIds.includes(candidate.id)"
+                                    :src="candidate.game.image_url"
+                                    :alt="`Portada de ${candidate.game.name}`"
+                                    loading="lazy"
+                                    class="h-full w-full object-contain"
+                                    @error="markCoverAsBroken(candidate.id)"
+                                />
+                                <PlayingCardsFanIcon
+                                    v-else
+                                    class="size-7 text-violet-700"
+                                    aria-label="Juego sin portada"
+                                />
+                            </div>
+
+                            <div class="min-w-0 flex-1">
+                                <p
+                                    v-if="sessionResult(candidate.id)?.is_winner"
+                                    class="mb-1 text-xs font-black uppercase text-green-800"
+                                >
+                                    <Trophy class="mr-1 inline-block size-4 shrink-0 align-[-0.15em]" :stroke-width="2.2" aria-hidden="true" /> Juego ganador
+                                </p>
+                                <p
+                                    v-else-if="sessionResult(candidate.id)?.is_top_tie"
+                                    class="mb-1 text-xs font-bold text-orange-800"
+                                >
+                                    <CircleStar class="mr-1 inline-block size-4 shrink-0 align-[-0.15em]" :stroke-width="2.2" aria-hidden="true" /> Empate en primera posición
+                                </p>
+
+                                <p
+                                    v-if="myChoiceLabel(candidate.id)"
+                                    class="mb-1 text-xs font-bold text-[#5200FF]"
+                                >
+                                    <SquareStar class="mr-1 inline-block size-4 align-[-0.15em]" :stroke-width="2" aria-hidden="true" /> {{ myChoiceLabel(candidate.id) }}
+                                </p>
+
+                                <h3 class="break-words font-black leading-snug text-zinc-900">
+                                    {{ candidate.game.name }}
+                                </h3>
+
+                                <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-600">
+                                    <span class="inline-flex items-center gap-1">
+                                        <UsersRound class="size-3.5 text-[#5200FF]" aria-hidden="true" />
+                                        {{ candidate.game.min_players }}–{{ candidate.game.max_players }}
+                                    </span>
+                                    <span
+                                        v-if="candidate.game.min_playtime"
+                                        class="inline-flex items-center gap-1"
+                                    >
+                                        <HourglassCog class="size-3.5 text-blue-700" aria-hidden="true" />
+                                        {{ candidate.game.min_playtime }}<template v-if="candidate.game.max_playtime && candidate.game.max_playtime !== candidate.game.min_playtime">–{{ candidate.game.max_playtime }}</template> min
+                                    </span>
+                                </div>
+
+                                <p
+                                    v-if="candidate.expansion"
+                                    class="mt-1 text-xs font-semibold text-[#5200FF]"
+                                >
+                                    Con expansión: {{ candidate.expansion.name }}
+                                </p>
+
+                                <p
+                                    v-if="candidate.note"
+                                    class="mt-2 whitespace-pre-line break-words text-xs text-zinc-600"
+                                >
+                                    {{ candidate.note }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <p
+                            v-if="candidate.game.short_description"
+                            class="mt-3 line-clamp-3 text-sm leading-relaxed text-zinc-600"
+                        >
+                            {{ candidate.game.short_description }}
+                        </p>
+
+                        <div class="mt-auto flex flex-wrap items-center gap-2 pt-4">
+                            <a
+                                :href="tutorialUrl(candidate.game)"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#5200FF] px-3 py-2.5 text-center text-sm font-bold text-white hover:bg-[#4100cc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                            >
+                                <YoutubeLogoIcon class="size-5 shrink-0" aria-hidden="true" />
+                                {{ externalUrl(candidate.game.youtube_url) ? 'Ver tutorial' : 'Buscar tutorial' }}
+                            </a>
+
+                            <a
+                                v-if="externalUrl(candidate.game.bgg_url)"
+                                :href="externalUrl(candidate.game.bgg_url)"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="inline-flex min-h-11 items-center justify-center gap-1 rounded-xl border border-zinc-300 px-3 text-sm font-bold text-[#5200FF] hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                            >
+                                BGG
+                                <ChainIcon class="size-4 shrink-0" aria-hidden="true" />
+                            </a>
+                        </div>
+                    </article>
+                </div>
+                <div
+                    v-if="linkedSession && linkedSession.candidates.length"
+                    class="mt-9 border-t border-zinc-200 pt-7"
+                >
+                    <p class="text-xs font-bold uppercase tracking-wide text-[#5200FF]">
+                        Juego {{ linkedSession.session_position }} de 2
+                    </p>
+                    <h3 class="mt-1 text-xl font-black">
+                        {{ linkedSession.name }}
+                    </h3>
+                    <p class="mt-2 mb-4 text-sm text-zinc-600">
+                        Juegos y tutoriales de la otra votación de esta sesión.
+                        Puedes consultarlos sin modificar ningún voto.
+                    </p>
+
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <article
+                            v-for="candidate in linkedSession.candidates"
+                            :key="candidate.id"
+                            class="flex min-w-0 flex-col rounded-2xl border bg-white p-3 shadow-sm"
+                            :class="candidate.is_winner
+                                ? 'border-[#9BCB00] ring-1 ring-[#CCFF00]'
+                                : 'border-zinc-200'"
+                        >
+                            <div class="flex min-w-0 items-start gap-3">
+                                <div class="flex h-24 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-zinc-100">
+                                    <img
+                                        v-if="candidate.game.image_url && !brokenCoverIds.includes(candidate.id)"
+                                        :src="candidate.game.image_url"
+                                        :alt="`Portada de ${candidate.game.name}`"
+                                        loading="lazy"
+                                        class="h-full w-full object-contain"
+                                        @error="markCoverAsBroken(candidate.id)"
+                                    />
+                                    <PlayingCardsFanIcon
+                                        v-else
+                                        class="size-6 text-violet-700"
+                                        aria-label="Juego sin portada"
+                                    />
+                                </div>
+
+                                <div class="min-w-0 flex-1">
+                                    <p
+                                        v-if="candidate.is_winner"
+                                        class="mb-1 text-xs font-black text-green-800"
+                                    >
+                                        <Trophy class="mr-1 inline-block size-4 shrink-0 align-[-0.15em]" :stroke-width="2.2" aria-hidden="true" /> Ganador
+                                    </p>
+                                    <h4 class="break-words font-black leading-snug">
+                                        {{ candidate.game.name }}
+                                    </h4>
+                                    <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-600">
+                                        <span class="inline-flex items-center gap-1">
+                                            <UsersRound class="size-3.5 text-[#5200FF]" aria-hidden="true" />
+                                            {{ candidate.game.min_players }}–{{ candidate.game.max_players }}
+                                        </span>
+                                        <span
+                                            v-if="candidate.game.min_playtime"
+                                            class="inline-flex items-center gap-1"
+                                        >
+                                            <HourglassCog class="size-3.5 text-blue-700" aria-hidden="true" />
+                                            {{ candidate.game.min_playtime }}<template v-if="candidate.game.max_playtime && candidate.game.max_playtime !== candidate.game.min_playtime">–{{ candidate.game.max_playtime }}</template> min
+                                        </span>
+                                    </div>
+                                    <p
+                                        v-if="candidate.expansion_name"
+                                        class="mt-1 text-xs font-semibold text-[#5200FF]"
+                                    >
+                                        Con expansión: {{ candidate.expansion_name }}
+                                    </p>
+                                    <p
+                                        v-if="candidate.note"
+                                        class="mt-2 whitespace-pre-line break-words text-xs text-zinc-600"
+                                    >
+                                        {{ candidate.note }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <p
+                                v-if="candidate.game.short_description"
+                                class="mt-3 line-clamp-3 text-sm text-zinc-600"
+                            >
+                                {{ candidate.game.short_description }}
+                            </p>
+
+                            <div class="mt-auto flex flex-wrap gap-2 pt-4">
+                                <a
+                                    :href="tutorialUrl(candidate.game)"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#5200FF] px-3 py-2 text-sm font-bold text-white hover:bg-[#4100cc]"
+                                >
+                                    <YoutubeLogoIcon class="size-5 shrink-0" aria-hidden="true" />
+                                    {{ externalUrl(candidate.game.youtube_url) ? 'Ver tutorial' : 'Buscar tutorial' }}
+                                </a>
+                                <a
+                                    v-if="externalUrl(candidate.game.bgg_url)"
+                                    :href="externalUrl(candidate.game.bgg_url)"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="inline-flex min-h-11 items-center rounded-xl border border-zinc-300 px-3 text-sm font-bold text-[#5200FF]"
+                                >
+                                    BGG
+                                </a>
+                            </div>
+                        </article>
+                    </div>
                 </div>
             </section>
 
@@ -1184,19 +1596,19 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                         v-if="form.first_candidate_id === candidate.id"
                                         class="inline-block rounded-full bg-[#CCFF00] px-2.5 py-1 text-xs font-black text-black"
                                     >
-                                        {{ needsSecondChoice ? '🥇 Primera opción' : 'Mi voto' }}
+                                        {{ needsSecondChoice ? 'Primera opción' : 'Mi voto' }}
                                     </span>
                                     <span
                                         v-else-if="form.second_candidate_id === candidate.id"
                                         class="inline-block rounded-full bg-orange-100 px-2.5 py-1 text-xs font-black text-orange-900"
                                     >
-                                        🥈 Segunda opción
+                                        Segunda opción
                                     </span>
                                     <span
                                         v-else-if="form.third_candidate_id === candidate.id"
                                         class="inline-block rounded-full bg-sky-100 px-2.5 py-1 text-xs font-black text-sky-900"
                                     >
-                                        🥉 Tercera opción
+                                        Tercera opción
                                     </span>
                                 </div>
 
@@ -1275,7 +1687,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                 @click="selectFirst(candidate.id)"
                             >
                                 <span class="block text-xs font-bold leading-tight sm:text-sm">
-                                    {{ needsSecondChoice ? '🥇 1.ª opción' : '✓ Mi voto' }}
+                                    {{ needsSecondChoice ? '1.ª opción' : 'Mi voto' }}
                                 </span>
                                 <span class="mt-1 block text-[11px] font-semibold leading-tight opacity-80 sm:text-xs">
                                     {{ preferencePointsLabel(1) }}
@@ -1293,7 +1705,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                 @click="selectSecond(candidate.id)"
                             >
                                 <span class="block text-xs font-bold leading-tight sm:text-sm">
-                                    🥈 2.ª opción
+                                    2.ª opción
                                 </span>
                                 <span class="mt-1 block text-[11px] font-semibold leading-tight opacity-80 sm:text-xs">
                                     {{ preferencePointsLabel(2) }}
@@ -1311,7 +1723,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                                 @click="selectThird(candidate.id)"
                             >
                                 <span class="block text-xs font-bold leading-tight sm:text-sm">
-                                    🥉 3.ª opción
+                                    3.ª opción
                                 </span>
                                 <span class="mt-1 block text-[11px] font-semibold leading-tight opacity-80 sm:text-xs">
                                     {{ preferencePointsLabel(3) }}
@@ -1406,7 +1818,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                     >
                         <p class="min-w-0 wrap-anywhere rounded-xl bg-lime-100 px-3 py-2.5 font-medium" :title="selectedFirstGame?.name ?? ''">
                             <template v-if="selectedFirstGame">
-                                {{ needsSecondChoice ? '🥇 Primera opción' : 'Mi voto' }}
+                                {{ needsSecondChoice ? 'Primera opción' : 'Mi voto' }}
                                 ({{ preferencePointsLabel(1) }}):
                                 {{ selectedFirstGame.name }}
                             </template>
@@ -1420,7 +1832,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                             :title="selectedSecondGame?.name ?? ''"
                         >
                             <template v-if="selectedSecondGame">
-                                🥈 Segunda opción ({{ preferencePointsLabel(2) }}):
+                                Segunda opción ({{ preferencePointsLabel(2) }}):
                                 {{ selectedSecondGame.name }}
                             </template>
                             <template v-else>
@@ -1433,7 +1845,7 @@ const hasRecordedVotes = computed(() => props.results.some(result => result.poin
                             :title="selectedThirdGame?.name ?? ''"
                         >
                             <template v-if="selectedThirdGame">
-                                🥉 Tercera opción ({{ preferencePointsLabel(3) }}):
+                                Tercera opción ({{ preferencePointsLabel(3) }}):
                                 {{ selectedThirdGame.name }}
                             </template>
                             <template v-else>

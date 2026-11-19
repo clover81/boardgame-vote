@@ -581,6 +581,8 @@ class PublicPollController extends Controller
 
                 'results' =>
                 $results,
+
+                'linkedSession' => $this->linkedSession($poll),
             ]
         );
     }
@@ -590,6 +592,91 @@ class PublicPollController extends Controller
     | VOTAR
     |--------------------------------------------------------------------------
     */
+
+
+    /**
+     * Juegos consultables de la otra votación de la sesión.
+     * No incluye enlaces personales ni votos individuales.
+     */
+    private function linkedSession(Poll $poll): ?array
+    {
+        $relation = $poll->parent_poll_id !== null
+            ? $poll->firstGamePoll()
+            : $poll->secondGamePoll();
+
+        $linked = $relation
+            ->where('created_by', $poll->created_by)
+            ->first();
+
+        if (!$linked || !in_array($linked->status, ['open', 'closed'], true)) {
+            return null;
+        }
+
+        $linked->load([
+            'candidates.game',
+            'candidates.expansion',
+            'candidates.votes',
+        ]);
+
+        $winnerId = null;
+
+        if ($linked->status === 'closed') {
+            $scores = $linked->candidates->map(function ($candidate) use ($linked) {
+                $first = $candidate->votes->where('position', 1)->count();
+                $second = $candidate->votes->where('position', 2)->count();
+                $third = $candidate->votes->where('position', 3)->count();
+
+                return [
+                    'id' => $candidate->id,
+                    'first' => $first,
+                    'points' => $linked->votePoints($first, $second, $third),
+                ];
+            })->sort(function ($a, $b) {
+                return ($b['points'] <=> $a['points'])
+                    ?: ($b['first'] <=> $a['first']);
+            })->values();
+
+            $leader = $scores->first();
+
+            if ($leader && $leader['points'] > 0) {
+                $ties = $scores->filter(fn ($score) =>
+                    $score['points'] === $leader['points']
+                    && $score['first'] === $leader['first']
+                )->count();
+
+                if ($ties === 1) {
+                    $winnerId = $leader['id'];
+                }
+            }
+        }
+
+        return [
+            'name' => $linked->name,
+            'status' => $linked->status,
+            'session_position' => $poll->parent_poll_id !== null ? 1 : 2,
+            'candidates' => $linked->candidates
+                ->filter(fn ($candidate) => $candidate->game !== null)
+                ->sortByDesc(fn ($candidate) => $candidate->id === $winnerId)
+                ->map(fn ($candidate) => [
+                    'id' => $candidate->id,
+                    'is_winner' => $candidate->id === $winnerId,
+                    'note' => $candidate->note,
+                    'expansion_name' => $candidate->expansion?->name,
+                    'game' => [
+                        'name' => $candidate->game->name,
+                        'image_url' => $candidate->game->image_url,
+                        'min_players' => $candidate->game->min_players,
+                        'max_players' => $candidate->game->max_players,
+                        'min_playtime' => $candidate->game->min_playtime,
+                        'max_playtime' => $candidate->game->max_playtime,
+                        'short_description' => $candidate->game->short_description,
+                        'youtube_url' => $candidate->game->youtube_url,
+                        'bgg_url' => $candidate->game->bgg_url,
+                    ],
+                ])
+                ->values(),
+        ];
+    }
 
     public function voteForParticipant(
         Request $request,

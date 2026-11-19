@@ -313,3 +313,167 @@ test('el enlace de votacion publica muestra el color guardado sin exponer datos 
             ->where('poll.candidates.0.history.participants.0.display_name', 'Miki')
         );
 });
+
+
+test('el enlace personal conserva todos los juegos y tutoriales al cerrar', function () {
+    $this->candidate->game->update([
+        'youtube_url' => 'https://www.youtube.com/watch?v=video-prueba',
+    ]);
+
+    $secondCandidate = $this->poll->candidates()->create([
+        'game_id' => $this->secondGame->id,
+    ]);
+
+    $this->participant->votes()->create([
+        'poll_id' => $this->poll->id,
+        'poll_candidate_id' => $secondCandidate->id,
+        'position' => 2,
+    ]);
+
+    foreach (['open', 'closed'] as $status) {
+        $this->poll->update(['status' => $status]);
+
+        $response = $this->get($this->personalUrl)->assertOk();
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('vote/show')
+            ->has('poll.candidates', 2)
+            ->where('poll.candidates.0.game.youtube_url',
+                'https://www.youtube.com/watch?v=video-prueba')
+            ->where('poll.candidates.0.game.short_description',
+                'Aterriza en equipo.')
+            ->where('poll.candidates.1.game.name', 'Heat')
+            ->where('poll.candidates.1.game.youtube_url', null)
+            ->where('poll.participants.0.votes.1.position', 2)
+            ->has('results', $status === 'closed' ? 2 : 0)
+        );
+    }
+
+    expect($this->participant->votes()->count())->toBe(2);
+});
+
+test('una votacion cerrada sin votos mantiene los juegos consultables', function () {
+    $this->participant->votes()->delete();
+
+    $this->poll->update(['status' => 'closed']);
+
+    $this->get($this->personalUrl)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('vote/show')
+            ->has('poll.candidates', 1)
+            ->where('poll.candidates.0.game.name', 'Sky Team')
+            ->has('results', 0)
+        );
+});
+
+
+test('la consulta publica enlaza los juegos de ambas votaciones sin compartir otros tokens', function () {
+    $this->secondGame->update([
+        'youtube_url' => 'https://www.youtube.com/watch?v=tutorial-prueba',
+    ]);
+
+    $linked = Poll::create([
+        'created_by' => $this->poll->created_by,
+        'name' => 'Segundo juego de la sesión',
+        'token' => 'SEGUNDAVOTACION',
+        'status' => 'closed',
+        'single_choice' => true,
+        'parent_poll_id' => $this->poll->id,
+    ]);
+
+    $candidate = $linked->candidates()->create([
+        'game_id' => $this->secondGame->id,
+    ]);
+
+    $otherParticipant = $linked->participants()->create([
+        'display_name' => 'Otra participante',
+    ]);
+
+    $otherParticipant->votes()->create([
+        'poll_id' => $linked->id,
+        'poll_candidate_id' => $candidate->id,
+        'position' => 1,
+    ]);
+
+    $this->get($this->personalUrl)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('linkedSession.session_position', 2)
+            ->where('linkedSession.name', 'Segundo juego de la sesión')
+            ->where('linkedSession.candidates.0.game.name', 'Heat')
+            ->where('linkedSession.candidates.0.game.youtube_url',
+                'https://www.youtube.com/watch?v=tutorial-prueba')
+            ->where('linkedSession.candidates.0.is_winner', true)
+        )
+        ->assertDontSee($otherParticipant->vote_token, false);
+
+    // Desde la segunda votación se consultan los juegos de la primera.
+    $otherUrl = route('vote.participant.show', [
+        $linked->token,
+        $otherParticipant->vote_token,
+    ]);
+
+    $this->get($otherUrl)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('linkedSession.session_position', 1)
+            ->where('linkedSession.candidates.0.game.name', 'Sky Team')
+        )
+        ->assertDontSee($this->participant->vote_token, false);
+});
+
+test('una votacion vinculada en borrador no se expone publicamente', function () {
+    Poll::create([
+        'created_by' => $this->poll->created_by,
+        'name' => 'Juego en preparación',
+        'token' => 'BORRADOVINCULADO',
+        'status' => 'draft',
+        'parent_poll_id' => $this->poll->id,
+    ]);
+
+    $this->get($this->personalUrl)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('linkedSession', null)
+        );
+});
+
+
+test('el ganador de la otra votacion aparece primero en la consulta publica', function () {
+    $linked = Poll::create([
+        'created_by' => $this->poll->created_by,
+        'name' => 'Segunda votación',
+        'token' => 'SEGUNDAVOTACIONORDEN',
+        'status' => 'closed',
+        'single_choice' => true,
+        'parent_poll_id' => $this->poll->id,
+    ]);
+
+    $first = $linked->candidates()->create([
+        'game_id' => $this->secondGame->id,
+    ]);
+    $winner = $linked->candidates()->create([
+        'game_id' => $this->candidate->game_id,
+    ]);
+
+    $participant = $linked->participants()->create([
+        'display_name' => 'Ana',
+    ]);
+    $participant->votes()->create([
+        'poll_id' => $linked->id,
+        'poll_candidate_id' => $winner->id,
+        'position' => 1,
+    ]);
+
+    $this->get($this->personalUrl)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('linkedSession.candidates.0.id', $winner->id)
+            ->where('linkedSession.candidates.0.is_winner', true)
+            ->where('linkedSession.candidates.0.game.name', 'Sky Team')
+            ->where('linkedSession.candidates.1.id', $first->id)
+            ->where('linkedSession.candidates.1.is_winner', false)
+            ->where('linkedSession.candidates.1.game.name', 'Heat')
+        );
+});
