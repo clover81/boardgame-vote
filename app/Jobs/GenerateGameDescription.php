@@ -38,6 +38,24 @@ class GenerateGameDescription implements ShouldQueue, ShouldBeUnique
 
     public function middleware(): array
     {
+        // Descartar trabajos innecesarios antes del limitador.
+        // Así no consumen ni cuota diaria ni créditos de IA.
+        $game = Game::query()
+            ->whereKey($this->gameId)
+            ->where('is_active', true)
+            ->first();
+
+        if (
+            !$game ||
+            (int) $game->bgg_id !== $this->bggId ||
+            $game->description_source !== 'bgg' ||
+            $game->full_description !== null ||
+            trim($this->bggDescription) === '' ||
+            !$this->stillInCollection()
+        ) {
+            return [];
+        }
+
         return [
             // Primero comprobar si OpenAI sigue bloqueado.
             (new ThrottlesExceptions(1, 6 * 60 * 60))

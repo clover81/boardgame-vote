@@ -147,3 +147,50 @@ test('un trabajo antiguo serializado sin ownerId sigue funcionando', function ()
     expect($this->game->fresh()->description_source)
         ->toBe('generated');
 });
+
+
+test('un trabajo retirado no consume cuota del limitador', function () {
+    $job = new GenerateGameDescription(
+        $this->game->id,
+        987654,
+        'Original BGG',
+        $this->owner->id
+    );
+
+    expect($job->middleware())->toBe([]);
+});
+
+test('un trabajo valido conserva los dos limitadores', function () {
+    $this->collection->games()->attach($this->game->id);
+
+    $job = new GenerateGameDescription(
+        $this->game->id,
+        987654,
+        'Original BGG',
+        $this->owner->id
+    );
+
+    $middleware = $job->middleware();
+
+    expect($middleware)->toHaveCount(2)
+        ->and($middleware[0])->toBeInstanceOf(
+            Illuminate\Queue\Middleware\ThrottlesExceptions::class
+        )
+        ->and($middleware[1])->toBeInstanceOf(
+            Illuminate\Queue\Middleware\RateLimited::class
+        );
+});
+
+test('un trabajo antiguo retirado tampoco consume cuota', function () {
+    $job = new GenerateGameDescription(
+        $this->game->id,
+        987654,
+        'Original BGG'
+    );
+
+    unset($job->ownerId);
+
+    $restored = unserialize(serialize($job));
+
+    expect($restored->middleware())->toBe([]);
+});
