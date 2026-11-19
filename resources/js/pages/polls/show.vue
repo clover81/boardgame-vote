@@ -292,16 +292,24 @@ const resultText = computed(() => {
             ? 'Juego 1 de 2'
             : null;
 
+    const cleanName = sessionLabel
+        ? props.poll.name.replace(/\s*[·–—-]\s*Juego\s*[12]\s*$/i, '').trim()
+        : props.poll.name.trim();
+
+    const title = sessionLabel
+        ? `${cleanName} · ${sessionLabel}`
+        : cleanName;
+
     const lines: string[] = [
-        `🎲 ${props.poll.name}${sessionLabel ? ' · ' + sessionLabel : ''}`,
+        `🎲 *${title}*`,
         '',
     ];
 
     if (winner) {
-        lines.push(`🏆 ${winner.game.name} gana con ${score(winner.points)}`);
+        lines.push(`🏆 *${winner.game.name}* gana con *${score(winner.points)}*`);
     } else if (tied.length > 1) {
         const names = tied.map(result => result.game.name).join(' y ');
-        lines.push(`🤝 Empate con ${score(tied[0].points)}: ${names}`);
+        lines.push(`🤝 *Empate con ${score(tied[0].points)}:* ${names}`);
     }
 
     for (const result of results) {
@@ -317,8 +325,10 @@ const resultText = computed(() => {
 
     lines.push(
         '',
-        '🎬 Tutoriales para la partida:',
-        `Desde vuestro enlace personal de votación (el mismo que usasteis para votar) podéis consultar ${gamesReminder}, ver sus vídeos disponibles o buscar los que falten en YouTube. `
+        '🎬 *Tutoriales para la partida:*',
+        `Desde vuestro enlace personal de votación (el mismo que usasteis para votar) podéis consultar ${gamesReminder}, ver sus vídeos disponibles o buscar los que falten en YouTube.`,
+        '',
+        '¡Échales un vistazo antes de la partida!'
     );
 
     return lines.join('\n');
