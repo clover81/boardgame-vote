@@ -37,8 +37,57 @@
         @fonts
 
         @vite(['resources/css/app.css', 'resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
+        {{-- Metadatos enviados por Laravel para las vistas previas de WhatsApp. --}}
+        @php
+            $publicPoll = ($page['component'] ?? null) === 'vote/show'
+                ? ($page['props']['poll'] ?? null)
+                : null;
+
+            $previewTitle = 'Juegos de mesa · Clover';
+            $previewDescription = null;
+
+            if (is_array($publicPoll)) {
+                $pollName = trim((string) ($publicPoll['name'] ?? 'Votación'));
+                $position = $publicPoll['session_position'] ?? null;
+                $closed = ($publicPoll['status'] ?? null) === 'closed';
+
+                if (in_array($position, [1, 2], true)) {
+                    // Evitar "Juego 2 · Juego 2 de 2".
+                    $baseName = preg_replace(
+                        '/\\s*[·–—-]\\s*Juego\\s*[12]\\s*$/iu',
+                        '',
+                        $pollName
+                    );
+
+                    $baseName = trim($baseName) ?: $pollName;
+
+                    $previewTitle = "🎲 {$baseName} · Juego {$position} de 2";
+
+                    $previewDescription = $closed
+                        ? "Juego {$position} de 2: consulta los resultados y los tutoriales."
+                        : "Juego {$position} de 2: vota y consulta los juegos y sus tutoriales.";
+                } else {
+                    $previewTitle = "🎲 {$pollName}";
+
+                    $previewDescription = $closed
+                        ? 'Consulta los resultados y tutoriales de la votación.'
+                        : 'Participa en la votación y descubre los juegos y sus tutoriales.';
+                }
+            }
+        @endphp
+
+        @if (is_array($publicPoll))
+            <meta name="description" content="{{ $previewDescription }}">
+            <meta name="robots" content="noindex, nofollow">
+            <meta property="og:type" content="website">
+            <meta property="og:site_name" content="Juegos de mesa · Clover">
+            <meta property="og:title" content="{{ $previewTitle }}">
+            <meta property="og:description" content="{{ $previewDescription }}">
+            <meta property="og:url" content="{{ request()->url() }}">
+        @endif
+
         <x-inertia::head>
-            <title>Juegos de mesa · Clover</title>
+            <title>{{ $previewTitle }}</title>
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">
