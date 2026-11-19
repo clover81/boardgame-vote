@@ -27,7 +27,8 @@ class GenerateGameDescription implements ShouldQueue, ShouldBeUnique
     public function __construct(
         public int $gameId,
         public int $bggId,
-        public string $bggDescription
+        public string $bggDescription,
+        public ?int $ownerId = null
     ) {}
 
     public function uniqueId(): string
@@ -55,6 +56,21 @@ class GenerateGameDescription implements ShouldQueue, ShouldBeUnique
         ];
     }
 
+    private function stillInCollection(): bool
+    {
+        $query = DB::table('game_collection_game as gcg')
+            ->join('game_collections as gc', 'gc.id', '=', 'gcg.game_collection_id')
+            ->where('gcg.game_id', $this->gameId);
+
+        // Los trabajos antiguos no incluyen ownerId.
+        // Para ellos se exige al menos una colección actual.
+        if ($this->ownerId !== null) {
+            $query->where('gc.created_by', $this->ownerId);
+        }
+
+        return $query->exists();
+    }
+
     public function handle(
         GameDescriptionGenerator $generator
     ): void {
@@ -63,7 +79,10 @@ class GenerateGameDescription implements ShouldQueue, ShouldBeUnique
             return;
         }
 
-        $game = Game::find($this->gameId);
+        $game = Game::query()
+            ->whereKey($this->gameId)
+            ->where('is_active', true)
+            ->first();
 
         if (!$game) {
             return;
@@ -74,7 +93,8 @@ class GenerateGameDescription implements ShouldQueue, ShouldBeUnique
             (int) $game->bgg_id !== $this->bggId ||
             $game->description_source !== 'bgg' ||
             $game->full_description !== null ||
-            trim($this->bggDescription) === ''
+            trim($this->bggDescription) === '' ||
+            !$this->stillInCollection()
         ) {
             return;
         }
@@ -96,6 +116,17 @@ class GenerateGameDescription implements ShouldQueue, ShouldBeUnique
             ->where('description_source', 'bgg')
             ->whereNull('full_description')
             ->where('short_description', $originalShort)
+            ->where('is_active', true)
+            ->whereExists(function ($query) {
+                $query->selectRaw('1')
+                    ->from('game_collection_game as gcg')
+                    ->join('game_collections as gc', 'gc.id', '=', 'gcg.game_collection_id')
+                    ->whereColumn('gcg.game_id', 'games.id');
+
+                if ($this->ownerId !== null) {
+                    $query->where('gc.created_by', $this->ownerId);
+                }
+            })
             ->update([
                 'short_description' =>
                     $result['short_description'],

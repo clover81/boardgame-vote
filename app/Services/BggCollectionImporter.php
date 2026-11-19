@@ -143,7 +143,8 @@ class BggCollectionImporter
             GenerateGameDescription::dispatch(
               $game->id,
               (int) $game->bgg_id,
-              $description
+              $description,
+              (int) $collection->created_by
             )
               ->onQueue('descriptions')
               ->afterCommit();

@@ -41,7 +41,10 @@ class QueueGameDescriptions extends Command
         $pending = [];
 
         foreach ($items as $item) {
-            $game = Game::find($item['id']);
+            $game = Game::query()
+                ->where('is_active', true)
+                ->whereHas('collections')
+                ->find($item['id']);
 
             if (!$game) {
                 continue;
