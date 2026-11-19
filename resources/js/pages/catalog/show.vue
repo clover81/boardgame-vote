@@ -170,6 +170,14 @@ const externalUrl = (url: string | null): string | undefined => {
         return undefined;
     }
 };
+
+// Tutorial guardado o búsqueda en YouTube en español.
+const tutorialUrl = (game: Game): string =>
+    externalUrl(game.youtube_url) ??
+    `https://www.youtube.com/results?search_query=${encodeURIComponent(
+        `tutorial juego de mesa ${game.name} español`
+    )}`;
+
 </script>
 
 <template>
@@ -359,13 +367,13 @@ const externalUrl = (url: string | null): string | undefined => {
                         </a>
 
                         <a
-                            v-if="externalUrl(game.youtube_url)"
-                            :href="externalUrl(game.youtube_url)"
+
+                            :href="tutorialUrl(game)"
                             target="_blank"
                             rel="noopener noreferrer"
                             class="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl border border-violet-200 bg-white px-3 py-2.5 text-center text-sm font-bold text-[#5200FF] transition-all duration-200 hover:bg-[#f1ebff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:flex-none sm:px-5"
                         >
-                            <YoutubeLogoIcon class="size-4 shrink-0" aria-hidden="true" /> Ver tutorial <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
+                            <YoutubeLogoIcon class="size-4 shrink-0" aria-hidden="true" /> {{ externalUrl(game.youtube_url) ? 'Ver tutorial' : 'Buscar tutorial' }} <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                         </a>
                     </div>
 

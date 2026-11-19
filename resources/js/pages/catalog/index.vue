@@ -567,6 +567,14 @@ const complexityFormatter = new Intl.NumberFormat('es-ES', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
 });
+
+// Tutorial guardado o búsqueda en YouTube en español.
+const tutorialUrl = (game: Game): string =>
+    externalUrl(game.youtube_url) ??
+    `https://www.youtube.com/results?search_query=${encodeURIComponent(
+        `tutorial juego de mesa ${game.name} español`
+    )}`;
+
 </script>
 
 <template>
@@ -1001,7 +1009,7 @@ const complexityFormatter = new Intl.NumberFormat('es-ES', {
                         <div class="mt-auto pt-4 sm:pt-5">
                             <!-- Enlaces externos independientes de la ficha de nuestra aplicación. -->
                             <div
-                                v-if="externalUrl(game.bgg_url) || externalUrl(game.youtube_url)"
+
                                 class="relative z-20 mb-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-1"
                             >
                                 <a
@@ -1016,14 +1024,14 @@ const complexityFormatter = new Intl.NumberFormat('es-ES', {
                                 </a>
 
                                 <a
-                                    v-if="externalUrl(game.youtube_url)"
-                                    :href="externalUrl(game.youtube_url)"
+
+                                    :href="tutorialUrl(game)"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    :aria-label="`Ver tutorial de ${game.name} (nueva pestaña)`"
+                                    :aria-label="`${externalUrl(game.youtube_url) ? 'Ver tutorial' : 'Buscar tutorial'} de ${game.name} (nueva pestaña)`"
                                     class="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-[#5200FF] underline-offset-4 transition-colors hover:text-[#4000cc] hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                                 >
-                                    <YoutubeLogoIcon class="size-4 shrink-0" aria-hidden="true" /> Tutorial <ChainIcon class="size-3.5 shrink-0" aria-hidden="true" />
+                                    <YoutubeLogoIcon class="size-4 shrink-0" aria-hidden="true" /> {{ externalUrl(game.youtube_url) ? 'Ver tutorial' : 'Buscar tutorial' }} <ChainIcon class="size-3.5 shrink-0" aria-hidden="true" />
                                 </a>
                             </div>
 
