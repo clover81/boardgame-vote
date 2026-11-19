@@ -64,7 +64,7 @@ class GenerateGameDescription implements ShouldQueue, ShouldBeUnique
 
         // Los trabajos antiguos no incluyen ownerId.
         // Para ellos se exige al menos una colección actual.
-        if ($this->ownerId !== null) {
+        if (isset($this->ownerId)) {
             $query->where('gc.created_by', $this->ownerId);
         }
 
@@ -123,7 +123,7 @@ class GenerateGameDescription implements ShouldQueue, ShouldBeUnique
                     ->join('game_collections as gc', 'gc.id', '=', 'gcg.game_collection_id')
                     ->whereColumn('gcg.game_id', 'games.id');
 
-                if ($this->ownerId !== null) {
+                if (isset($this->ownerId)) {
                     $query->where('gc.created_by', $this->ownerId);
                 }
             })

@@ -118,3 +118,32 @@ test('los trabajos antiguos siguen funcionando si el juego pertenece a una colec
 
     expect($this->game->fresh()->description_source)->toBe('generated');
 });
+
+
+test('un trabajo antiguo serializado sin ownerId sigue funcionando', function () {
+    $this->collection->games()->attach($this->game->id);
+
+    $generator = $this->mock(GameDescriptionGenerator::class);
+    $generator->shouldReceive('generate')->once()->andReturn([
+        'short_description' => 'Resumen español',
+        'full_description' => 'Descripción completa española',
+    ]);
+
+    $job = new GenerateGameDescription(
+        $this->game->id,
+        987654,
+        'Original BGG'
+    );
+
+    // Simular un trabajo guardado antes de existir ownerId.
+    unset($job->ownerId);
+
+    $restored = unserialize(serialize($job), [
+        'allowed_classes' => true,
+    ]);
+
+    $restored->handle($generator);
+
+    expect($this->game->fresh()->description_source)
+        ->toBe('generated');
+});
