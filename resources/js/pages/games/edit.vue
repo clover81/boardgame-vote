@@ -2,7 +2,7 @@
 import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
 import { BuildingComplexPlus, Swords } from '@lucide/vue';
 import { Link as ChainIcon } from '@lucide/vue';
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import GameCollectionsField from '@/components/GameCollectionsField.vue';
 import BggExpansionsImporter from '@/components/BggExpansionsImporter.vue';
@@ -109,6 +109,11 @@ const form = useForm({
     ],
 
     collection_ids: [...props.game_collection_ids] as number[],
+});
+
+const imagePreviewFailed = ref(false);
+watch(() => form.image_url, () => {
+    imagePreviewFailed.value = false;
 });
 
 const bggQuery = ref(props.game.name);
@@ -268,9 +273,10 @@ const submit = () => {
     }
 
     form.put(`/games/${props.game.id}?back=${encodeURIComponent(backToGames.value)}`, {
+        preserveScroll: true,
         onError: async () => {
             await nextTick();
-            saveError.value?.focus();
+            saveError.value?.focus({ preventScroll: true });
         },
     });
 };
@@ -644,12 +650,42 @@ const confirmDeleteGame = () => {
                 </div>
 
                 <div class="space-y-4">
-                    <input
-                        v-model="form.image_url"
-                        type="url"
-                        placeholder="URL de la portada"
-                        class="w-full rounded-xl border px-4 py-3"
-                    />
+                    <div class="rounded-2xl border-2 border-violet-300 bg-violet-50/60 p-4 dark:border-violet-700 dark:bg-violet-950/20">
+                        <label for="edit-game-image-url" class="block text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                            Portada del juego
+                        </label>
+                        <p class="mt-1 text-xs text-zinc-600 dark:text-zinc-300">
+                            Pega la dirección web de la nueva imagen.
+                        </p>
+
+                        <input
+                            id="edit-game-image-url"
+                            v-model.trim="form.image_url"
+                            type="url"
+                            inputmode="url"
+                            autocomplete="off"
+                            placeholder="https://..."
+                            class="mt-3 block min-h-12 w-full min-w-0 rounded-xl border-2 border-zinc-400 bg-white px-3 py-3 text-base text-zinc-900 outline-none transition focus:border-[#5200FF] focus:ring-2 focus:ring-violet-200 dark:border-zinc-500 dark:bg-zinc-900 dark:text-white"
+                        />
+                        <InputError :message="form.errors.image_url" />
+
+                        <div class="mt-3 rounded-xl border border-dashed border-violet-300 bg-white p-3 dark:border-violet-700 dark:bg-zinc-900">
+                            <p class="mb-2 text-xs font-bold text-zinc-600 dark:text-zinc-300">
+                                Vista previa de la portada
+                            </p>
+                            <img
+                                v-if="form.image_url && !imagePreviewFailed"
+                                :src="form.image_url"
+                                :alt="`Portada de ${form.name}`"
+                                loading="lazy"
+                                class="mx-auto h-36 max-w-full object-contain"
+                                @error="imagePreviewFailed = true"
+                            />
+                            <p v-else class="py-3 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                                {{ form.image_url ? 'No se puede mostrar esta imagen.' : 'Introduce una URL para ver la imagen.' }}
+                            </p>
+                        </div>
+                    </div>
 
                     <input
                         v-model="form.bgg_url"
