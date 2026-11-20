@@ -101,3 +101,28 @@ test('an unknown catalog token returns not found', function () {
     $this->get(route('catalog.public', (string) Str::uuid()))
         ->assertNotFound();
 });
+
+
+test('el catalogo publico tiene su vista previa de WhatsApp', function () {
+    $this->withoutVite();
+
+    $owner = User::factory()->create();
+    $owner->forceFill([
+        'catalog_share_token' => (string) Str::uuid(),
+    ])->save();
+
+    $this->get(route('catalog.public', $owner->catalog_share_token))
+        ->assertOk()
+        ->assertSee(
+            'property="og:title" content="🎲 Catálogo de juegos · Clover"',
+            false
+        )
+        ->assertSee(
+            'property="og:description" content="Explora los juegos de mesa de Clover, consulta sus fichas, filtra por jugadores y encuentra tutoriales."',
+            false
+        )
+        ->assertDontSee(
+            'name="robots" content="noindex, nofollow"',
+            false
+        );
+});

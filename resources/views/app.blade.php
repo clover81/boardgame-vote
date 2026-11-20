@@ -103,9 +103,16 @@
                     $previewImage = $candidateImage;
                 }
             }
+            // Vista previa al compartir el catálogo completo.
+            $publicCatalogIndex = ($page['component'] ?? null) === 'catalog/index';
+
+            if ($publicCatalogIndex) {
+                $previewTitle = '🎲 Catálogo de juegos · Clover';
+                $previewDescription = 'Explora los juegos de mesa de Clover, consulta sus fichas, filtra por jugadores y encuentra tutoriales.';
+            }
         @endphp
 
-        @if (is_array($publicPoll) || is_array($publicCatalogGame))
+        @if (is_array($publicPoll) || is_array($publicCatalogGame) || $publicCatalogIndex)
             <meta name="description" content="{{ $previewDescription }}">
             @if (is_array($publicPoll))
                 <meta name="robots" content="noindex, nofollow">

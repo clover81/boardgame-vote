@@ -152,24 +152,24 @@ const filteredGames = computed(() => {
 
     const normalizedData = normalizedGameSearch.value;
 
-    // Primero títulos que empiezan por lo escrito; después títulos que lo contienen.
-    const prefix = terms.join(' ');
-    const prefixMatches = candidates.filter(game =>
-        (normalizedData.get(game.id)?.name ?? '').startsWith(prefix)
-    );
-    if (prefixMatches.length) return prefixMatches;
+    // Mostrar todos los títulos que contienen los términos buscados.
+    const titleMatches = candidates.filter(game => {
+        const name = normalizedData.get(game.id)?.name ?? '';
+        return terms.every(term => name.includes(term));
+    });
 
-    const titleMatches = candidates.filter(game =>
-        terms.every(term =>
-            (normalizedData.get(game.id)?.name ?? '').includes(term)
-        )
-    );
     if (titleMatches.length) return titleMatches;
 
-    // Sin títulos coincidentes, se conserva la búsqueda por temática.
+    // Si no hay títulos coincidentes, buscar por temática.
+    // Evitar que "nova" coincida con "innovador" o "renovado".
     return candidates.filter(game => {
-        const searchable = normalizedData.get(game.id)?.text ?? '';
-        return terms.every(term => searchable.includes(term));
+        const words = (normalizedData.get(game.id)?.text ?? '')
+            .split(/[^\p{L}\p{N}]+/u)
+            .filter(Boolean);
+
+        return terms.every(term =>
+            words.some(word => word.startsWith(term))
+        );
     });
 });
 
@@ -412,6 +412,18 @@ watch(
 );
 
 const sortedGames = computed(() => {
+    const searchTerms = normalizeText(search.value).split(/\s+/).filter(Boolean);
+    const searchPrefix = searchTerms.join(' ');
+
+    const relevance = (game: Game): number => {
+        const name = normalizedGameSearch.value.get(game.id)?.name ?? '';
+
+        if (name.startsWith(searchPrefix)) return 0;
+        if (searchTerms.every(term => name.includes(term))) return 1;
+
+        return 2;
+    };
+
     const getDuration = (game: Game): number | null =>
         game.max_playtime ?? game.min_playtime;
 
@@ -437,6 +449,12 @@ const sortedGames = computed(() => {
     };
 
     return [...filteredGames.value].sort((a, b) => {
+        // Priorizar coincidencias solo con la ordenación predeterminada.
+        if (sortBy.value === 'name' && searchTerms.length) {
+            const byRelevance = relevance(a) - relevance(b);
+            if (byRelevance !== 0) return byRelevance;
+        }
+
         let result = 0;
 
         switch (sortBy.value) {
@@ -869,7 +887,7 @@ const tutorialUrl = (game: Game): string =>
                         v-model="sortBy"
                         class="rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold outline-none focus:border-[#5200FF]"
                     >
-                        <option value="name">Nombre (A–Z)</option>
+                        <option value="name">{{ search.trim() ? 'Relevancia (A–Z)' : 'Nombre (A–Z)' }}</option>
                         <option value="name_desc">Nombre (Z–A)</option>
                         <option value="duration_asc">Duración: más cortos</option>
                         <option value="duration_desc">Duración: más largos</option>
