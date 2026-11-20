@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Player;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -40,16 +41,24 @@ class HandleInertiaRequests extends Middleware
         $ownerId = filter_var(config('app.original_palette_user_id'), FILTER_VALIDATE_INT, [
             'options' => ['min_range' => 1],
         ]);
-        $usesOriginalPalette = $user === null || ($ownerId !== false
-            ? (int) $user->id === $ownerId
-            : strcasecmp(trim($user->email), 'alejandroruedamar@gmail.com') === 0);
+        $usesOriginalPalette = $user === null
+            || ($ownerId !== false && (int) $user->id === $ownerId);
 
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'ui_palette' => $usesOriginalPalette ? 'original' : 'calm-blue',
             'auth' => [
-                'user' => $request->user(),
+                // Compartir solo los datos de cuenta necesarios en Vue.
+                'user' => $user ? Arr::only($user->toArray(), [
+                    'id',
+                    'name',
+                    'email',
+                    'email_verified_at',
+                    'created_at',
+                    'updated_at',
+                    'avatar',
+                ]) : null,
             ],
             // Una cuenta puede representar de forma explícita un jugador de
             // otra colección. Solo compartimos su color, nunca sus datos privados.

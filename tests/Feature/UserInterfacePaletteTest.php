@@ -3,6 +3,12 @@
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
+// Cada prueba empieza sin un ID preconfigurado.
+// Las pruebas que necesitan uno lo establecen expresamente.
+beforeEach(function () {
+    config(['app.original_palette_user_id' => null]);
+});
+
 test('visitors keep the original palette', function () {
     $this->withoutVite();
 
@@ -14,9 +20,8 @@ test('visitors keep the original palette', function () {
 
 test('the principal account always keeps the original palette', function () {
     $this->withoutVite();
-    $owner = User::factory()->create([
-        'email' => 'AlejandroRuedaMar@GMAIL.COM',
-    ]);
+    $owner = User::factory()->create();
+    config(['app.original_palette_user_id' => (string) $owner->id]);
 
     $this->actingAs($owner)->get('/games')
         ->assertOk()
