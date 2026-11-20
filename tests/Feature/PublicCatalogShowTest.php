@@ -110,3 +110,39 @@ test('public game details return not found for inaccessible games or invalid tok
     'unknown token',
     'nonnumeric game',
 ]);
+
+
+test('la ficha publica tiene metadatos personalizados para WhatsApp', function () {
+    $this->game->update([
+        'image_url' => 'https://cf.geekdo-images.com/example.jpg',
+    ]);
+
+    $this->get(route('catalog.games.show', [
+        $this->token, $this->game->id,
+    ]))
+        ->assertOk()
+        ->assertSee(
+            'property="og:title" content="🎲 The White Castle · Clover"',
+            false
+        )
+        ->assertSee(
+            'property="og:description" content="Consulta la ficha de The White Castle y accede a sus tutoriales."',
+            false
+        )
+        ->assertSee(
+            'property="og:image" content="https://cf.geekdo-images.com/example.jpg"',
+            false
+        );
+});
+
+test('la ficha publica sin portada no genera imagen Open Graph', function () {
+    $this->get(route('catalog.games.show', [
+        $this->token, $this->game->id,
+    ]))
+        ->assertOk()
+        ->assertSee(
+            'property="og:title" content="🎲 The White Castle · Clover"',
+            false
+        )
+        ->assertDontSee('property="og:image"', false);
+});

@@ -74,16 +74,50 @@
                         : 'Participa en la votación y descubre los juegos y sus tutoriales.';
                 }
             }
+            // Vista previa de las fichas del catálogo público.
+            $publicCatalogGame = ($page['component'] ?? null) === 'catalog/show'
+                ? ($page['props']['game'] ?? null)
+                : null;
+
+            $previewImage = null;
+
+            if (is_array($publicCatalogGame)) {
+                $gameName = trim(
+                    (string) ($publicCatalogGame['name'] ?? 'Juego de mesa')
+                );
+
+                $previewTitle = "🎲 {$gameName} · Clover";
+                $previewDescription = "Consulta la ficha de {$gameName} y accede a sus tutoriales.";
+
+                $candidateImage = $publicCatalogGame['image_url'] ?? null;
+
+                if (
+                    is_string($candidateImage)
+                    && filter_var($candidateImage, FILTER_VALIDATE_URL)
+                    && in_array(
+                        parse_url($candidateImage, PHP_URL_SCHEME),
+                        ['http', 'https'],
+                        true
+                    )
+                ) {
+                    $previewImage = $candidateImage;
+                }
+            }
         @endphp
 
-        @if (is_array($publicPoll))
+        @if (is_array($publicPoll) || is_array($publicCatalogGame))
             <meta name="description" content="{{ $previewDescription }}">
-            <meta name="robots" content="noindex, nofollow">
+            @if (is_array($publicPoll))
+                <meta name="robots" content="noindex, nofollow">
+            @endif
             <meta property="og:type" content="website">
             <meta property="og:site_name" content="Juegos de mesa · Clover">
             <meta property="og:title" content="{{ $previewTitle }}">
             <meta property="og:description" content="{{ $previewDescription }}">
             <meta property="og:url" content="{{ request()->url() }}">
+            @if ($previewImage)
+                <meta property="og:image" content="{{ $previewImage }}">
+            @endif
         @endif
 
         <x-inertia::head>
