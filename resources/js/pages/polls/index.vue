@@ -47,6 +47,7 @@ interface Poll {
     session_position: 1 | 2 | null;
     linked_poll_id: number | null;
     linked_poll_status: PollStatus | null;
+    tie_break_for_poll_id: number | null;
 
     participants_count: number;
     candidates_count: number;
@@ -495,6 +496,13 @@ const confirmDraftDeletion = () => {
                                 </h2>
 
                                 <span
+                                    v-if="poll.tie_break_for_poll_id !== null"
+                                    class="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-bold text-orange-900 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-200"
+                                >
+                                    Ronda de desempate
+                                </span>
+
+                                <span
                                     v-if="poll.session_position"
                                     class="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-black text-[#5200FF] dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-200"
                                 >
@@ -624,6 +632,14 @@ const confirmDraftDeletion = () => {
                             </Link>
 
                             <Link
+                                v-if="poll.tie_break_for_poll_id !== null"
+                                :href="withPollListReturn(`/polls/${poll.tie_break_for_poll_id}`)"
+                                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-violet-300 px-4 py-2.5 text-center text-sm font-bold text-[#5200FF] hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300"
+                            >
+                                Ver votación original
+                            </Link>
+
+                            <Link
                                 v-if="poll.linked_poll_id"
                                 :href="withPollListReturn(`/polls/${poll.linked_poll_id}`)"
                                 class="inline-flex min-h-11 items-center justify-center rounded-xl border border-violet-300 px-4 py-2.5 text-center text-sm font-bold text-[#5200FF] transition hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-950"
@@ -641,7 +657,8 @@ const confirmDraftDeletion = () => {
                                 v-if="
                                     poll.status ===
                                         'closed' &&
-                                    !poll.has_registered_play
+                                    !poll.has_registered_play &&
+                                    poll.tie_break_for_poll_id === null
                                 "
                                 :href="withPollListReturn(`/polls/${poll.id}/register-play`)"
                                 class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#CCFF00] px-4 py-2.5 text-center text-sm font-black text-black transition-all duration-200 hover:bg-lime-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"

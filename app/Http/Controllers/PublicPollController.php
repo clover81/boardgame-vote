@@ -284,6 +284,11 @@ class PublicPollController extends Controller
         |--------------------------------------------------------------------------
         */
 
+        $tieBreakOutcome = $poll->status === 'closed'
+            && $poll->tie_break_for_poll_id === null
+                ? \App\Support\PollTieBreakOutcome::forOriginal($poll)
+                : null;
+
         return Inertia::render(
             'vote/show',
             [
@@ -310,6 +315,8 @@ class PublicPollController extends Controller
 
                     'has_clear_winner' =>
                     $hasClearWinner,
+
+                    'tie_break_outcome' => $tieBreakOutcome,
 
                     /*
                     |--------------------------------------------------------------------------

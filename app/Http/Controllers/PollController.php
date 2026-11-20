@@ -96,7 +96,14 @@ class PollController extends Controller
                 : $poll->secondGamePoll?->status,
             'participants_count' => $poll->participants_count,
             'candidates_count' => $poll->candidates_count,
-            'has_registered_play' => in_array($poll->id, $playedPollIds, true),
+            'tie_break_for_poll_id' => $poll->tie_break_for_poll_id !== null
+                ? (int) $poll->tie_break_for_poll_id
+                : null,
+            'has_registered_play' => in_array(
+                (int) ($poll->tie_break_for_poll_id ?? $poll->id),
+                $playedPollIds,
+                true
+            ),
             'created_at' => $poll->created_at?->toIso8601String(),
             'collections' => $poll->gameCollections
                 ->map(fn ($collection) => [
@@ -139,6 +146,7 @@ class PollController extends Controller
 
             abort_unless(
                 $parentPoll->parent_poll_id === null
+                && $parentPoll->tie_break_for_poll_id === null
                 && $parentPoll->status === 'draft'
                 && $parentPoll->secondGamePoll()->doesntExist(),
                 409,
@@ -754,6 +762,7 @@ class PollController extends Controller
 
                     if (
                         $parent->parent_poll_id !== null ||
+                        $parent->tie_break_for_poll_id !== null ||
                         $parent->status !== 'draft' ||
                         $parent->secondGamePoll()->exists()
                     ) {
@@ -1122,6 +1131,36 @@ class PollController extends Controller
         $winnerGameId = $hasClearWinner
             ? ($results->first()['game']['id'] ?? null)
             : null;
+        $tieBreakPoll = $poll->tieBreakPoll()->first(['id', 'status']);
+
+        $tieBreakOutcome = $poll->tie_break_for_poll_id === null
+            ? \App\Support\PollTieBreakOutcome::forOriginal($poll)
+            : null;
+
+        if ($winnerGameId === null && isset($tieBreakOutcome['winner']['game_id'])) {
+            $winnerGameId = (int) $tieBreakOutcome['winner']['game_id'];
+        }
+
+        $canDrawTieBreak = $poll->status === 'closed'
+            && $poll->tie_break_for_poll_id === null
+            && $tieBreakOutcome !== null
+            && $tieBreakOutcome['status'] === 'closed'
+            && $tieBreakOutcome['winner'] === null
+            && $tieBreakPoll !== null
+            && $tieBreakPoll->votes()->exists();
+
+        $originalPoll = $poll->tie_break_for_poll_id !== null
+            ? Poll::query()
+                ->where('created_by', $poll->created_by)
+                ->find($poll->tie_break_for_poll_id, ['id', 'name'])
+            : null;
+
+        $canCreateTieBreak = $poll->status === 'closed'
+            && $poll->tie_break_for_poll_id === null
+            && $tieBreakPoll === null
+            && !$hasClearWinner
+            && $results->where('is_top_tie', true)->count() > 1;
+
         $candidateGameIds = $poll->candidates->pluck('game_id');
         $registeredPlay = $poll->play;
 
@@ -1142,6 +1181,7 @@ class PollController extends Controller
 
         // Ampliar una votación solo antes de recibir el primer voto.
         $canAddCandidates = in_array($poll->status, ['draft', 'open'], true)
+            && $poll->tie_break_for_poll_id === null
             && !$poll->votes()->exists();
 
         $availableGames = collect();
@@ -1187,6 +1227,18 @@ class PollController extends Controller
                     'is_second_game' => $poll->parent_poll_id !== null,
                     'planned_second_game' => (bool) $poll->planned_second_game,
 
+                    'can_create_tie_break' => $canCreateTieBreak,
+
+                    'tie_break_poll' => $tieBreakPoll ? [
+                        'id' => $tieBreakPoll->id,
+                        'status' => $tieBreakPoll->status,
+                    ] : null,
+
+                    'original_poll' => $originalPoll ? [
+                        'id' => $originalPoll->id,
+                        'name' => $originalPoll->name,
+                    ] : null,
+
                     'linked_poll' => $linkedPoll
                         ? [
                             'id' => $linkedPoll->id,
@@ -1197,6 +1249,7 @@ class PollController extends Controller
 
                     'can_add_second_game' =>
                         $poll->parent_poll_id === null
+                        && $poll->tie_break_for_poll_id === null
                         && $poll->status === 'draft'
                         && $linkedPoll === null,
 
@@ -1222,6 +1275,9 @@ class PollController extends Controller
 
                     'has_clear_winner' =>
                     $hasClearWinner,
+
+                    'tie_break_outcome' => $tieBreakOutcome,
+                    'can_draw_tie_break' => $canDrawTieBreak,
 
                     'plays' => $poll->plays->map(fn ($play) => [
                         'id' => $play->id,
@@ -1530,6 +1586,7 @@ class PollController extends Controller
             // Así no cambiamos las reglas mientras alguien está votando.
             if (
                 !in_array($current->status, ['draft', 'open'], true)
+                || $current->tie_break_for_poll_id !== null
                 || $current->votes()->exists()
             ) {
                 return back()->withErrors([
@@ -1589,6 +1646,12 @@ class PollController extends Controller
                 ->where('created_by', $userId)
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            if ($current->tie_break_for_poll_id !== null) {
+                return back()->withErrors([
+                    'game_id' => 'No puedes añadir juegos a una ronda de desempate.',
+                ]);
+            }
 
             if (! in_array($current->status, ['draft', 'open'], true)) {
                 return back()->withErrors([

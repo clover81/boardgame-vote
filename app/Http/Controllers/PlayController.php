@@ -283,6 +283,15 @@ class PlayController extends Controller
             404
         );
 
+        // La partida pertenece a la votación original,
+        // no a la ronda auxiliar de desempate.
+        if ($poll->tie_break_for_poll_id !== null) {
+            return redirect()->route('plays.create-from-poll', [
+                'poll' => $poll->tie_break_for_poll_id,
+                ...$this->pollReturnQuery($request),
+            ]);
+        }
+
         if (Play::where('poll_id', $poll->id)->exists()) {
             return redirect()
                 ->route('polls.show', [$poll, ...$this->pollReturnQuery($request)])
@@ -353,6 +362,22 @@ class PlayController extends Controller
 
             if ($hasClearWinner) {
                 $winnerCandidate = $first['candidate'];
+            }
+        }
+
+        // Si la primera votación terminó empatada, utilizar
+        // únicamente un ganador confirmado de la ronda adicional.
+        if (!$hasClearWinner && $poll->tie_break_for_poll_id === null) {
+            $outcome = \App\Support\PollTieBreakOutcome::forOriginal($poll);
+            $finalGameId = $outcome['winner']['game_id'] ?? null;
+
+            if ($finalGameId !== null) {
+                $winnerCandidate = $poll->candidates->first(
+                    fn ($candidate) =>
+                        (int) $candidate->game_id === (int) $finalGameId
+                );
+
+                $hasClearWinner = $winnerCandidate !== null;
             }
         }
 
@@ -636,6 +661,12 @@ class PlayController extends Controller
                 if (!$poll) {
                     throw ValidationException::withMessages([
                         'poll_id' => 'La votación seleccionada no está disponible.',
+                    ]);
+                }
+
+                if ($poll->tie_break_for_poll_id !== null) {
+                    throw ValidationException::withMessages([
+                        'poll_id' => 'Registra la partida desde la votación original.',
                     ]);
                 }
 

@@ -131,6 +131,16 @@ interface Poll {
         | 'closed';
 
     has_clear_winner: boolean;
+    tie_break_outcome: {
+        poll_id: number;
+        status: 'draft' | 'open' | 'closed';
+        winner: {
+            game_id: number;
+            game_name: string;
+            votes: number;
+            method: 'votes' | 'draw';
+        } | null;
+    } | null;
     single_choice: boolean;
     ranking_slots: number | null;
     required_vote_count: number;
@@ -670,6 +680,10 @@ const secondPreferenceTieBreak = computed(() =>
     getSecondPreferenceTieBreak(props.results)
 );
 
+const finalTieBreakWinner = computed(
+    () => props.poll.tie_break_outcome?.winner ?? null
+);
+
 const winningGame = computed(() => {
     const winner = props.results.find(result => result.is_winner);
     return winner
@@ -898,6 +912,33 @@ const myChoiceLabel = (candidateId: number): string | null => {
                     </div>
 
                     <div
+                        v-else-if="finalTieBreakWinner"
+                        class="rounded-2xl border border-lime-200 bg-[#F7FAED] p-5 text-zinc-900"
+                    >
+                        <p class="font-black text-lime-900">
+                            🏆 Ganador definitivo tras desempate
+                        </p>
+                        <p class="mt-3 break-words text-xl font-black">
+                            {{ finalTieBreakWinner.game_name }}
+                        </p>
+                        <p class="mt-2 text-sm">
+                            <template v-if="finalTieBreakWinner.method === 'draw'">
+                                Ganador elegido por sorteo después de un nuevo empate
+                                ({{ finalTieBreakWinner.votes }} votos).
+                            </template>
+                            <template v-else>
+                                Ganó la ronda de desempate con
+                                {{ finalTieBreakWinner.votes }}
+                                {{ finalTieBreakWinner.votes === 1 ? 'voto' : 'votos' }}.
+                            </template>
+                        </p>
+                        <p class="mt-2 text-sm text-zinc-600">
+                            La clasificación de la votación original
+                            se conserva sin cambios.
+                        </p>
+                    </div>
+
+                    <div
                         v-else
                         class="rounded-2xl bg-orange-100 p-5 text-orange-900"
                     >
@@ -918,6 +959,19 @@ const myChoiceLabel = (candidateId: number): string | null => {
                             {{ poll.single_choice || poll.ranking_slots === 1
                                 ? 'Hay varios juegos con el mismo número de votos.'
                                 : 'Hay varios juegos con los mismos puntos y el mismo número de primeras y segundas opciones.' }}
+                        </p>
+
+                        <p
+                            v-if="poll.tie_break_outcome"
+                            class="mt-3 text-sm font-semibold"
+                        >
+                            {{
+                                poll.tie_break_outcome.status === 'closed'
+                                    ? 'La ronda de desempate también terminó empatada.'
+                                    : poll.tie_break_outcome.status === 'open'
+                                        ? 'Hay una votación de desempate en marcha.'
+                                        : 'Se está preparando una votación de desempate.'
+                            }}
                         </p>
                     </div>
                 </div>

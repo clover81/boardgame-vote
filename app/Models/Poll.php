@@ -21,6 +21,9 @@ class Poll extends Model
         'single_choice',
         'ranking_slots',
         'parent_poll_id',
+        'tie_break_for_poll_id',
+        'tie_break_draw_winner_game_id',
+        'tie_break_drawn_at',
         'submission_key',
         'planned_second_game',
     ];
@@ -29,6 +32,9 @@ class Poll extends Model
         'single_choice' => 'boolean',
         'ranking_slots' => 'integer',
         'parent_poll_id' => 'integer',
+        'tie_break_for_poll_id' => 'integer',
+        'tie_break_draw_winner_game_id' => 'integer',
+        'tie_break_drawn_at' => 'datetime',
         'planned_second_game' => 'boolean',
     ];
 
@@ -88,6 +94,16 @@ class Poll extends Model
     public function secondGamePoll(): HasOne
     {
         return $this->hasOne(self::class, 'parent_poll_id');
+    }
+
+    public function tieBreakPoll(): HasOne
+    {
+        return $this->hasOne(self::class, 'tie_break_for_poll_id');
+    }
+
+    public function originalPoll(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'tie_break_for_poll_id');
     }
 
     public function creator(): BelongsTo

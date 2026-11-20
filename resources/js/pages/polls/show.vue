@@ -155,6 +155,26 @@ interface Poll {
         | 'closed';
 
     has_clear_winner: boolean;
+    can_create_tie_break: boolean;
+    can_draw_tie_break: boolean;
+    tie_break_outcome: {
+        poll_id: number;
+        status: 'draft' | 'open' | 'closed';
+        winner: {
+            game_id: number;
+            game_name: string;
+            votes: number;
+            method: 'votes' | 'draw';
+        } | null;
+    } | null;
+    tie_break_poll: {
+        id: number;
+        status: 'draft' | 'open' | 'closed';
+    } | null;
+    original_poll: {
+        id: number;
+        name: string;
+    } | null;
     single_choice: boolean;
     ranking_slots: number | null;
 
@@ -273,12 +293,17 @@ const secondPreferenceTieBreak = computed(() =>
     getSecondPreferenceTieBreak(props.results)
 );
 
+const finalTieBreakWinner = computed(
+    () => props.poll.tie_break_outcome?.winner ?? null
+);
+
 const resultShareMessage = ref('');
 const showResultText = ref(false);
 const resultTextArea = ref<HTMLTextAreaElement | null>(null);
 const resultText = computed(() => {
     const results = props.results.filter(result => result.points > 0);
     const winner = results.find(result => result.is_winner);
+    const finalWinner = finalTieBreakWinner.value;
     const tied = results.filter(result => result.is_top_tie);
 
     const score = (points: number) => {
@@ -318,6 +343,21 @@ const resultText = computed(() => {
                 `🥈 Desempate por segundas opciones: ${tie.winnerSecondVotes} frente a ${tie.nextBestSecondVotes}.`
             );
         }
+    } else if (finalWinner) {
+        const unit = finalWinner.votes === 1 ? 'voto' : 'votos';
+        if (finalWinner.method === 'draw') {
+            lines.push(
+                `🎲 *${finalWinner.game_name}* es el ganador definitivo por sorteo, tras un nuevo empate en el desempate (${finalWinner.votes} ${unit}).`
+            );
+        } else {
+            lines.push(
+                `🏆 *${finalWinner.game_name}* gana el desempate con *${finalWinner.votes} ${unit}*.`
+            );
+        }
+        if (tied.length > 1) {
+            const names = tied.map(result => result.game.name).join(' y ');
+            lines.push(`🤝 Empate en la votación original: ${names}.`);
+        }
     } else if (tied.length > 1) {
         const names = tied.map(result => result.game.name).join(' y ');
         lines.push(`🤝 *Empate con ${score(tied[0].points)}:* ${names}`);
@@ -330,7 +370,7 @@ const resultText = computed(() => {
 
     // Cada jugador conserva su propio enlace personal.
     // No compartimos tokens privados en el mensaje grupal.
-    const gamesReminder = winner
+    const gamesReminder = winner || finalWinner
         ? 'el ganador y los demás juegos'
         : 'todos los juegos candidatos';
 
@@ -498,6 +538,44 @@ const openPoll = () => {
 |--------------------------------------------------------------------------
 */
 
+const creatingTieBreak = ref(false);
+
+const createTieBreak = () => {
+    if (creatingTieBreak.value || !props.poll.can_create_tie_break) return;
+
+    router.post(`/polls/${props.poll.id}/tie-break`, {}, {
+        preserveScroll: true,
+        onStart: () => { creatingTieBreak.value = true; },
+        onFinish: () => { creatingTieBreak.value = false; },
+    });
+};
+
+const drawDialogOpen = ref(false);
+const drawingTieBreak = ref(false);
+const drawTieBreakError = ref('');
+
+const confirmTieBreakDraw = () => {
+    if (drawingTieBreak.value || !props.poll.can_draw_tie_break) return;
+
+    router.post(`/polls/${props.poll.id}/tie-break/draw`, {}, {
+        preserveScroll: true,
+        onStart: () => {
+            drawingTieBreak.value = true;
+            drawTieBreakError.value = '';
+        },
+        onError: (errors) => {
+            drawTieBreakError.value =
+                errors.poll ?? 'No se ha podido realizar el sorteo.';
+        },
+        onSuccess: () => {
+            drawDialogOpen.value = false;
+        },
+        onFinish: () => {
+            drawingTieBreak.value = false;
+        },
+    });
+};
+
 const closePollDialogOpen = ref(false);
 const closingPoll = ref(false);
 const closePollError = ref('');
@@ -617,6 +695,15 @@ const modeLabel = (
             </Link>
 
             <!-- ================================================== -->
+            <div v-if="poll.original_poll" class="mt-3">
+                <Link
+                    :href="`/polls/${poll.original_poll.id}`"
+                    class="inline-flex min-h-11 items-center text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
+                >
+                    ← Volver a la votación original: {{ poll.original_poll.name }}
+                </Link>
+            </div>
+
             <!-- CABECERA                                           -->
             <!-- ================================================== -->
 
@@ -1526,6 +1613,37 @@ const modeLabel = (
                     </div>
 
                     <div
+                        v-else-if="finalTieBreakWinner"
+                        class="rounded-2xl border border-lime-200 bg-[#F7FAED] p-5 text-zinc-900 dark:border-lime-900 dark:bg-lime-950/30 dark:text-zinc-100"
+                    >
+                        <p class="font-black">
+                            🏆 Ganador definitivo tras desempate
+                        </p>
+                        <p class="mt-2 break-words text-xl font-black">
+                            {{ finalTieBreakWinner.game_name }}
+                        </p>
+                        <p class="mt-2 text-sm">
+                            <template v-if="finalTieBreakWinner.method === 'draw'">
+                                Ganador elegido por sorteo tras persistir el empate
+                                ({{ finalTieBreakWinner.votes }} votos).
+                            </template>
+                            <template v-else>
+                                Ganó la ronda adicional con
+                                {{ finalTieBreakWinner.votes }}
+                                {{ finalTieBreakWinner.votes === 1 ? 'voto' : 'votos' }}.
+                            </template>
+                            La clasificación original se conserva.
+                        </p>
+                        <Link
+                            v-if="poll.tie_break_poll"
+                            :href="`/polls/${poll.tie_break_poll.id}`"
+                            class="mt-3 inline-flex min-h-11 items-center text-sm font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
+                        >
+                            Ver resultados del desempate
+                        </Link>
+                    </div>
+
+                    <div
                         v-else
                         class="rounded-2xl bg-orange-100 p-5 text-orange-900 dark:bg-orange-950/30 dark:text-orange-200"
                     >
@@ -1547,6 +1665,43 @@ const modeLabel = (
                                 ? 'Hay varios juegos con el mismo número de votos.'
                                 : 'Hay varios juegos con los mismos puntos y el mismo número de primeras y segundas opciones.' }}
                         </p>
+
+                        <div v-if="poll.can_create_tie_break" class="mt-4">
+                            <button
+                                type="button"
+                                class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#5200FF] px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-[#4100CC] disabled:opacity-60 sm:w-auto"
+                                :disabled="creatingTieBreak"
+                                @click="createTieBreak"
+                            >
+                                {{ creatingTieBreak ? 'Preparando desempate…' : 'Crear votación de desempate' }}
+                            </button>
+                            <p class="mt-2 text-xs">
+                                Solo participarán los juegos empatados.
+                                Los votos originales se conservarán.
+                            </p>
+                        </div>
+
+                        <Link
+                            v-else-if="poll.tie_break_poll"
+                            :href="`/polls/${poll.tie_break_poll.id}`"
+                            class="mt-4 inline-flex min-h-11 items-center rounded-xl bg-[#5200FF] px-4 py-3 text-sm font-bold text-white hover:bg-[#4100CC]"
+                        >
+                            Ver desempate ({{ statusLabel(poll.tie_break_poll.status) }})
+                        </Link>
+
+                        <div v-if="poll.can_draw_tie_break" class="mt-4">
+                            <button
+                                type="button"
+                                class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#5200FF] px-4 py-3 text-sm font-bold text-white hover:bg-[#4100CC] sm:w-auto"
+                                @click="drawDialogOpen = true"
+                            >
+                                Sortear ganador definitivo
+                            </button>
+                            <p class="mt-2 text-xs">
+                                La ronda adicional también terminó empatada.
+                                El sorteo será entre los juegos empatados en primer lugar.
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -1761,6 +1916,18 @@ const modeLabel = (
                 <!-- TODAVÍA NO REGISTRADA -->
 
                 <div
+                    v-else-if="poll.original_poll"
+                    class="mt-8"
+                >
+                    <Link
+                        :href="`/polls/${poll.original_poll.id}`"
+                        class="inline-flex min-h-11 items-center rounded-xl bg-[#5200FF] px-5 py-2.5 font-bold text-white hover:bg-[#4100CC]"
+                    >
+                        Volver a la votación original para registrar la partida
+                    </Link>
+                </div>
+
+                <div
                     v-else
                     class="mt-8"
                 >
@@ -1858,6 +2025,49 @@ const modeLabel = (
                         @click="confirmClosePoll"
                     >
                         {{ closingPoll ? 'Cerrando...' : 'Cerrar votación' }}
+                    </button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <Dialog v-model:open="drawDialogOpen">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle class="text-xl font-black">
+                        ¿Sortear el ganador definitivo?
+                    </DialogTitle>
+                    <DialogDescription class="pt-2 text-sm leading-6">
+                        La ronda de desempate sigue empatada.
+                        Se elegirá aleatoriamente uno de los juegos empatados
+                        en primera posición y el resultado quedará registrado.
+                        No podrás repetir el sorteo desde la aplicación.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <p
+                    v-if="drawTieBreakError"
+                    role="alert"
+                    class="text-sm font-semibold text-red-700 dark:text-red-300"
+                >
+                    {{ drawTieBreakError }}
+                </p>
+
+                <DialogFooter class="mt-3 gap-2 sm:gap-3">
+                    <button
+                        type="button"
+                        :disabled="drawingTieBreak"
+                        class="min-h-11 rounded-xl border border-zinc-300 px-5 py-3 font-semibold dark:border-zinc-700"
+                        @click="drawDialogOpen = false"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="button"
+                        :disabled="drawingTieBreak"
+                        class="min-h-11 rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white disabled:opacity-50"
+                        @click="confirmTieBreakDraw"
+                    >
+                        {{ drawingTieBreak ? 'Realizando sorteo…' : 'Confirmar sorteo' }}
                     </button>
                 </DialogFooter>
             </DialogContent>

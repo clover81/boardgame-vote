@@ -4,6 +4,7 @@ use App\Http\Controllers\GameController;
 use App\Http\Controllers\PlayController;
 use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\PollController;
+use App\Http\Controllers\PollTieBreakController;
 use App\Http\Controllers\PublicPollController;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Support\Facades\Route;
@@ -249,6 +250,17 @@ Route::middleware(Authenticate::class)->group(function () {
         '/polls/{poll}',
         [PollController::class, 'show']
     )->name('polls.show');
+
+
+    Route::post(
+        '/polls/{poll}/tie-break',
+        [PollTieBreakController::class, 'store']
+    )->name('polls.tie-break.store');
+
+    Route::post(
+        '/polls/{poll}/tie-break/draw',
+        [PollTieBreakController::class, 'draw']
+    )->name('polls.tie-break.draw');
 
     Route::delete(
         '/polls/{poll}',
