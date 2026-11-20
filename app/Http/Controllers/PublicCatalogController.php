@@ -102,12 +102,30 @@ class PublicCatalogController extends Controller
                     ->where('game_collections.created_by', $owner->id)
                     ->where('game_collections.is_public', true)
                     ->orderBy('game_collections.name'),
-
-                'expansions' => fn ($query) => $query
-                    ->where('is_active', true)
-                    ->orderBy('name'),
             ])
             ->firstOrFail();
+
+        // Mostrar expansiones de colecciones publicas del propietario.
+        // Mantener tambien las expansiones informativas sin coleccion.
+        $publicCollectionIds = $game->collections->pluck('id')->all();
+
+        $game->load([
+            'expansions' => fn ($query) => $query
+                ->where('is_active', true)
+                ->where(function ($query) use ($publicCollectionIds) {
+                    $query
+                        ->whereNotIn('expansions.id', function ($subquery) {
+                            $subquery->select('expansion_id')
+                                ->from('game_collection_expansion');
+                        })
+                        ->orWhereIn('expansions.id', function ($subquery) use ($publicCollectionIds) {
+                            $subquery->select('expansion_id')
+                                ->from('game_collection_expansion')
+                                ->whereIn('game_collection_id', $publicCollectionIds);
+                        });
+                })
+                ->orderBy('name'),
+        ]);
 
         return Inertia::render('catalog/show', [
             'catalogToken' => $token,

@@ -146,3 +146,57 @@ test('la ficha publica sin portada no genera imagen Open Graph', function () {
         )
         ->assertDontSee('property="og:image"', false);
 });
+
+
+test('el catalogo publico respeta las colecciones de las expansiones', function () {
+    $private = GameCollection::forceCreate([
+        'created_by' => $this->owner->id,
+        'name' => 'Privada',
+        'is_public' => false,
+    ]);
+
+    $foreign = GameCollection::forceCreate([
+        'created_by' => User::factory()->create()->id,
+        'name' => 'Ajena',
+        'is_public' => true,
+    ]);
+
+    $this->game->collections()->attach([
+        $private->id, $foreign->id,
+    ]);
+
+    $publicExpansion = $this->game->expansions()->create([
+        'name' => 'A pública',
+        'is_active' => true,
+    ]);
+
+    $this->game->expansions()->create([
+        'name' => 'B informativa sin colección',
+        'is_active' => true,
+    ]);
+
+    $privateExpansion = $this->game->expansions()->create([
+        'name' => 'C solo privada',
+        'is_active' => true,
+    ]);
+
+    $foreignExpansion = $this->game->expansions()->create([
+        'name' => 'D solo ajena',
+        'is_active' => true,
+    ]);
+
+    $this->collection->expansions()->attach($publicExpansion);
+    $private->expansions()->attach($privateExpansion);
+    $foreign->expansions()->attach($foreignExpansion);
+
+    $this->get(route('catalog.games.show', [
+        $this->token, $this->game->id,
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('catalog/show')
+            ->has('game.expansions', 2)
+            ->where('game.expansions.0.name', 'A pública')
+            ->where('game.expansions.1.name', 'B informativa sin colección')
+        );
+});
