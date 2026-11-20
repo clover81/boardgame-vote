@@ -11,6 +11,7 @@ const form = useForm({
 });
 
 const submit = () => {
+    if (form.processing) return;
     form.post('/players');
 };
 </script>
@@ -19,7 +20,7 @@ const submit = () => {
     <Head title="Añadir jugador" />
 
     <AppLayout>
-        <div class="mx-auto w-full max-w-xl px-4 py-6 sm:px-6">
+        <div class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
 
             <Link
                 href="/players"
@@ -33,21 +34,22 @@ const submit = () => {
             </h1>
 
             <form
-                class="mt-8 space-y-6 rounded-2xl border p-6"
+                class="mt-6 space-y-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7 dark:border-zinc-800 dark:bg-zinc-950"
                 @submit.prevent="submit"
             >
                 <div>
-                    <label
-                        class="mb-2 block font-semibold"
-                    >
+                    <label for="create-player-name" class="mb-2 block font-bold">
                         Nombre
                     </label>
 
                     <input
+                        id="create-player-name"
                         v-model="form.name"
                         type="text"
+                        maxlength="255"
+                        required
                         placeholder="Juan"
-                        class="w-full rounded-xl border px-4 py-3"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                     />
 
                     <InputError :message="form.errors.name" />

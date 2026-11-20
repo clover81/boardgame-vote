@@ -234,9 +234,10 @@ const submit = () => {
             data.game_ids.map((gameId) => [gameId, data.expansion_ids[gameId] ?? null])
         ),
     })).post(`/plays${pollReturnQuery.value}`, {
+        preserveScroll: 'errors',
         onError: async () => {
             await nextTick();
-            saveError.value?.focus();
+            saveError.value?.focus({ preventScroll: true });
         },
     });
 };

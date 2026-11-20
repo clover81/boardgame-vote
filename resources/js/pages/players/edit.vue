@@ -14,7 +14,10 @@ const form = useForm({
     color: props.player.color ?? 'violet',
 });
 
-const submit = () => form.patch(`/players/${props.player.id}`);
+const submit = () => {
+    if (form.processing) return;
+    form.patch(`/players/${props.player.id}`);
+};
 </script>
 
 <template>

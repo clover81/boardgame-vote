@@ -215,6 +215,7 @@ const submit = () => {
         game_ids: game_id === null ? [] : [game_id],
         expansion_ids: game_id === null ? {} : { [game_id]: expansion_id },
     })).post('/plays', {
+        preserveScroll: 'errors',
         onError: async (errors) => {
             const gameError = errors.game_ids ?? errors['game_ids.0'];
             if (gameError) {
@@ -227,7 +228,7 @@ const submit = () => {
             }
 
             await nextTick();
-            saveError.value?.focus();
+            saveError.value?.focus({ preventScroll: true });
         },
     });
 };

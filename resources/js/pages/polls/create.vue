@@ -1039,9 +1039,10 @@ const submit = () => {
             : data.create_second_game,
     })).post('/polls', {
         preserveState: 'errors',
+        preserveScroll: 'errors',
         onError: async () => {
             await nextTick();
-            saveError.value?.focus();
+            saveError.value?.focus({ preventScroll: true });
         },
     });
 };

@@ -217,9 +217,10 @@ const submit = () => {
     }
 
     form.put(query.size ? `${url}?${query}` : url, {
+        preserveScroll: 'errors',
         onError: async () => {
             await nextTick();
-            saveError.value?.focus();
+            saveError.value?.focus({ preventScroll: true });
         },
     });
 };
