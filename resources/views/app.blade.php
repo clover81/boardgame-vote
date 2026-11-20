@@ -121,7 +121,7 @@
             <meta property="og:site_name" content="Juegos de mesa · Clover">
             <meta property="og:title" content="{{ $previewTitle }}">
             <meta property="og:description" content="{{ $previewDescription }}">
-            <meta property="og:url" content="{{ request()->url() }}">
+            <meta property="og:url" content="{{ $publicCatalogIndex && request()->query('view') === 'filtered' ? request()->fullUrl() : request()->url() }}">
             @if ($previewImage)
                 <meta property="og:image" content="{{ $previewImage }}">
             @endif

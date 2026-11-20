@@ -825,7 +825,7 @@ const tutorialUrl = (game: Game): string =>
                 </div>
 
                 <button
-                    v-if="showAdvancedFilters"
+                    v-if="showAdvancedFilters || hasFilters"
                     type="button"
                     class="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#5200FF] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#4000cc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] md:hidden"
                     @click="showCatalogResults"

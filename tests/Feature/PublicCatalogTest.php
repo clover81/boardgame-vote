@@ -126,3 +126,41 @@ test('el catalogo publico tiene su vista previa de WhatsApp', function () {
             false
         );
 });
+
+
+test('los enlaces filtrados conservan sus parametros en Open Graph', function () {
+    $this->withoutVite();
+
+    $owner = User::factory()->create();
+    $owner->forceFill([
+        'catalog_share_token' => (string) Str::uuid(),
+    ])->save();
+
+    $baseUrl = route('catalog.public', $owner->catalog_share_token);
+    $filteredUrl = $baseUrl . '?view=filtered&search=Ark';
+
+    // Comprobar la ruta y los parámetros sin depender
+    // del puerto configurado en el entorno de pruebas.
+    $catalogPath = preg_quote(
+        (string) parse_url($baseUrl, PHP_URL_PATH),
+        '~'
+    );
+
+    $filteredResponse = $this->get($filteredUrl)->assertOk();
+
+    $this->assertMatchesRegularExpression(
+        '~property="og:url" content="https?://[^"]*'
+            . $catalogPath
+            . '\?(?:view=filtered&amp;search=Ark|search=Ark&amp;view=filtered)"~',
+        $filteredResponse->getContent()
+    );
+
+    $normalResponse = $this->get($baseUrl)->assertOk();
+
+    $this->assertMatchesRegularExpression(
+        '~property="og:url" content="https?://[^"]*'
+            . $catalogPath
+            . '"~',
+        $normalResponse->getContent()
+    );
+});
