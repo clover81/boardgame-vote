@@ -1065,6 +1065,10 @@ class PollController extends Controller
                         return $b['first_votes'] <=> $a['first_votes'];
                     }
 
+                    if ($a['second_votes'] !== $b['second_votes']) {
+                        return $b['second_votes'] <=> $a['second_votes'];
+                    }
+
                     return strcasecmp($a['game']['name'], $b['game']['name']);
                 })
                 ->values();
@@ -1072,16 +1076,19 @@ class PollController extends Controller
             // Ranking de competición: 1, 1, 3 o 1, 2, 2, 4.
             $previousPoints = null;
             $previousFirstVotes = null;
+            $previousSecondVotes = null;
             $previousRank = null;
 
             $results = $results->map(function (array $result, int $index) use (
                 &$previousPoints,
                 &$previousFirstVotes,
+                &$previousSecondVotes,
                 &$previousRank
             ) {
                 $sameAsPrevious = $index > 0
                     && $result['points'] === $previousPoints
-                    && $result['first_votes'] === $previousFirstVotes;
+                    && $result['first_votes'] === $previousFirstVotes
+                    && $result['second_votes'] === $previousSecondVotes;
 
                 if ($sameAsPrevious) {
                     $rank = $previousRank;
@@ -1091,6 +1098,7 @@ class PollController extends Controller
 
                 $previousPoints = $result['points'];
                 $previousFirstVotes = $result['first_votes'];
+                $previousSecondVotes = $result['second_votes'];
                 $previousRank = $rank;
 
                 $result['rank'] = $rank;

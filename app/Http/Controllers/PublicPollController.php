@@ -172,6 +172,10 @@ class PublicPollController extends Controller
                                 <=> $a['first_votes'];
                         }
 
+                        if ($a['second_votes'] !== $b['second_votes']) {
+                            return $b['second_votes'] <=> $a['second_votes'];
+                        }
+
                         /*
                          * Solo estabiliza visualmente
                          * el orden.
@@ -204,6 +208,9 @@ class PublicPollController extends Controller
                             &&
                             $result['first_votes']
                                 === $first['first_votes']
+                            &&
+                            $result['second_votes']
+                                === $first['second_votes']
                     );
 
                 $hasClearWinner =
@@ -233,7 +240,8 @@ class PublicPollController extends Controller
                             $key =
                                 $result['points']
                                 . '-'
-                                . $result['first_votes'];
+                                . $result['first_votes']
+                                . '-' . $result['second_votes'];
 
                             /*
                              * Ranking tipo:
@@ -629,11 +637,13 @@ class PublicPollController extends Controller
                 return [
                     'id' => $candidate->id,
                     'first' => $first,
+                    'second' => $second,
                     'points' => $linked->votePoints($first, $second, $third),
                 ];
             })->sort(function ($a, $b) {
                 return ($b['points'] <=> $a['points'])
-                    ?: ($b['first'] <=> $a['first']);
+                    ?: ($b['first'] <=> $a['first'])
+                    ?: ($b['second'] <=> $a['second']);
             })->values();
 
             $leader = $scores->first();
@@ -642,6 +652,7 @@ class PublicPollController extends Controller
                 $ties = $scores->filter(fn ($score) =>
                     $score['points'] === $leader['points']
                     && $score['first'] === $leader['first']
+                    && $score['second'] === $leader['second']
                 )->count();
 
                 if ($ties === 1) {

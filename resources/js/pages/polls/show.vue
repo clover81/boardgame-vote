@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
 import { playerNameColor } from '@/lib/player-colors';
+import { getSecondPreferenceTieBreak } from '@/lib/poll-tiebreak';
 import MeepleIcon from '@/components/icons/MeepleIcon.vue';
 import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, CalendarHeart, UsersRound, HourglassCog, Swords, BrainCog, NotebookPen, Share2, Trophy } from '@lucide/vue';
 
@@ -268,6 +269,10 @@ const copyParticipantLink = async (participant: Participant) => {
     }
 };
 
+const secondPreferenceTieBreak = computed(() =>
+    getSecondPreferenceTieBreak(props.results)
+);
+
 const resultShareMessage = ref('');
 const showResultText = ref(false);
 const resultTextArea = ref<HTMLTextAreaElement | null>(null);
@@ -307,6 +312,12 @@ const resultText = computed(() => {
 
     if (winner) {
         lines.push(`🏆 *${winner.game.name}* gana con *${score(winner.points)}*`);
+        if (secondPreferenceTieBreak.value) {
+            const tie = secondPreferenceTieBreak.value;
+            lines.push(
+                `🥈 Desempate por segundas opciones: ${tie.winnerSecondVotes} frente a ${tie.nextBestSecondVotes}.`
+            );
+        }
     } else if (tied.length > 1) {
         const names = tied.map(result => result.game.name).join(' y ');
         lines.push(`🤝 *Empate con ${score(tied[0].points)}:* ${names}`);
@@ -1440,7 +1451,7 @@ const modeLabel = (
                     >
                         <template v-if="poll.required_vote_count === 3">
                             Primera opción: 3 puntos. Segunda: 2. Tercera: 1.
-                            En caso de empate se priorizan las primeras opciones.
+                            En caso de empate se comparan las primeras y después las segundas opciones.
                         </template>
                         <template v-else-if="poll.single_choice || poll.ranking_slots === 1">
                             Un voto por persona.
@@ -1504,6 +1515,14 @@ const modeLabel = (
                         <p class="mt-3 break-words text-xl font-black">
                             {{ results[0].game.name }}
                         </p>
+                        <p
+                            v-if="secondPreferenceTieBreak"
+                            class="mt-2 text-sm font-semibold text-lime-900 dark:text-lime-200"
+                        >
+                            Desempate resuelto por más segundas opciones
+                            ({{ secondPreferenceTieBreak.winnerSecondVotes }}
+                            frente a {{ secondPreferenceTieBreak.nextBestSecondVotes }}).
+                        </p>
                     </div>
 
                     <div
@@ -1524,9 +1543,9 @@ const modeLabel = (
                         </p>
 
                         <p class="mt-1 text-sm">
-                            {{ poll.single_choice
+                            {{ poll.single_choice || poll.ranking_slots === 1
                                 ? 'Hay varios juegos con el mismo número de votos.'
-                                : 'Hay varios juegos con los mismos puntos y el mismo número de primeras opciones.' }}
+                                : 'Hay varios juegos con los mismos puntos y el mismo número de primeras y segundas opciones.' }}
                         </p>
                     </div>
                 </div>

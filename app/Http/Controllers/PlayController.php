@@ -316,6 +316,7 @@ class PlayController extends Controller
                 return [
                     'candidate' => $candidate,
                     'first_votes' => $firstVotes,
+                    'second_votes' => $secondVotes,
                     'points' => $poll->votePoints(
                         $firstVotes,
                         $secondVotes,
@@ -328,7 +329,11 @@ class PlayController extends Controller
                     return $b['points'] <=> $a['points'];
                 }
 
-                return $b['first_votes'] <=> $a['first_votes'];
+                if ($a['first_votes'] !== $b['first_votes']) {
+                    return $b['first_votes'] <=> $a['first_votes'];
+                }
+
+                return $b['second_votes'] <=> $a['second_votes'];
             })
             ->values();
 
@@ -343,7 +348,8 @@ class PlayController extends Controller
 
             $hasClearWinner = $second === null
                 || $first['points'] !== $second['points']
-                || $first['first_votes'] !== $second['first_votes'];
+                || $first['first_votes'] !== $second['first_votes']
+                || $first['second_votes'] !== $second['second_votes'];
 
             if ($hasClearWinner) {
                 $winnerCandidate = $first['candidate'];

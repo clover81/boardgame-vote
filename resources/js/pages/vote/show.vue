@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { playerMeepleColor, playerNameColor } from '@/lib/player-colors';
+import { getSecondPreferenceTieBreak } from '@/lib/poll-tiebreak';
 import MeepleIcon from '@/components/icons/MeepleIcon.vue';
 import YoutubeLogoIcon from '@/components/icons/YoutubeLogoIcon.vue';
 import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, UsersRound, HourglassCog, Swords, BrainCog, NotebookPen , Trophy, Medal, CircleStar, SquareStar} from '@lucide/vue';
@@ -665,6 +666,10 @@ const sessionCandidates = computed(() => {
 const sessionResult = (candidateId: number): Result | undefined =>
     props.results.find(result => result.candidate_id === candidateId);
 
+const secondPreferenceTieBreak = computed(() =>
+    getSecondPreferenceTieBreak(props.results)
+);
+
 const winningGame = computed(() => {
     const winner = props.results.find(result => result.is_winner);
     return winner
@@ -835,6 +840,14 @@ const myChoiceLabel = (candidateId: number): string | null => {
                                 <h3 class="break-words text-xl font-black leading-snug sm:text-2xl">
                                     {{ results[0].game.name }}
                                 </h3>
+                                <p
+                                    v-if="secondPreferenceTieBreak"
+                                    class="mt-2 text-sm font-bold text-lime-900"
+                                >
+                                    Desempate resuelto por más segundas opciones
+                                    ({{ secondPreferenceTieBreak.winnerSecondVotes }}
+                                    frente a {{ secondPreferenceTieBreak.nextBestSecondVotes }}).
+                                </p>
 
                                 <div
                                     v-if="winningGame"
@@ -902,9 +915,9 @@ const myChoiceLabel = (candidateId: number): string | null => {
                         </p>
 
                         <p class="mt-1 text-sm">
-                            {{ poll.single_choice
+                            {{ poll.single_choice || poll.ranking_slots === 1
                                 ? 'Hay varios juegos con el mismo número de votos.'
-                                : 'Hay varios juegos con los mismos puntos y el mismo número de primeras opciones.' }}
+                                : 'Hay varios juegos con los mismos puntos y el mismo número de primeras y segundas opciones.' }}
                         </p>
                     </div>
                 </div>
