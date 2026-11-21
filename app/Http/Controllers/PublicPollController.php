@@ -666,6 +666,18 @@ class PublicPollController extends Controller
                     $winnerId = $leader['id'];
                 }
             }
+            // Si la votación original terminó empatada, consultar
+            // el ganador definitivo de su ronda de desempate.
+            if ($winnerId === null && $linked->tie_break_for_poll_id === null) {
+                $resolvedGameId = \App\Support\PollTieBreakOutcome::forOriginal($linked)['winner']['game_id'] ?? null;
+
+                if ($resolvedGameId !== null) {
+                    $winnerId = $linked->candidates
+                        ->first(fn ($candidate) =>
+                            (int) $candidate->game_id === (int) $resolvedGameId
+                        )?->id;
+                }
+            }
         }
 
         return [

@@ -87,9 +87,14 @@ class FriendCollectionController extends Controller
             'idealPlayerCounts',
             'expansions' => fn ($query) => $query
                 ->where('is_active', true)
-                ->whereIn('expansions.id', DB::table('game_collection_expansion')
-                    ->where('game_collection_id', $collection->id)
-                    ->select('expansion_id'))
+                ->where(function ($query) use ($collection) {
+                    $query
+                        ->whereNotIn('expansions.id', DB::table('game_collection_expansion')
+                            ->select('expansion_id'))
+                        ->orWhereIn('expansions.id', DB::table('game_collection_expansion')
+                            ->where('game_collection_id', $collection->id)
+                            ->select('expansion_id'));
+                })
                 ->orderBy('name'),
         ]);
 

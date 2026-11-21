@@ -477,3 +477,76 @@ test('el ganador de la otra votacion aparece primero en la consulta publica', fu
             ->where('linkedSession.candidates.1.game.name', 'Heat')
         );
 });
+
+test('la otra votacion destaca el ganador definitivo del desempate', function () {
+    $linked = Poll::create([
+        'created_by' => $this->poll->created_by,
+        'name' => 'Segunda partida con empate',
+        'token' => 'SEGUNDOCONDESEMPATE',
+        'status' => 'closed',
+        'ranking_slots' => 1,
+        'single_choice' => true,
+        'parent_poll_id' => $this->poll->id,
+    ]);
+
+    $first = $linked->candidates()->create([
+        'game_id' => $this->candidate->game_id,
+    ]);
+
+    $second = $linked->candidates()->create([
+        'game_id' => $this->secondGame->id,
+    ]);
+
+    // Empate original: un voto para cada juego.
+    foreach ([$first, $second] as $index => $candidate) {
+        $participant = $linked->participants()->create([
+            'display_name' => 'Jugador ' . ($index + 1),
+        ]);
+
+        $participant->votes()->create([
+            'poll_id' => $linked->id,
+            'poll_candidate_id' => $candidate->id,
+            'position' => 1,
+        ]);
+    }
+
+    $round = Poll::create([
+        'created_by' => $this->poll->created_by,
+        'name' => 'Desempate de la segunda partida',
+        'token' => 'RONDADESEMPATE',
+        'status' => 'closed',
+        'ranking_slots' => 1,
+        'single_choice' => true,
+        'tie_break_for_poll_id' => $linked->id,
+    ]);
+
+    $round->candidates()->create([
+        'game_id' => $this->candidate->game_id,
+    ]);
+
+    $winningCandidate = $round->candidates()->create([
+        'game_id' => $this->secondGame->id,
+    ]);
+
+    $voter = $round->participants()->create([
+        'display_name' => 'Votante de desempate',
+    ]);
+
+    $voter->votes()->create([
+        'poll_id' => $round->id,
+        'poll_candidate_id' => $winningCandidate->id,
+        'position' => 1,
+    ]);
+
+    $this->get($this->personalUrl)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('vote/show')
+            ->has('linkedSession.candidates', 2)
+            ->where('linkedSession.candidates.0.id', $second->id)
+            ->where('linkedSession.candidates.0.is_winner', true)
+            ->where('linkedSession.candidates.0.game.name', 'Heat')
+            ->where('linkedSession.candidates.1.id', $first->id)
+            ->where('linkedSession.candidates.1.is_winner', false)
+        );
+});

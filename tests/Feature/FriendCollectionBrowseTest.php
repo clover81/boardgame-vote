@@ -148,3 +148,54 @@ test('consultar colecciones ajenas no permite asociarles juegos ni eliminarlas',
         'game_collection_id' => $this->collection->id,
     ]);
 });
+
+test('las colecciones de amigos incluyen expansiones informativas sin revelar las privadas', function () {
+    $public = $this->game->expansions()->create([
+        'name' => 'A pública',
+        'is_active' => true,
+    ]);
+
+    $this->game->expansions()->create([
+        'name' => 'B informativa',
+        'is_active' => true,
+    ]);
+
+    $private = $this->game->expansions()->create([
+        'name' => 'C privada',
+        'is_active' => true,
+    ]);
+
+    $foreign = $this->game->expansions()->create([
+        'name' => 'D ajena',
+        'is_active' => true,
+    ]);
+
+    $this->game->expansions()->create([
+        'name' => 'E inactiva',
+        'is_active' => false,
+    ]);
+
+    $this->collection->expansions()->attach($public);
+    $this->otherCollection->expansions()->attach($private);
+
+    $foreignCollection = GameCollection::forceCreate([
+        'created_by' => User::factory()->create()->id,
+        'name' => 'Colección ajena',
+        'is_public' => true,
+    ]);
+
+    $foreignCollection->expansions()->attach($foreign);
+
+    $this->actingAs($this->friend)
+        ->get(route('friends.collections.games.show', [
+            $this->collection,
+            $this->game,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('catalog/show')
+            ->has('game.expansions', 2)
+            ->where('game.expansions.0.name', 'A pública')
+            ->where('game.expansions.1.name', 'B informativa')
+        );
+});
