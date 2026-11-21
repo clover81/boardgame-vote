@@ -18,6 +18,7 @@ class GameCollection extends Model
     {
         return [
             'is_default' => 'boolean',
+            'bgg_sync_report' => 'array',
         ];
     }
 

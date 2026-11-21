@@ -46,7 +46,10 @@ test('conserva el contador de juegos si falla un lote parcialmente', function ()
         app(BggCollectionService::class)
     ))->toThrow(RuntimeException::class, 'Error importando juegos BGG');
 
-    expect($this->collection->fresh()->bgg_sync_games_added)->toBe(2);
+    $partial = $this->collection->fresh();
+
+    expect($partial->bgg_sync_games_added)->toBe(2)
+        ->and($partial->bgg_sync_report['games_added'])->toHaveCount(2);
 
     $job->failed(new RuntimeException('Error importando juegos BGG'));
 
@@ -178,5 +181,11 @@ test('registra expansiones pendientes sin perder las importaciones', function ()
         ->and($collection->bgg_sync_games_added)->toBe(1)
         ->and($collection->bgg_sync_expansions_added)->toBe(1)
         ->and($collection->bgg_sync_expansions_pending)->toBe(1)
+        ->and($collection->bgg_sync_report['games_added'])->toHaveCount(1)
+        ->and($collection->bgg_sync_report['expansions_added'])->toHaveCount(1)
+        ->and($collection->bgg_sync_report['expansions_pending'][0]['name'])
+        ->toBe('Expansión pendiente')
+        ->and($collection->bgg_sync_report['expansions_pending'][0]['reason'])
+        ->toBe('No se encontró un juego base propio.')
         ->and($collection->bgg_last_synced_at)->not->toBeNull();
 });

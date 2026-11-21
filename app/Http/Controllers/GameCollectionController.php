@@ -63,6 +63,7 @@ class GameCollectionController extends Controller
                     'bgg_sync_games_added' => (int) $collection->bgg_sync_games_added,
                     'bgg_sync_expansions_added' => (int) $collection->bgg_sync_expansions_added,
                     'bgg_sync_expansions_pending' => (int) $collection->bgg_sync_expansions_pending,
+                    'bgg_sync_report' => $collection->bgg_sync_report,
 
                     'is_default' =>
                     $collection->is_default,

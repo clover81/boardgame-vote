@@ -16,6 +16,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { ChevronDown, FolderUser, Globe2, LockKeyhole, MoreHorizontal, Star, Trash2 } from '@lucide/vue';
 import InputError from '@/components/InputError.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
+import BggSyncResultCard from '@/components/BggSyncResultCard.vue';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -45,6 +46,21 @@ interface FriendCollection {
     games_count: number;
 }
 
+interface BggSyncItem {
+    id?: number;
+    bgg_id?: number;
+    game_id?: number;
+    name?: string;
+    base_game?: string;
+    reason?: string;
+}
+
+interface BggSyncReport {
+    games_added: BggSyncItem[];
+    expansions_added: BggSyncItem[];
+    expansions_pending: BggSyncItem[];
+}
+
 interface Collection {
     id: number;
     name: string;
@@ -57,6 +73,7 @@ interface Collection {
     bgg_sync_games_added: number;
     bgg_sync_expansions_added: number;
     bgg_sync_expansions_pending: number;
+    bgg_sync_report: BggSyncReport | null;
 
     is_default: boolean;
     is_public: boolean;
@@ -1355,35 +1372,36 @@ watch(
                     </p>
 
                     <template
-                        v-if="selectedBggCollection.bgg_sync_status === 'completed'"
+                        v-if="['completed', 'failed'].includes(selectedBggCollection.bgg_sync_status)"
                     >
                         <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                            <div class="rounded-lg bg-zinc-100 p-4 dark:bg-zinc-900">
-                                <p class="text-xs text-zinc-500">Juegos añadidos</p>
-                                <p class="text-2xl font-bold">
-                                    {{ selectedBggCollection.bgg_sync_games_added }}
-                                </p>
-                            </div>
-
-                            <div class="rounded-lg bg-zinc-100 p-4 dark:bg-zinc-900">
-                                <p class="text-xs text-zinc-500">Expansiones añadidas</p>
-                                <p class="text-2xl font-bold">
-                                    {{ selectedBggCollection.bgg_sync_expansions_added }}
-                                </p>
-                            </div>
-
-                            <div class="col-span-2 rounded-lg bg-zinc-100 p-4 dark:bg-zinc-900 sm:col-span-1">
-                                <p class="text-xs text-zinc-500 dark:text-zinc-400">
-                                    Expansiones pendientes
-                                </p>
-                                <p class="text-2xl font-bold">
-                                    {{ selectedBggCollection.bgg_sync_expansions_pending }}
-                                </p>
-                            </div>
+                            <BggSyncResultCard
+                                :key="`${selectedBggCollection.id}-games`"
+                                kind="games"
+                                :count="selectedBggCollection.bgg_sync_games_added"
+                                :entries="selectedBggCollection.bgg_sync_report?.games_added"
+                                :has-report="selectedBggCollection.bgg_sync_report !== null"
+                            />
+                            <BggSyncResultCard
+                                :key="`${selectedBggCollection.id}-expansions`"
+                                kind="expansions"
+                                :count="selectedBggCollection.bgg_sync_expansions_added"
+                                :entries="selectedBggCollection.bgg_sync_report?.expansions_added"
+                                :has-report="selectedBggCollection.bgg_sync_report !== null"
+                            />
+                            <BggSyncResultCard
+                                :key="`${selectedBggCollection.id}-pending`"
+                                kind="pending"
+                                class="col-span-2 sm:col-span-1"
+                                :count="selectedBggCollection.bgg_sync_expansions_pending"
+                                :entries="selectedBggCollection.bgg_sync_report?.expansions_pending"
+                                :has-report="selectedBggCollection.bgg_sync_report !== null"
+                            />
                         </div>
 
                         <p
-                            v-if="selectedBggCollection.bgg_sync_expansions_pending > 0"
+                            v-if="selectedBggCollection.bgg_sync_status === 'completed' &&
+                                selectedBggCollection.bgg_sync_expansions_pending > 0"
                             role="status"
                             class="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm font-medium text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
                         >
@@ -1395,7 +1413,10 @@ watch(
                             en la próxima sincronización.
                         </p>
 
-                        <p class="mt-3 text-xs text-zinc-500">
+                        <p
+                            v-if="selectedBggCollection.bgg_sync_status === 'completed'"
+                            class="mt-3 text-xs text-zinc-500"
+                        >
                             Última sincronización:
                             {{ selectedBggCollection.bgg_last_synced_at }}
                         </p>
@@ -1522,16 +1543,16 @@ watch(
                         v-if="bggPreview.removal_candidates?.length"
                         class="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/5 p-5"
                     >
-                        <div class="flex items-center justify-between gap-3">
+                        <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <h3 class="text-lg font-bold">
                                 Juegos retirados de BGG
                             </h3>
 
                             <span
-                                class="rounded-full bg-amber-100 px-3 py-1 text-sm font-bold text-amber-800"
+                                class="inline-flex shrink-0 whitespace-nowrap rounded-full bg-amber-100 px-3 py-1 text-sm font-bold text-amber-800"
                             >
                                 {{ bggPreview.removal_candidates.length }}
-                                pendientes
+                                {{ bggPreview.removal_candidates.length === 1 ? 'baja pendiente' : 'bajas pendientes' }}
                             </span>
                         </div>
 
@@ -1589,16 +1610,16 @@ watch(
                     <div
                         class="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/5 p-5"
                     >
-                        <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <h3 class="text-lg font-bold">
                                 Expansiones retiradas de BGG
                             </h3>
 
                             <span
-                                class="rounded-full bg-amber-100 px-3 py-1 text-sm font-bold text-amber-800"
+                                class="inline-flex shrink-0 whitespace-nowrap rounded-full bg-amber-100 px-3 py-1 text-sm font-bold text-amber-800"
                             >
                                 {{ bggPreview.expansion_removal_candidates?.length ?? 0 }}
-                                pendientes
+                                {{ (bggPreview.expansion_removal_candidates?.length ?? 0) === 1 ? 'baja pendiente' : 'bajas pendientes' }}
                             </span>
                         </div>
 

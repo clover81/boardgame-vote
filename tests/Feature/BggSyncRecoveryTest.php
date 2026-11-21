@@ -121,3 +121,41 @@ test('muestra al propietario las expansiones pendientes en Inertia', function ()
             ->where('collections.0.bgg_sync_expansions_pending', 3)
         );
 });
+
+test('envia el informe detallado BGG a la coleccion propietaria', function () {
+    $this->collection->forceFill([
+        'bgg_sync_status' => 'completed',
+        'bgg_sync_report' => [
+            'games_added' => [
+                ['id' => 11, 'bgg_id' => 1001, 'name' => 'Juego nuevo'],
+            ],
+            'expansions_added' => [
+                ['id' => 21, 'bgg_id' => 2001, 'name' => 'Expansión nueva', 'game_id' => 11],
+            ],
+            'expansions_pending' => [
+                [
+                    'bgg_id' => 261663,
+                    'name' => 'Outlive: Underwater',
+                    'reason' => 'El juego base no pertenece a esta colección.',
+                ],
+            ],
+        ],
+    ])->save();
+
+    $this->actingAs($this->user)
+        ->get(route('collections.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('collections/index')
+            ->where('collections.0.bgg_sync_report.games_added.0.name', 'Juego nuevo')
+            ->where('collections.0.bgg_sync_report.games_added.0.id', 11)
+            ->where('collections.0.bgg_sync_report.expansions_added.0.name', 'Expansión nueva')
+            ->where('collections.0.bgg_sync_report.expansions_added.0.game_id', 11)
+            ->where('collections.0.bgg_sync_report.expansions_pending.0.bgg_id', 261663)
+            ->where('collections.0.bgg_sync_report.expansions_pending.0.name', 'Outlive: Underwater')
+            ->where(
+                'collections.0.bgg_sync_report.expansions_pending.0.reason',
+                'El juego base no pertenece a esta colección.'
+            )
+        );
+});

@@ -54,6 +54,12 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
 
         Cache::forget($collection->bggPreviewCacheKey());
 
+        $report = [
+            'games_added' => [],
+            'expansions_added' => [],
+            'expansions_pending' => [],
+        ];
+
         $collection->forceFill([
             'bgg_sync_status' => 'running',
             'bgg_sync_started_at' => now(),
@@ -61,6 +67,7 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
             'bgg_sync_games_added' => 0,
             'bgg_sync_expansions_added' => 0,
             'bgg_sync_expansions_pending' => 0,
+            'bgg_sync_report' => $report,
         ])->save();
 
         $preview = $collections->preview(trim((string) $collection->bgg_username));
@@ -80,8 +87,14 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
             $totalGames += $imported;
 
             if ($imported > 0) {
+                $report['games_added'] = array_merge(
+                    $report['games_added'],
+                    $result['imported']
+                );
+
                 $collection->forceFill([
                     'bgg_sync_games_added' => $totalGames,
+                    'bgg_sync_report' => $report,
                 ])->save();
             }
 
@@ -120,10 +133,14 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
 
         $totalExpansions = count($expansions['imported']);
 
+        $report['expansions_added'] = $expansions['imported'];
+        $report['expansions_pending'] = $expansions['pending'];
+
         $collection->forceFill([
             'bgg_sync_expansions_added' => $totalExpansions,
             'bgg_sync_expansions_pending' =>
                 count($expansions['pending']),
+            'bgg_sync_report' => $report,
         ])->save();
 
         if (!empty($expansions['errors'])) {
