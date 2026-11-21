@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\GameCollection;
 use App\Services\BggCollectionImporter;
+use App\Services\BggCollectionService;
 use App\Services\BggExpansionImporter;
 use App\Services\BggRetryCooldown;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -38,7 +39,8 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
 
     public function handle(
         BggCollectionImporter $gamesImporter,
-        BggExpansionImporter $expansionsImporter
+        BggExpansionImporter $expansionsImporter,
+        BggCollectionService $collections
     ): void {
         $collection = GameCollection::findOrFail(
             $this->collectionId
@@ -58,7 +60,10 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
             'bgg_sync_error' => null,
             'bgg_sync_games_added' => 0,
             'bgg_sync_expansions_added' => 0,
+            'bgg_sync_expansions_pending' => 0,
         ])->save();
+
+        $preview = $collections->preview(trim((string) $collection->bgg_username));
 
         $totalGames = 0;
         $completed = false;
@@ -67,8 +72,18 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
         for ($batch = 1; $batch <= 20; $batch++) {
             $result = $gamesImporter->importGames(
                 $collection,
-                20
+                20,
+                $preview
             );
+
+            $imported = count($result['imported']);
+            $totalGames += $imported;
+
+            if ($imported > 0) {
+                $collection->forceFill([
+                    'bgg_sync_games_added' => $totalGames,
+                ])->save();
+            }
 
             if (!empty($result['errors'])) {
                 throw new RuntimeException(
@@ -76,9 +91,6 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
                         . json_encode($result['errors'])
                 );
             }
-
-            $imported = count($result['imported']);
-            $totalGames += $imported;
 
             if ($result['remaining_before_import'] <= $imported) {
                 $completed = true;
@@ -102,8 +114,17 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
         // que el usuario posee en BGG.
         $expansions = $expansionsImporter->run(
             $collection,
-            false
+            false,
+            $preview
         );
+
+        $totalExpansions = count($expansions['imported']);
+
+        $collection->forceFill([
+            'bgg_sync_expansions_added' => $totalExpansions,
+            'bgg_sync_expansions_pending' =>
+                count($expansions['pending']),
+        ])->save();
 
         if (!empty($expansions['errors'])) {
             throw new RuntimeException(

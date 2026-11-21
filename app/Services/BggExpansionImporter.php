@@ -17,7 +17,8 @@ class BggExpansionImporter
 
   public function run(
     GameCollection $collection,
-    bool $dryRun = true
+    bool $dryRun = true,
+    ?array $preview = null
   ): array {
     $username = trim((string) $collection->bgg_username);
 
@@ -27,8 +28,8 @@ class BggExpansionImporter
       );
     }
 
-    // Consultar la colección real del usuario.
-    $preview = $this->collections->preview($username);
+    // Reutilizar la consulta inicial si está disponible.
+    $preview ??= $this->collections->preview($username);
 
     $ownedExpansions = $preview['expansions'];
 
@@ -59,10 +60,24 @@ class BggExpansionImporter
       }
     }
 
-    // Obtener detalles de todas las expansiones
-    // en grupos de 20 identificadores.
-    $ids = array_column($ownedExpansions, 'bgg_id');
-    $details = $this->fetchDetails($ids);
+    // Consultar detalles únicamente de expansiones nuevas.
+    // Las existentes se reutilizan sin volver a consultar sus fichas.
+    $ids = array_map(
+      'intval',
+      array_column($ownedExpansions, 'bgg_id')
+    );
+
+    $existingIds = Expansion::query()
+      ->whereIn('bgg_id', $ids)
+      ->pluck('bgg_id')
+      ->map(fn ($id) => (int) $id)
+      ->all();
+
+    $newIds = array_values(array_diff($ids, $existingIds));
+
+    $details = $newIds === []
+      ? []
+      : $this->fetchDetails($newIds);
 
     $result = [
       'total_bgg' => count($ownedExpansions),

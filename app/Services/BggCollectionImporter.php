@@ -20,7 +20,8 @@ class BggCollectionImporter
 
   public function importGames(
     GameCollection $collection,
-    int $limit = 5
+    int $limit = 5,
+    ?array $preview = null
   ): array {
     if ($limit < 1 || $limit > 20) {
       throw new InvalidArgumentException(
@@ -37,23 +38,33 @@ class BggCollectionImporter
     }
 
     // Consultar únicamente los juegos que el usuario posee.
-    $preview = $this->collections->preview($username);
+    $preview ??= $this->collections->preview($username);
     $ownedGames = $preview['games'];
 
     // Asociar los juegos ya existentes sin modificar sus fichas.
     $ownedBggIds = array_column($ownedGames, 'bgg_id');
 
-    $existingIds = Game::query()
+    $existingGames = Game::query()
       ->whereIn('bgg_id', $ownedBggIds)
-      ->pluck('id')
-      ->all();
+      ->get(['id', 'bgg_id']);
+
+    $existingIds = $existingGames->pluck('id')->all();
+
+    $existingBggIds = array_fill_keys(
+      $existingGames->pluck('bgg_id')->map(
+        fn ($id) => (int) $id
+      )->all(),
+      true
+    );
 
     $collection->games()->syncWithoutDetaching($existingIds);
 
-    // Seleccionar únicamente juegos que aún no están en Laravel.
+    // Consultar la base de datos en cada lote:
+    // la fotografia BGG puede seguir siendo la misma.
     $newGames = array_values(array_filter(
       $ownedGames,
-      fn(array $item) => $item['status'] === 'new'
+      fn (array $item) =>
+        !isset($existingBggIds[(int) $item['bgg_id']])
     ));
 
     $batch = array_slice($newGames, 0, $limit);

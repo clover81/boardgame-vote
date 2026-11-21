@@ -99,3 +99,25 @@ test('no intenta recuperacion con una cola distinta de database', function () {
     $this->actingAs($this->user)->get(route('collections.index'))->assertOk();
     expect($this->collection->fresh()->bgg_sync_status)->toBe('pending');
 });
+
+
+test('muestra al propietario las expansiones pendientes en Inertia', function () {
+    $this->collection->forceFill([
+        'bgg_sync_status' => 'completed',
+        'bgg_sync_games_added' => 2,
+        'bgg_sync_expansions_added' => 1,
+        'bgg_sync_expansions_pending' => 3,
+    ])->save();
+
+    $this->actingAs($this->user)
+        ->get(route('collections.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('collections/index')
+            ->where('collections.0.id', $this->collection->id)
+            ->where('collections.0.bgg_sync_status', 'completed')
+            ->where('collections.0.bgg_sync_games_added', 2)
+            ->where('collections.0.bgg_sync_expansions_added', 1)
+            ->where('collections.0.bgg_sync_expansions_pending', 3)
+        );
+});

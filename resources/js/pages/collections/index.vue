@@ -56,6 +56,7 @@ interface Collection {
     bgg_retry_until: number | null;
     bgg_sync_games_added: number;
     bgg_sync_expansions_added: number;
+    bgg_sync_expansions_pending: number;
 
     is_default: boolean;
     is_public: boolean;
@@ -347,9 +348,17 @@ const selectedBggCollection = computed(() => {
 });
 
 watch(
-    () => selectedBggCollection.value?.bgg_sync_status,
-    status => {
-        if (status === 'pending' || status === 'running' || status === 'failed') {
+    () => [
+        selectedBggCollection.value?.bgg_sync_status,
+        selectedBggCollection.value?.bgg_sync_expansions_pending,
+    ] as const,
+    ([status, pending]) => {
+        if (
+            status === 'pending' ||
+            status === 'running' ||
+            status === 'failed' ||
+            (status === 'completed' && (pending ?? 0) > 0)
+        ) {
             bggPanelOpen.value = true;
         }
     },
@@ -747,7 +756,12 @@ const loadBggPreview = async () => {
 };
 
 const showCompletedBggSync = () => {
-    const message =
+    const pending = selectedBggCollection.value?.bgg_sync_expansions_pending ?? 0;
+
+    const message = pending > 0
+        ? `Sincronización finalizada con ${pending} expansiones pendientes de revisar. ` +
+          'Las incorporaciones realizadas se conservan. Revisa el resumen inferior.'
+        :
         'Sincronización completada. Los juegos nuevos se han procesado. ' +
         'Para consultar altas y bajas, pulsa «Consultar BGG». ' +
         'No hacemos otra consulta automáticamente para evitar límites de BGG.';
@@ -1271,6 +1285,22 @@ watch(
                         <p class="mt-1 text-sm leading-6">
                             {{ activeBggSyncError }}
                         </p>
+                        <p
+                            v-if="selectedBggCollection?.bgg_sync_status === 'failed' &&
+                                ((selectedBggCollection?.bgg_sync_games_added ?? 0) > 0 ||
+                                (selectedBggCollection?.bgg_sync_expansions_added ?? 0) > 0)"
+                            class="mt-3 text-sm font-semibold leading-6"
+                        >
+                            Importación parcial: se han conservado
+                            {{ selectedBggCollection?.bgg_sync_games_added ?? 0 }}
+                            {{ (selectedBggCollection?.bgg_sync_games_added ?? 0) === 1 ? 'juego' : 'juegos' }}
+                            y
+                            {{ selectedBggCollection?.bgg_sync_expansions_added ?? 0 }}
+                            {{ (selectedBggCollection?.bgg_sync_expansions_added ?? 0) === 1 ? 'expansión' : 'expansiones' }}
+                            incorporados antes del error.
+                            Podrás reintentar la sincronización cuando BGG lo permita
+                            sin perder esos registros.
+                        </p>
                     </div>
                 </div>
 
@@ -1287,11 +1317,14 @@ watch(
                             class="rounded-full px-3 py-1 text-xs font-bold"
                             :class="{
                                 'bg-amber-100 text-amber-800':
-                                    selectedBggCollection.bgg_sync_status === 'pending',
+                                    selectedBggCollection.bgg_sync_status === 'pending' ||
+                                    (selectedBggCollection.bgg_sync_status === 'completed' &&
+                                     selectedBggCollection.bgg_sync_expansions_pending > 0),
                                 'bg-blue-100 text-blue-800':
                                     selectedBggCollection.bgg_sync_status === 'running',
                                 'bg-emerald-100 text-emerald-800':
-                                    selectedBggCollection.bgg_sync_status === 'completed',
+                                    selectedBggCollection.bgg_sync_status === 'completed' &&
+                                    selectedBggCollection.bgg_sync_expansions_pending === 0,
                                 'bg-red-100 text-red-800':
                                     selectedBggCollection.bgg_sync_status === 'failed',
                                 'bg-zinc-100 text-zinc-700':
@@ -1299,9 +1332,11 @@ watch(
                             }"
                         >
                             {{
-                                bggStatusLabels[
-                                    selectedBggCollection.bgg_sync_status
-                                ] ?? 'Estado desconocido'
+                                selectedBggCollection.bgg_sync_status === 'completed'
+                                && selectedBggCollection.bgg_sync_expansions_pending > 0
+                                    ? 'Finalizada con pendientes'
+                                    : (bggStatusLabels[selectedBggCollection.bgg_sync_status]
+                                        ?? 'Estado desconocido')
                             }}
                         </span>
                     </div>
@@ -1322,7 +1357,7 @@ watch(
                     <template
                         v-if="selectedBggCollection.bgg_sync_status === 'completed'"
                     >
-                        <div class="mt-4 grid grid-cols-2 gap-3">
+                        <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                             <div class="rounded-lg bg-zinc-100 p-4 dark:bg-zinc-900">
                                 <p class="text-xs text-zinc-500">Juegos añadidos</p>
                                 <p class="text-2xl font-bold">
@@ -1336,7 +1371,29 @@ watch(
                                     {{ selectedBggCollection.bgg_sync_expansions_added }}
                                 </p>
                             </div>
+
+                            <div class="col-span-2 rounded-lg bg-zinc-100 p-4 dark:bg-zinc-900 sm:col-span-1">
+                                <p class="text-xs text-zinc-500 dark:text-zinc-400">
+                                    Expansiones pendientes
+                                </p>
+                                <p class="text-2xl font-bold">
+                                    {{ selectedBggCollection.bgg_sync_expansions_pending }}
+                                </p>
+                            </div>
                         </div>
+
+                        <p
+                            v-if="selectedBggCollection.bgg_sync_expansions_pending > 0"
+                            role="status"
+                            class="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm font-medium text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                        >
+                            La sincronización ha terminado, pero hay expansiones
+                            que no se han podido incorporar. Puede faltar su juego
+                            base, haber varios juegos base posibles o no haber
+                            recibido los detalles de BGG. Los registros existentes
+                            se conservan. Estas expansiones se revisarán de nuevo
+                            en la próxima sincronización.
+                        </p>
 
                         <p class="mt-3 text-xs text-zinc-500">
                             Última sincronización:

@@ -62,6 +62,7 @@ class GameCollectionController extends Controller
                     'bgg_retry_until' => $cooldown->retryUntil($collection),
                     'bgg_sync_games_added' => (int) $collection->bgg_sync_games_added,
                     'bgg_sync_expansions_added' => (int) $collection->bgg_sync_expansions_added,
+                    'bgg_sync_expansions_pending' => (int) $collection->bgg_sync_expansions_pending,
 
                     'is_default' =>
                     $collection->is_default,

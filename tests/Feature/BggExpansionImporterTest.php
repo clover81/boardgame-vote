@@ -46,22 +46,23 @@ beforeEach(function () {
     config(['services.bgg.token' => 'token-de-prueba']);
 
     // Impedir peticiones reales a BGG durante las pruebas.
-    Http::fake([
-        '*' => Http::response('<items></items>', 200),
-    ]);
+    $this->bggThingXml = '<items></items>';
+    Http::fake(fn () => Http::response($this->bggThingXml, 200));
+
+    $this->ownedBggPreview = [
+        'games' => [
+            ['bgg_id' => 1001, 'name' => 'Juego propio'],
+        ],
+        'expansions' => [
+            ['bgg_id' => 3003, 'name' => 'Expansión existente'],
+        ],
+    ];
 
     $this->mock(BggCollectionService::class, function ($mock) {
         $mock->shouldReceive('preview')
             ->once()
             ->with('tester_bgg')
-            ->andReturn([
-                'games' => [
-                    ['bgg_id' => 1001, 'name' => 'Juego propio'],
-                ],
-                'expansions' => [
-                    ['bgg_id' => 3003, 'name' => 'Expansión existente'],
-                ],
-            ]);
+            ->andReturnUsing(fn () => $this->ownedBggPreview);
     });
 });
 
@@ -99,4 +100,53 @@ test('permite asociar una expansión existente cuando el juego base es propio', 
         ->and($resultado['pending'])->toBeEmpty()
         ->and($this->expansion->fresh()->name)
         ->toBe('Expansión existente');
+});
+
+
+test('reutiliza expansiones existentes sin consultar sus detalles BGG', function () {
+    $this->expansion->update([
+        'game_id' => $this->ownGame->id,
+    ]);
+
+    $result = app(BggExpansionImporter::class)
+        ->run($this->collection, false);
+
+    expect($result['existing'])->toHaveCount(1)
+        ->and($result['errors'])->toBeEmpty();
+
+    Http::assertSentCount(0);
+
+    $this->assertDatabaseHas('game_collection_expansion', [
+        'game_collection_id' => $this->collection->id,
+        'expansion_id' => $this->expansion->id,
+    ]);
+});
+
+test('consulta solo la expansion nueva cuando hay existentes', function () {
+    $this->expansion->update([
+        'game_id' => $this->ownGame->id,
+    ]);
+
+    $this->ownedBggPreview['expansions'][] = [
+        'bgg_id' => 4004,
+        'name' => 'Expansión nueva',
+    ];
+
+    $this->bggThingXml =
+        '<items><item id="4004"><name type="primary" value="Expansión nueva"/><link type="boardgameexpansion" id="1001" inbound="true"/></item></items>';
+
+    $result = app(BggExpansionImporter::class)
+        ->run($this->collection, false);
+
+    expect($result['existing'])->toHaveCount(1)
+        ->and($result['imported'])->toHaveCount(1)
+        ->and($result['errors'])->toBeEmpty();
+
+    Http::assertSentCount(1);
+    Http::assertSent(fn ($request) => $request['id'] === '4004');
+
+    $this->assertDatabaseHas('expansions', [
+        'bgg_id' => 4004,
+        'game_id' => $this->ownGame->id,
+    ]);
 });

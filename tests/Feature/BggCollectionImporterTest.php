@@ -72,15 +72,9 @@ test('existing games keep their manually configured ideal counts even with an ou
         ->once()->with('mi-usuario')->andReturn([
             'games' => [['bgg_id' => 100, 'name' => 'Juego', 'status' => $status]],
         ]);
-    $bgg = $this->mock(BggService::class);
-    if ($status === 'new') {
-        $bgg->shouldReceive('game')->once()->with(100)->andReturn([
-            ...$this->details,
-            'suggested_ideal_player_counts' => [3, 4],
-        ]);
-    } else {
-        $bgg->shouldNotReceive('game');
-    }
+    // La base de datos local prevalece sobre una vista previa antigua.
+    // Nunca volver a consultar ni sobrescribir un juego existente.
+    $this->mock(BggService::class)->shouldNotReceive('game');
 
     $result = app(BggCollectionImporter::class)->importGames($this->collection);
 
@@ -90,3 +84,51 @@ test('existing games keep their manually configured ideal counts even with an ou
         ->and($game->idealPlayerCounts()->pluck('player_count')->all())->toBe([2])
         ->and($this->collection->games()->pluck('games.id')->all())->toBe([$game->id]);
 })->with(['existing', 'new']);
+
+test('reutiliza la consulta BGG en varios lotes sin repetir juegos', function () {
+    $preview = [
+        'games' => [
+            ['bgg_id' => 100, 'name' => 'Juego A', 'status' => 'new'],
+            ['bgg_id' => 101, 'name' => 'Juego B', 'status' => 'new'],
+        ],
+        'expansions' => [],
+    ];
+
+    // La vista previa ya está disponible: no se consulta otra vez.
+    $this->mock(BggCollectionService::class)
+        ->shouldNotReceive('preview');
+
+    $bgg = $this->mock(BggService::class);
+
+    foreach ([100, 101] as $id) {
+        $bgg->shouldReceive('game')
+            ->once()
+            ->with($id)
+            ->andReturn([
+                'bgg_id' => $id,
+                'name' => "Juego {$id}",
+                'min_players' => 1,
+                'max_players' => 4,
+            ]);
+    }
+
+    $importer = app(BggCollectionImporter::class);
+
+    $first = $importer->importGames($this->collection, 1, $preview);
+    $second = $importer->importGames($this->collection, 1, $preview);
+    $third = $importer->importGames($this->collection, 1, $preview);
+
+    expect(array_column($first['imported'], 'bgg_id'))->toBe([100])
+        ->and(array_column($second['imported'], 'bgg_id'))->toBe([101])
+        ->and($third['imported'])->toBe([])
+        ->and($first['remaining_before_import'])->toBe(2)
+        ->and($second['remaining_before_import'])->toBe(1)
+        ->and($third['remaining_before_import'])->toBe(0)
+        ->and($first['errors'])->toBe([])
+        ->and($second['errors'])->toBe([])
+        ->and($third['errors'])->toBe([]);
+
+    $this->assertDatabaseCount('games', 2);
+
+    expect($this->collection->games()->count())->toBe(2);
+});
