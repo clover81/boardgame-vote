@@ -130,6 +130,6 @@ const togglePlayer = (player: Player) => {
             </div>
 
         </div>
-        <ScrollToTopProgress :remember-position="false" />
+        <ScrollToTopProgress :remember-position="false" compact-on-mobile />
     </AppLayout>
 </template>

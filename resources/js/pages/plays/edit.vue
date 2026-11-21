@@ -583,6 +583,6 @@ const submit = () => {
                 </button>
             </form>
         </div>
-        <ScrollToTopProgress :remember-position="false" />
+        <ScrollToTopProgress :remember-position="false" compact-on-mobile hide-near-bottom />
     </AppLayout>
 </template>
