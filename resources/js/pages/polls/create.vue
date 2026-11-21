@@ -417,9 +417,11 @@ watch(
             recommendationTimer = null;
         }
 
-        // La selección actual invalida cualquier respuesta anterior.
+        // La selección actual invalida las recomendaciones anteriores.
         recommendationRequestId++;
         recommendationsLoading.value = false;
+        groupRecommendations.value = [];
+        recommendationsError.value = '';
 
         if (gameSort.value !== 'group_history') {
             return;
@@ -840,9 +842,10 @@ const matchesGameFilters = (game: Game): boolean => {
 
     // Filtrar por duración máxima estimada.
     if (gameDurationFilter.value !== 'all') {
-        const minutes = game.max_playtime == null
+        const estimatedDuration = game.max_playtime ?? game.min_playtime;
+        const minutes = estimatedDuration == null
             ? NaN
-            : Number(game.max_playtime);
+            : Number(estimatedDuration);
 
         if (
             !Number.isFinite(minutes) ||

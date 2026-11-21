@@ -327,3 +327,35 @@ test('non-text filter values use the default collection filters', function () {
             ->where('filters.mode', '')
         );
 });
+
+test('mode filter supports legacy classifications without overriding current modes', function () {
+    $this->castle->update([
+        'game_mode' => 'competitive',
+        'game_modes' => null,
+    ]);
+
+    $this->sky->update([
+        'game_mode' => 'competitive',
+        'game_modes' => ['cooperative'],
+    ]);
+
+    $this->heat->update([
+        'game_mode' => 'competitive',
+        'game_modes' => [],
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('games.index', ['mode' => 'competitive']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('games', 1)
+            ->where('games.0.id', $this->castle->id)
+        );
+
+    $this->get(route('games.index', ['mode' => 'cooperative']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('games', 1)
+            ->where('games.0.id', $this->sky->id)
+        );
+});

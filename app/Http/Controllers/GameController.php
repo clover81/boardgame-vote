@@ -658,13 +658,12 @@ class GameController extends Controller
                     'heavy' => $query->where('complexity', '>', 3),
                 };
             })
-            ->when(
-                $gameMode !== '',
-                fn ($query) => $query->whereJsonContains(
-                    'games.game_modes',
-                    $gameMode
-                )
-            )
+            ->when($gameMode !== '', fn ($query) => $query
+                ->where(fn ($modes) => $modes
+                    ->whereJsonContains('games.game_modes', $gameMode)
+                    ->orWhere(fn ($legacy) => $legacy
+                        ->whereNull('games.game_modes')
+                        ->where('games.game_mode', $gameMode))))
             ->when($search, function ($query, $search) {
                 $replacements = [
                     '‘' => "'", '’' => "'",
