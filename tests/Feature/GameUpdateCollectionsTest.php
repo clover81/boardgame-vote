@@ -165,6 +165,66 @@ test('editing a shared game receives only owned collections and memberships', fu
         );
 });
 
+test('editing a shared game marks global fields as read only', function () {
+    $this->withoutVite();
+
+    $this->actingAs($this->user)
+        ->get(route('games.edit', $this->game))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('games/edit')
+            ->where('globalFieldsReadOnly', true)
+        );
+
+    $this->game->collections()->detach($this->foreignCollection);
+
+    $this->get(route('games.edit', $this->game))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('globalFieldsReadOnly', false)
+        );
+});
+
+test('foreign expansion or history also protects the game editor', function ($reference) {
+    $this->withoutVite();
+    $this->game->collections()->detach($this->foreignCollection);
+
+    $foreignId = (int) $this->foreignCollection->created_by;
+
+    if ($reference === 'expansion') {
+        $expansion = $this->game->expansions()->create([
+            'name' => 'Expansión compartida',
+            'is_active' => true,
+        ]);
+        $this->foreignCollection->expansions()->attach($expansion);
+    } elseif ($reference === 'play') {
+        Play::create([
+            'created_by' => $foreignId,
+            'game_id' => $this->game->id,
+            'played_at' => '2026-11-01',
+        ]);
+    } else {
+        $poll = Poll::create([
+            'created_by' => $foreignId,
+            'name' => 'Votación ajena',
+            'token' => 'PROTECTEDGAMEEDITOR',
+            'status' => 'closed',
+        ]);
+        $poll->candidates()->create(['game_id' => $this->game->id]);
+    }
+
+    $this->actingAs($this->user)
+        ->get(route('games.edit', $this->game))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('globalFieldsReadOnly', true)
+        );
+})->with([
+    'expansion',
+    'play',
+    'poll',
+]);
+
 test('games outside owned collections cannot be edited or updated', function ($hasForeignCollection) {
     $this->game->collections()->detach($this->ownedCollections->pluck('id'));
     if (! $hasForeignCollection) {
@@ -334,4 +394,26 @@ test('rejects ideal player counts outside the supported player range', function 
         ->assertSessionHasErrors('ideal_player_counts.1');
 
     expect($this->game->fresh()->name)->toBe('The White Castle');
+});
+
+test('a shared game without ideal recommendations can update its collections', function () {
+    $this->game->idealPlayerCounts()->delete();
+
+    $selectedId = $this->ownedCollections[1]->id;
+
+    $this->actingAs($this->user)
+        ->put(route('games.update', $this->game), [
+            ...$this->payload,
+            'ideal_player_counts' => [],
+            'collection_ids' => [$selectedId],
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('games.index'));
+
+    expect($this->game->fresh()->collections->modelKeys())
+        ->toEqualCanonicalizing([
+            $selectedId,
+            $this->foreignCollection->id,
+        ])
+        ->and($this->game->fresh()->idealPlayerCounts)->toHaveCount(0);
 });

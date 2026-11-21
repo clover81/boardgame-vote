@@ -154,3 +154,25 @@ test('rejects ideal player counts below the minimum supported players', function
         'name' => 'Juego de prueba',
     ]);
 });
+
+test('a game can be created without ideal player recommendations', function () {
+    $user = User::factory()->create();
+    $collection = GameCollection::create([
+        'created_by' => $user->id,
+        'name' => 'Mi colección',
+    ]);
+
+    $this->actingAs($user)->post(route('games.store'), [
+        'name' => 'Juego sin recomendaciones BGG',
+        'min_players' => 1,
+        'max_players' => 4,
+        'game_modes' => [],
+        'ideal_player_counts' => [],
+        'collection_ids' => [$collection->id],
+    ])->assertSessionHasNoErrors()
+      ->assertRedirect(route('games.index'));
+
+    $game = Game::where('name', 'Juego sin recomendaciones BGG')->sole();
+
+    expect($game->idealPlayerCounts)->toHaveCount(0);
+});

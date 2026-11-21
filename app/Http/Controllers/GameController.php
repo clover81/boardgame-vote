@@ -260,6 +260,7 @@ class GameController extends Controller
         $this->authorizeGame($request, $game);
 
         $userId = (int) $request->user()->id;
+        $globalFieldsReadOnly = $this->hasForeignGameReferences($game, $userId);
 
         $game->load([
             'idealPlayerCounts',
@@ -380,6 +381,8 @@ class GameController extends Controller
 
                 'game_collection_ids' =>
                 $gameCollectionIds,
+
+                'globalFieldsReadOnly' => $globalFieldsReadOnly,
             ]
         );
     }
@@ -390,47 +393,7 @@ class GameController extends Controller
 
         $userId = (int) $request->user()->id;
 
-        // Una ficha global compartida no puede modificarse desde otra cuenta.
-        $usedByAnotherUser = DB::table('game_collection_game as gcg')
-            ->join('game_collections as gc', 'gc.id', '=', 'gcg.game_collection_id')
-            ->where('gcg.game_id', $game->id)
-            ->where('gc.created_by', '<>', $userId)
-            ->exists();
-
-        // Una expansión puede seguir en otra colección aunque
-        // el juego base ya se haya quitado de ella.
-        if (! $usedByAnotherUser) {
-            $usedByAnotherUser = DB::table('expansions as e')
-                ->join('game_collection_expansion as gce', 'gce.expansion_id', '=', 'e.id')
-                ->join('game_collections as gc', 'gc.id', '=', 'gce.game_collection_id')
-                ->where('e.game_id', $game->id)
-                ->where('gc.created_by', '<>', $userId)
-                ->exists();
-        }
-
-
-        // Una partida de otra cuenta también conserva esta ficha global.
-        if (! $usedByAnotherUser) {
-            $usedByAnotherUser = DB::table('plays')
-                ->where('game_id', $game->id)
-                ->where(function ($query) use ($userId) {
-                    $query->where('created_by', '<>', $userId)
-                        ->orWhereNull('created_by');
-                })
-                ->exists();
-        }
-
-        // Comprobar igualmente las votaciones históricas ajenas.
-        if (! $usedByAnotherUser) {
-            $usedByAnotherUser = DB::table('poll_candidates as pc')
-                ->join('polls as p', 'p.id', '=', 'pc.poll_id')
-                ->where('pc.game_id', $game->id)
-                ->where(function ($query) use ($userId) {
-                    $query->where('p.created_by', '<>', $userId)
-                        ->orWhereNull('p.created_by');
-                })
-                ->exists();
-        }
+        $usedByAnotherUser = $this->hasForeignGameReferences($game, $userId);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -463,7 +426,7 @@ class GameController extends Controller
             'bgg_url' => ['nullable', 'url'],
             'youtube_url' => ['nullable', 'url'],
 
-            'ideal_player_counts' => ['required', 'array', 'min:1'],
+            'ideal_player_counts' => ['present', 'array'],
             'ideal_player_counts.*' => [
                 'required',
                 'integer',
@@ -1035,7 +998,7 @@ class GameController extends Controller
             'bgg_url' => ['nullable', 'url'],
             'youtube_url' => ['nullable', 'url'],
 
-            'ideal_player_counts' => ['required', 'array', 'min:1'],
+            'ideal_player_counts' => ['present', 'array'],
             'ideal_player_counts.*' => [
                 'required',
                 'integer',
@@ -1365,6 +1328,53 @@ class GameController extends Controller
         return redirect()
             ->route('games.index', $returnFilters)
             ->with('success', 'Juego añadido correctamente.');
+    }
+
+    private function hasForeignGameReferences(Game $game, int $userId): bool
+    {
+        // Una ficha global compartida no puede modificarse desde otra cuenta.
+        $usedByAnotherUser = DB::table('game_collection_game as gcg')
+            ->join('game_collections as gc', 'gc.id', '=', 'gcg.game_collection_id')
+            ->where('gcg.game_id', $game->id)
+            ->where('gc.created_by', '<>', $userId)
+            ->exists();
+
+        // Una expansión puede seguir en otra colección aunque
+        // el juego base ya se haya quitado de ella.
+        if (! $usedByAnotherUser) {
+            $usedByAnotherUser = DB::table('expansions as e')
+                ->join('game_collection_expansion as gce', 'gce.expansion_id', '=', 'e.id')
+                ->join('game_collections as gc', 'gc.id', '=', 'gce.game_collection_id')
+                ->where('e.game_id', $game->id)
+                ->where('gc.created_by', '<>', $userId)
+                ->exists();
+        }
+
+
+        // Una partida de otra cuenta también conserva esta ficha global.
+        if (! $usedByAnotherUser) {
+            $usedByAnotherUser = DB::table('plays')
+                ->where('game_id', $game->id)
+                ->where(function ($query) use ($userId) {
+                    $query->where('created_by', '<>', $userId)
+                        ->orWhereNull('created_by');
+                })
+                ->exists();
+        }
+
+        // Comprobar igualmente las votaciones históricas ajenas.
+        if (! $usedByAnotherUser) {
+            $usedByAnotherUser = DB::table('poll_candidates as pc')
+                ->join('polls as p', 'p.id', '=', 'pc.poll_id')
+                ->where('pc.game_id', $game->id)
+                ->where(function ($query) use ($userId) {
+                    $query->where('p.created_by', '<>', $userId)
+                        ->orWhereNull('p.created_by');
+                })
+                ->exists();
+        }
+
+        return $usedByAnotherUser;
     }
 
     private function gameListReturnFilters(Request $request): array

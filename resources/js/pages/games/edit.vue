@@ -73,6 +73,7 @@ const props = defineProps<{
     game: Game;
     collections: Collection[];
     game_collection_ids: number[];
+    globalFieldsReadOnly: boolean;
 }>();
 
 const form = useForm({
@@ -398,6 +399,19 @@ const confirmDeleteGame = () => {
                 <p class="mt-2 text-zinc-500 dark:text-zinc-400">
                     {{ game.name }}
                 </p>
+
+                <div
+                    v-if="globalFieldsReadOnly"
+                    role="status"
+                    class="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200"
+                >
+                    <p class="font-bold">Ficha compartida: datos protegidos</p>
+                    <p class="mt-1">
+                        Este juego también se utiliza en otra cuenta o en su historial.
+                        Puedes cambiar las colecciones de tu cuenta, pero no los datos
+                        generales ni las expansiones compartidas.
+                    </p>
+                </div>
             </div>
 
             <section
@@ -423,7 +437,7 @@ const confirmDeleteGame = () => {
                     </a>
                 </div>
 
-                <template v-else>
+                <template v-else-if="!globalFieldsReadOnly">
                     <p class="mt-3 text-sm text-zinc-500">
                         Este juego fue creado manualmente. Puedes buscarlo por nombre,
                         pegar una URL de BGG o escribir directamente su ID.
@@ -486,6 +500,10 @@ const confirmDeleteGame = () => {
                 class="space-y-6 rounded-2xl border p-6"
                 @submit.prevent="submit"
             >
+                <fieldset
+                    :disabled="globalFieldsReadOnly"
+                    class="min-w-0 space-y-6 disabled:opacity-60"
+                >
                 <div>
                     <label class="mb-2 block font-semibold">
                         Nombre
@@ -735,6 +753,8 @@ const confirmDeleteGame = () => {
                     />
                 </div>
 
+                </fieldset>
+
                 <GameCollectionsField
                     v-model="form.collection_ids"
                     :collections="collections"
@@ -760,12 +780,13 @@ const confirmDeleteGame = () => {
                     {{
                         form.processing
                             ? 'Guardando...'
-                            : 'Guardar cambios'
+                            : (globalFieldsReadOnly ? 'Guardar colecciones' : 'Guardar cambios')
                     }}
                 </button>
             </form>
 
             <BggExpansionsImporter
+                v-if="!globalFieldsReadOnly"
                 class="mt-10"
                 :game-id="game.id"
                 :bgg-id="game.bgg_id"
@@ -922,6 +943,7 @@ const confirmDeleteGame = () => {
                                     </a>
 
                                     <button
+                                        v-if="!globalFieldsReadOnly"
                                         :disabled="expansionForm.processing"
                                         type="button"
                                         class="rounded-lg bg-[#5200FF] px-3 py-2 text-sm font-bold text-white"
@@ -935,6 +957,7 @@ const confirmDeleteGame = () => {
                                     </button>
 
                                     <button
+                                        v-if="!globalFieldsReadOnly"
                                         :disabled="expansionForm.processing"
                                         type="button"
                                         class="rounded-lg border border-red-500 px-3 py-2 text-sm font-bold text-red-500"
@@ -1140,6 +1163,7 @@ const confirmDeleteGame = () => {
             <hr class="my-10 border-zinc-200 dark:border-zinc-800" />
 
             <section
+                v-if="!globalFieldsReadOnly"
                 aria-labelledby="danger-zone-title"
                 class="rounded-2xl border border-red-200 bg-red-50/50 p-5 sm:p-6 dark:border-red-900 dark:bg-red-950/10"
             >
