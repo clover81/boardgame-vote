@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\GenerateGameDescription;
 use App\Models\Expansion;
 use App\Models\Game;
 use App\Models\GameCollection;
@@ -10,7 +11,9 @@ use App\Models\Player;
 use App\Services\BggService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -1246,10 +1249,45 @@ class GameController extends Controller
             }
         }
 
+        // Reutilizar exclusivamente los datos BGG ya consultados.
+        // No hacemos otra petición externa durante el guardado.
+        $bggDescription = null;
+
+        if (
+            $bggId &&
+            trim((string) ($validated['short_description'] ?? '')) === ''
+        ) {
+            $cached = Cache::get("bgg-game-v2-{$bggId}");
+
+            if (
+                is_array($cached) &&
+                (int) ($cached['bgg_id'] ?? 0) === $bggId
+            ) {
+                $description = strip_tags(
+                    html_entity_decode(
+                        (string) ($cached['description'] ?? ''),
+                        ENT_QUOTES | ENT_HTML5,
+                        'UTF-8'
+                    )
+                );
+
+                $description = trim(
+                    preg_replace('/\s+/u', ' ', $description) ?? ''
+                );
+
+                if ($description !== '') {
+                    $bggDescription = $description;
+                }
+            }
+        }
+
         $game = DB::transaction(function () use (
             $validated,
             $ownedCollectionIds,
-            $selectedBggExpansions
+            $selectedBggExpansions,
+            $bggDescription,
+            $bggId,
+            $userId
         ) {
             $game = Game::create([
                 'bgg_id' => $validated['bgg_id'] ?? null,
@@ -1262,7 +1300,16 @@ class GameController extends Controller
                 'complexity' => $validated['complexity'] ?? null,
                 'game_mode' => $validated['game_modes'][0] ?? null,
                 'game_modes' => $validated['game_modes'],
-                'short_description' => $validated['short_description'] ?? null,
+                'short_description' => $bggDescription !== null
+                    ? Str::limit($bggDescription, 240)
+                    : ($validated['short_description'] ?? null),
+                'description_source' => $bggDescription !== null
+                    ? 'bgg'
+                    : (
+                        trim((string) ($validated['short_description'] ?? '')) !== ''
+                            ? 'manual'
+                            : null
+                    ),
                 'additional_information' => $validated['additional_information'] ?? null,
                 'bgg_url' => $validated['bgg_url'] ?? null,
                 'youtube_url' => $validated['youtube_url'] ?? null,
@@ -1270,6 +1317,18 @@ class GameController extends Controller
             ]);
 
             $this->attachGameToCollections($game, $ownedCollectionIds);
+
+            // Preparar la IA solo para el texto original de BGG.
+            if ($bggDescription !== null) {
+                GenerateGameDescription::dispatch(
+                    $game->id,
+                    $bggId,
+                    $bggDescription,
+                    $userId
+                )
+                    ->onQueue('descriptions')
+                    ->afterCommit();
+            }
 
             foreach ($validated['ideal_player_counts'] ?? [] as $playerCount) {
                 $game->idealPlayerCounts()->create([

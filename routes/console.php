@@ -15,18 +15,6 @@ Schedule::call(function () {
         true
     );
 
-    $hayTrabajos = \Illuminate\Support\Facades\DB::table('jobs')
-        ->where('queue', 'descriptions')
-        ->exists();
-
-    // Si la cola está vacía, incorporar un juego pendiente.
-    if (!$hayTrabajos) {
-        Artisan::call('games:descriptions-queue', [
-            '--limit' => 1,
-            '--apply' => true,
-        ]);
-    }
-
     // Procesar como máximo un trabajo.
     Artisan::call('queue:work', [
         'connection' => 'database',
@@ -38,9 +26,12 @@ Schedule::call(function () {
     ->name('procesar-descripciones-bgg')
     ->hourly()
     ->when(function () {
-        // No ejecutar mientras haya un bloqueo HTTP 429.
-        return app(\Illuminate\Cache\RateLimiter::class)
-            ->availableIn(
+        // No procesar si la cuota diaria de IA está agotada.
+        $limiter = app(\Illuminate\Cache\RateLimiter::class);
+        $dailyKey = md5('game-descriptions-aigame-descriptions-day');
+
+        return $limiter->remaining($dailyKey, 30) > 0
+            && $limiter->availableIn(
                 'laravel_throttles_exceptions:openai-game-descriptions'
             ) === 0;
     })
