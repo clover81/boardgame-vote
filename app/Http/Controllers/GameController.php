@@ -469,6 +469,8 @@ class GameController extends Controller
                 'integer',
                 'min:1',
                 'max:20',
+                'gte:min_players',
+                'lte:max_players',
                 'distinct',
             ],
             'collection_ids' => [
@@ -1039,6 +1041,8 @@ class GameController extends Controller
                 'integer',
                 'min:1',
                 'max:20',
+                'gte:min_players',
+                'lte:max_players',
                 'distinct',
             ],
             'collection_ids' => [

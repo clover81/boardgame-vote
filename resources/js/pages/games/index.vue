@@ -85,7 +85,7 @@ const playerCount = ref<number | ''>(props.filters.players ?? '');
 const selectedCollectionId = ref(props.selected_collection_id);
 const durationLimit = ref<number | ''>(props.filters.duration ?? '');
 const difficulty = ref<'' | 'light' | 'medium' | 'heavy'>(props.filters.difficulty ?? '');
-const playerOptions = Array.from({ length: 12 }, (_, index) => index + 1);
+const playerOptions = Array.from({ length: 20 }, (_, index) => index + 1);
 
 const brokenCoverIds = ref<number[]>([]);
 

@@ -133,3 +133,24 @@ test('the new game form preselects the requested owned collection', function () 
             );
     }
 });
+
+test('rejects ideal player counts below the minimum supported players', function () {
+    $user = User::factory()->create();
+    $collection = GameCollection::create([
+        'created_by' => $user->id,
+        'name' => 'Mi colección',
+    ]);
+
+    $this->actingAs($user)->post(route('games.store'), [
+        'name' => 'Juego de prueba',
+        'min_players' => 2,
+        'max_players' => 4,
+        'game_modes' => ['competitive'],
+        'ideal_player_counts' => [1, 3],
+        'collection_ids' => [$collection->id],
+    ])->assertSessionHasErrors('ideal_player_counts.0');
+
+    $this->assertDatabaseMissing('games', [
+        'name' => 'Juego de prueba',
+    ]);
+});

@@ -263,7 +263,29 @@ const confirmDeleteExpansion = () => {
     );
 };
 
-const playerNumbers = [1, 2, 3, 4, 5, 6, 7, 8];
+const playerNumbers = computed(() => {
+    const limit = Math.min(20, Math.max(
+        8,
+        Number(form.max_players) || 0,
+        ...form.ideal_player_counts,
+    ));
+
+    return Array.from({ length: limit }, (_, index) => index + 1);
+});
+
+const invalidIdealPlayers = computed(() => {
+    const min = Number(form.min_players);
+    const max = Number(form.max_players);
+
+    if (!Number.isInteger(min) || !Number.isInteger(max) ||
+        min < 1 || max < min) {
+        return [];
+    }
+
+    return form.ideal_player_counts.filter(
+        number => number < min || number > max
+    );
+});
 
 const saveError = ref<HTMLDivElement | null>(null);
 
@@ -521,7 +543,18 @@ const confirmDeleteGame = () => {
                         Puedes seleccionar varios.
                     </p>
 
-                    <div class="mt-3 flex flex-wrap gap-2">
+                    <p
+                            v-if="invalidIdealPlayers.length"
+                            role="alert"
+                            class="mt-2 text-sm font-semibold text-amber-700 dark:text-amber-300"
+                        >
+                            Revisa los números ideales
+                            {{ invalidIdealPlayers.join(', ') }}.
+                            Deben estar entre
+                            {{ form.min_players }} y {{ form.max_players }}.
+                        </p>
+
+                        <div class="mt-3 flex flex-wrap gap-2">
                         <label
                             v-for="number in playerNumbers"
                             :key="number"

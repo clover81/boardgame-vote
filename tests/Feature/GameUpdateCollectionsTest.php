@@ -320,3 +320,18 @@ test('editing from a filtered game list returns to the same filters', function (
     expect($this->game->fresh()->name)
         ->toBe('The White Castle actualizado');
 });
+
+test('rejects ideal player counts outside the supported player range', function () {
+    $this->game->collections()->detach($this->foreignCollection);
+
+    $this->actingAs($this->user)
+        ->put(route('games.update', $this->game), [
+            ...$this->payload,
+            'max_players' => 4,
+            'ideal_player_counts' => [3, 5],
+            'collection_ids' => [$this->ownedCollections[0]->id],
+        ])
+        ->assertSessionHasErrors('ideal_player_counts.1');
+
+    expect($this->game->fresh()->name)->toBe('The White Castle');
+});

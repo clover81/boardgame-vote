@@ -211,6 +211,20 @@ test('player count shows only games ideal for that exact group size', function (
     'no ideal games' => [7, []],
 ]);
 
+test('player filter supports ideal groups larger than twelve', function () {
+    $this->heat->update(['max_players' => 16]);
+    $this->heat->idealPlayerCounts()->create(['player_count' => 15]);
+
+    $this->actingAs($this->user)
+        ->get(route('games.index', ['players' => 15]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('games', 1)
+            ->where('games.0.id', $this->heat->id)
+            ->where('filters.players', 15)
+        );
+});
+
 test('collection name and player filters combine', function () {
     $this->castle->idealPlayerCounts()->create(['player_count' => 4]);
 
