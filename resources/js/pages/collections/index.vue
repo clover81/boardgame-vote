@@ -53,12 +53,15 @@ interface BggSyncItem {
     name?: string;
     base_game?: string;
     reason?: string;
+    error?: string;
 }
 
 interface BggSyncReport {
     games_added: BggSyncItem[];
     expansions_added: BggSyncItem[];
     expansions_pending: BggSyncItem[];
+    games_errors?: BggSyncItem[];
+    expansions_errors?: BggSyncItem[];
 }
 
 interface Collection {
@@ -414,7 +417,58 @@ const explainBggError = (message: string): string => {
             'Comprueba el servicio e inténtalo más tarde.';
     }
 
+    if (/^Error importando (juegos|expansiones) BGG:/i.test(message)) {
+        return 'La importación se ha interrumpido. Revisa los elementos con errores y vuelve a intentarlo cuando corresponda.';
+    }
+
     return message;
+};
+
+const bggImportErrorItems = computed(() => {
+    const collection = selectedBggCollection.value;
+
+    if (!collection || collection.bgg_sync_status !== 'failed') {
+        return [];
+    }
+
+    const report = collection.bgg_sync_report;
+
+    return [
+        ...(report?.games_errors ?? []).map(item => ({
+            ...item,
+            category: 'Juego',
+        })),
+        ...(report?.expansions_errors ?? []).map(item => ({
+            ...item,
+            category: 'Expansión',
+        })),
+    ];
+});
+
+const explainBggItemError = (message?: string): string => {
+    if (!message) return 'No se ha especificado el motivo.';
+
+    if (/429/i.test(message)) {
+        return 'BGG ha limitado temporalmente las consultas (HTTP 429). Espera antes de reintentar.';
+    }
+
+    if (/HTTP 5\\d\\d/i.test(message)) {
+        return 'BGG ha respondido con un error temporal del servidor. Prueba más adelante.';
+    }
+
+    if (/timeout|timed out|tiempo de espera/i.test(message)) {
+        return 'La conexión con BGG ha agotado el tiempo de espera.';
+    }
+
+    if (/HTTP 401|HTTP 403/i.test(message)) {
+        return 'BGG ha rechazado la autorización. Hay que revisar la configuración de acceso.';
+    }
+
+    if (/datos esperados|XML válido|no tiene nombre/i.test(message)) {
+        return message;
+    }
+
+    return 'No se pudo procesar este elemento. Si vuelve a fallar, habrá que revisar los registros del servidor.';
 };
 
 const activeBggSyncError = computed(() => {
@@ -422,7 +476,17 @@ const activeBggSyncError = computed(() => {
         ? selectedBggCollection.value.bgg_sync_error
         : null;
 
-    return explainBggError(bggSyncError.value || saved || '');
+    const message = bggSyncError.value || saved || '';
+
+    if (
+        bggImportErrorItems.value.length > 0 &&
+        /^Error importando (juegos|expansiones) BGG:/i.test(message) &&
+        !/429/.test(message)
+    ) {
+        return 'La sincronización se interrumpió al importar algunos elementos. Consulta el detalle de los errores más abajo.';
+    }
+
+    return explainBggError(message);
 });
 
 const bggNow = ref(Date.now());
@@ -1399,6 +1463,47 @@ watch(
                             />
                         </div>
 
+                        <details
+                            v-if="bggImportErrorItems.length > 0"
+                            class="group mt-4 rounded-xl border border-red-300 bg-red-50/70 dark:border-red-800 dark:bg-red-950/30"
+                        >
+                            <summary
+                                class="flex cursor-pointer list-none items-center justify-between gap-3 p-4 font-semibold text-red-900 dark:text-red-200 [&::-webkit-details-marker]:hidden"
+                            >
+                                <span>
+                                    Ver errores de importación
+                                    ({{ bggImportErrorItems.length }})
+                                </span>
+                                <ChevronDown
+                                    class="size-5 shrink-0 transition-transform group-open:rotate-180"
+                                    aria-hidden="true"
+                                />
+                            </summary>
+
+                            <div class="border-t border-red-300 p-4 dark:border-red-800">
+                                <p class="mb-3 text-sm leading-6 text-red-900 dark:text-red-200">
+                                    Los elementos importados correctamente se conservan.
+                                    Los siguientes no se pudieron incorporar.
+                                </p>
+
+                                <ul class="max-h-80 space-y-3 overflow-y-auto">
+                                    <li
+                                        v-for="(item, index) in bggImportErrorItems"
+                                        :key="`${item.category}-${item.bgg_id ?? index}`"
+                                        class="border-b border-red-200 pb-3 last:border-0 dark:border-red-900"
+                                    >
+                                        <p class="wrap-break-word font-semibold text-zinc-900 dark:text-white">
+                                            {{ item.category }}:
+                                            {{ item.name || `BGG ${item.bgg_id ?? 'sin identificar'}` }}
+                                        </p>
+                                        <p class="mt-1 text-sm leading-6 text-zinc-700 dark:text-zinc-300">
+                                            Motivo: {{ explainBggItemError(item.error) }}
+                                        </p>
+                                    </li>
+                                </ul>
+                            </div>
+                        </details>
+
                         <p
                             v-if="selectedBggCollection.bgg_sync_status === 'completed' &&
                                 selectedBggCollection.bgg_sync_expansions_pending > 0"
@@ -1423,7 +1528,9 @@ watch(
                     </template>
 
                     <details
-                        v-if="selectedBggCollection.bgg_sync_status === 'failed' && selectedBggCollection.bgg_sync_error"
+                        v-if="selectedBggCollection.bgg_sync_status === 'failed' &&
+                            selectedBggCollection.bgg_sync_error &&
+                            bggImportErrorItems.length === 0"
                         :key="selectedBggCollection.id"
                         class="mt-3 text-sm text-zinc-600 dark:text-zinc-400"
                     >
@@ -1608,6 +1715,7 @@ watch(
 
                     <!-- EXPANSIONES RETIRADAS DE BGG -->
                     <div
+                        v-if="bggPreview.expansion_removal_candidates?.length"
                         class="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/5 p-5"
                     >
                         <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1628,14 +1736,7 @@ watch(
                             de Laravel, pero que ya no aparecen como propias en BGG.
                         </p>
 
-                        <p
-                            v-if="!bggPreview.expansion_removal_candidates?.length"
-                            class="mt-4 text-sm text-emerald-600 dark:text-emerald-400"
-                        >
-                            ✓ No hay bajas de expansiones pendientes.
-                        </p>
-
-                        <div v-else class="mt-4 space-y-2">
+                        <div class="mt-4 space-y-2">
                             <div
                                 v-for="expansion in bggPreview.expansion_removal_candidates"
                                 :key="expansion.id"
@@ -1681,9 +1782,16 @@ watch(
                         </p>
                     </div>
 
+                    <p
+                        v-else
+                        class="mt-4 text-sm text-emerald-600 dark:text-emerald-400"
+                    >
+                        ✓ No hay bajas de expansiones pendientes.
+                    </p>
+
                     <p class="mt-4 text-xs text-zinc-500">
-                        Vista previa únicamente. No se ha importado,
-                        actualizado ni eliminado ningún juego.
+                        Esta consulta es una vista previa y no realiza cambios.
+                        Las importaciones y las bajas confirmadas son operaciones independientes.
                     </p>
                 </div>
                 </div>

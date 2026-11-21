@@ -49,7 +49,9 @@ test('conserva el contador de juegos si falla un lote parcialmente', function ()
     $partial = $this->collection->fresh();
 
     expect($partial->bgg_sync_games_added)->toBe(2)
-        ->and($partial->bgg_sync_report['games_added'])->toHaveCount(2);
+        ->and($partial->bgg_sync_report['games_added'])->toHaveCount(2)
+        ->and($partial->bgg_sync_report['games_errors'])->toHaveCount(1)
+        ->and($partial->bgg_sync_report['games_errors'][0]['bgg_id'])->toBe(13);
 
     $job->failed(new RuntimeException('Error importando juegos BGG'));
 
@@ -86,8 +88,13 @@ test('conserva los contadores cuando falla un lote de expansiones', function () 
         app(BggCollectionService::class)
     ))->toThrow(RuntimeException::class, 'Error importando expansiones BGG');
 
-    expect($this->collection->fresh()->bgg_sync_games_added)->toBe(1)
-        ->and($this->collection->fresh()->bgg_sync_expansions_added)->toBe(1);
+    $partial = $this->collection->fresh();
+
+    expect($partial->bgg_sync_games_added)->toBe(1)
+        ->and($partial->bgg_sync_expansions_added)->toBe(1)
+        ->and($partial->bgg_sync_report['expansions_added'])->toHaveCount(1)
+        ->and($partial->bgg_sync_report['expansions_errors'])->toHaveCount(1)
+        ->and($partial->bgg_sync_report['expansions_errors'][0]['bgg_id'])->toBe(32);
 });
 
 test('comparte una consulta BGG entre lotes y expansiones', function () {

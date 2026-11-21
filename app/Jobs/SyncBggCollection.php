@@ -58,6 +58,8 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
             'games_added' => [],
             'expansions_added' => [],
             'expansions_pending' => [],
+            'games_errors' => [],
+            'expansions_errors' => [],
         ];
 
         $collection->forceFill([
@@ -86,10 +88,15 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
             $imported = count($result['imported']);
             $totalGames += $imported;
 
-            if ($imported > 0) {
+            if ($imported > 0 || !empty($result['errors'])) {
                 $report['games_added'] = array_merge(
                     $report['games_added'],
                     $result['imported']
+                );
+
+                $report['games_errors'] = array_merge(
+                    $report['games_errors'],
+                    $result['errors']
                 );
 
                 $collection->forceFill([
@@ -135,6 +142,7 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
 
         $report['expansions_added'] = $expansions['imported'];
         $report['expansions_pending'] = $expansions['pending'];
+        $report['expansions_errors'] = $expansions['errors'];
 
         $collection->forceFill([
             'bgg_sync_expansions_added' => $totalExpansions,
