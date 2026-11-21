@@ -978,6 +978,7 @@ class PollController extends Controller
 
         $poll->load([
             'participants.votes',
+            'participants.player:id,color',
 
             'gameCollections',
 
@@ -1362,6 +1363,8 @@ class PollController extends Controller
                                     'display_name' =>
                                     $participant
                                         ->display_name,
+
+                                    'color' => $participant->player?->color,
 
                                     'vote_token' =>
                                     $participant

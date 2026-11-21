@@ -550,3 +550,35 @@ test('la otra votacion destaca el ganador definitivo del desempate', function ()
             ->where('linkedSession.candidates.1.is_winner', false)
         );
 });
+
+test('el organizador conserva el color guardado aunque cambie el nombre', function () {
+    $owner = User::findOrFail($this->poll->created_by);
+
+    $player = \App\Models\Player::create([
+        'created_by' => $owner->id,
+        'name' => 'Nombre actual',
+        'color' => 'teal',
+        'is_active' => true,
+    ]);
+
+    $this->participant->update([
+        'player_id' => $player->id,
+        'display_name' => 'Nombre anterior',
+    ]);
+
+    $this->get($this->personalUrl)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('poll.participants.0.color', 'teal')
+            ->where('poll.participants.0.display_name', 'Nombre anterior')
+        );
+
+    $this->actingAs($owner)
+        ->get(route('polls.show', $this->poll))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('polls/show')
+            ->where('poll.participants.0.color', 'teal')
+            ->where('poll.participants.0.display_name', 'Nombre anterior')
+        );
+});

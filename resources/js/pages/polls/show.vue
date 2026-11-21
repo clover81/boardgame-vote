@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
-import { playerNameColor } from '@/lib/player-colors';
+import { playerNameColor, playerMeepleColor } from '@/lib/player-colors';
 import { getSecondPreferenceTieBreak } from '@/lib/poll-tiebreak';
 import MeepleIcon from '@/components/icons/MeepleIcon.vue';
 import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, CalendarHeart, UsersRound, HourglassCog, Swords, BrainCog, NotebookPen, Share2, Trophy } from '@lucide/vue';
@@ -37,6 +37,7 @@ interface Participant {
     id: number;
     display_name: string;
     vote_token: string | null;
+    color: string | null;
     has_voted: boolean;
 }
 
@@ -1093,7 +1094,7 @@ const modeLabel = (
                                     class="rounded-xl bg-zinc-50 p-3 dark:bg-zinc-900"
                                 >
                                     <div class="flex flex-wrap items-center justify-between gap-2 font-semibold">
-                                        <span :class="['inline-flex items-center gap-1.5', playerNameColor(participant.display_name)]"><MeepleIcon class="h-3.5 w-3.5 shrink-0" />{{ participant.display_name }}</span>
+                                        <span :class="['inline-flex items-center gap-1.5', playerNameColor(participant.display_name, participant.color)]"><MeepleIcon :class="['h-3.5 w-3.5 shrink-0', playerMeepleColor(participant.display_name, participant.color)]" />{{ participant.display_name }}</span>
                                         <span
                                             class="rounded-full px-2 py-1 text-xs font-semibold"
                                             :class="participant.has_voted
