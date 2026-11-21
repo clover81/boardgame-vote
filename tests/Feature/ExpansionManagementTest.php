@@ -460,3 +460,57 @@ test('foreign historical references prevent global expansion editing', function 
     'partida de otra cuenta' => 'play',
     'votacion de otra cuenta' => 'poll',
 ]);
+
+test('game references from other accounts protect all expansion mutations', function (string $reference) {
+    $other = User::factory()->create();
+
+    if ($reference === 'play') {
+        Play::create([
+            'created_by' => $other->id,
+            'game_id' => $this->game->id,
+            'played_at' => '2026-11-01',
+        ]);
+    } elseif ($reference === 'poll') {
+        $poll = Poll::create([
+            'created_by' => $other->id,
+            'name' => 'Votación ajena',
+            'token' => 'GAMEEXPANSIONPROTECTION',
+            'status' => 'closed',
+        ]);
+        $poll->candidates()->create([
+            'game_id' => $this->game->id,
+        ]);
+    } else {
+        $collection = GameCollection::create([
+            'created_by' => $other->id,
+            'name' => 'Colección ajena de expansiones',
+        ]);
+        $anotherExpansion = $this->game->expansions()->create([
+            'name' => 'Otra expansión',
+            'is_active' => true,
+        ]);
+        $collection->expansions()->attach($anotherExpansion);
+    }
+
+    $before = $this->expansion->fresh()->getAttributes();
+    $count = Expansion::count();
+
+    $this->actingAs($this->user)
+        ->post(route('expansions.store', $this->game), [
+            'name' => 'No permitida',
+        ])
+        ->assertForbidden();
+
+    $this->patch($this->updateUrl, $this->payload)
+        ->assertForbidden();
+
+    $this->delete($this->deleteUrl)
+        ->assertRedirect($this->editUrl)
+        ->assertSessionHas(
+            'error',
+            'No se ha eliminado la expansión: otra cuenta utiliza la ficha de este juego.'
+        );
+
+    expect($this->expansion->fresh()->getAttributes())->toBe($before);
+    expect(Expansion::count())->toBe($count);
+})->with(['play', 'poll', 'other_expansion']);
