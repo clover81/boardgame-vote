@@ -119,6 +119,31 @@ test('search prioritizes titles even when a description contains the same words'
         );
 });
 
+test('private search ignores straight and curly apostrophes in titles', function () {
+    $this->castle->update(['name' => "King's Dilemma"]);
+    $this->sky->update(['name' => 'Queen’s Gambit']);
+
+    foreach (['Kings Dilemma', 'King’s Dilemma'] as $query) {
+        $this->actingAs($this->user)
+            ->get(route('games.index', ['q' => $query]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('games', 1)
+                ->where('games.0.id', $this->castle->id)
+            );
+    }
+
+    foreach (['Queens Gambit', "Queen's Gambit"] as $query) {
+        $this->actingAs($this->user)
+            ->get(route('games.index', ['q' => $query]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('games', 1)
+                ->where('games.0.id', $this->sky->id)
+            );
+    }
+});
+
 test('a single letter prioritizes titles beginning with that letter', function () {
     // The White Castle contiene la letra s pero no empieza por ella.
     $this->actingAs($this->user)->get(route('games.index', ['q' => 's']))

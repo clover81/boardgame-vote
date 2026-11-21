@@ -666,7 +666,7 @@ class GameController extends Controller
                         ->where('games.game_mode', $gameMode))))
             ->when($search, function ($query, $search) {
                 $replacements = [
-                    '‘' => "'", '’' => "'",
+                    "'" => '', '‘' => '', '’' => '',
                     '-' => ' ', '‐' => ' ', '‑' => ' ', '‒' => ' ',
                     '–' => ' ', '—' => ' ', '−' => ' ',
                 ];

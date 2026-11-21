@@ -293,3 +293,30 @@ test('foreign historical records protect game details during updates', function 
     'partida histórica de otra cuenta' => 'play',
     'votación histórica de otra cuenta' => 'poll',
 ]);
+
+test('editing from a filtered game list returns to the same filters', function () {
+    $this->game->collections()->detach($this->foreignCollection);
+
+    $filters = [
+        'collection_id' => $this->ownedCollections[0]->id,
+        'q' => 'White Castle',
+        'players' => 3,
+        'sort' => 'name_desc',
+    ];
+
+    $back = route('games.index', $filters, false);
+
+    $this->actingAs($this->user)
+        ->put(route('games.update', [
+            'game' => $this->game,
+            'back' => $back,
+        ]), [
+            ...$this->payload,
+            'collection_ids' => [$this->ownedCollections[0]->id],
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('games.index', $filters));
+
+    expect($this->game->fresh()->name)
+        ->toBe('The White Castle actualizado');
+});

@@ -670,9 +670,7 @@ const formatDate = (date: string | null): string => {
                             </Link>
 
                             <Link
-                                :href="
-                                    `/games/${game.id}/edit`
-                                "
+                                :href="`/games/${game.id}/edit?back=${encodeURIComponent($page.url)}`"
                                 class="flex min-h-11 items-center justify-center rounded-xl border border-zinc-300 px-3 py-2.5 text-center text-sm font-bold transition hover:border-[#5200FF] hover:text-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-[#CCFF00] dark:hover:text-[#CCFF00]"
                             >
                                 <span class="inline-flex items-center justify-center gap-1.5"><PencilSparklesIcon class="h-4 w-4 shrink-0 text-violet-500 dark:text-[#CCFF00]" />Editar</span>
