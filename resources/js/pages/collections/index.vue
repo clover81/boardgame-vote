@@ -285,6 +285,32 @@ const bggSyncing = ref(false);
 const bggSyncMessage = ref('');
 const bggSyncError = ref('');
 
+const bggRemovalError = ref<{
+    kind: 'game' | 'expansion';
+    id: number;
+    message: string;
+} | null>(null);
+
+const revealBggRemovalError = async (
+    kind: 'game' | 'expansion',
+    id: number,
+    message: string
+) => {
+    bggRemovalError.value = { kind, id, message };
+
+    await nextTick();
+
+    const alert = document.getElementById(
+        `bgg-removal-error-${kind}-${id}`
+    );
+
+    alert?.focus({ preventScroll: true });
+    alert?.scrollIntoView({
+        behavior: 'auto',
+        block: 'center',
+    });
+};
+
 // Si cambian las colecciones tras una visita Inertia, mantenemos una selección válida.
 watch(bggCollections, (linkedCollections) => {
     if (linkedCollections.length === 1) {
@@ -305,6 +331,7 @@ watch(bggCollectionId, () => {
     bggPreviewFeedback.value = '';
     bggSyncMessage.value = '';
     bggSyncError.value = '';
+    bggRemovalError.value = null;
 });
 
 const page = usePage();
@@ -504,6 +531,7 @@ const executeBggRemoval = (game: {
     bggRemovingId.value = game.id;
     bggSyncError.value = '';
     bggSyncMessage.value = '';
+    bggRemovalError.value = null;
 
     router.post(
         `/collections/${collectionId}/bgg/remove/${game.id}`,
@@ -531,6 +559,12 @@ const executeBggRemoval = (game: {
                     errors.bgg ||
                     Object.values(errors)[0] ||
                     'No se pudo confirmar la baja.';
+
+                void revealBggRemovalError(
+                    'game',
+                    game.id,
+                    `No se ha retirado "${game.name}". ${explainBggError(bggSyncError.value)}`
+                );
             },
 
             onFinish: () => {
@@ -595,6 +629,7 @@ const executeBggExpansionRemoval = (expansion: {
     bggRemovingExpansionId.value = expansion.id;
     bggSyncError.value = '';
     bggSyncMessage.value = '';
+    bggRemovalError.value = null;
 
     router.post(
         `/collections/${collectionId}/bgg/remove-expansion/${expansion.id}`,
@@ -621,6 +656,12 @@ const executeBggExpansionRemoval = (expansion: {
                     errors.bgg ||
                     Object.values(errors)[0] ||
                     'No se pudo confirmar la baja de la expansión.';
+
+                void revealBggRemovalError(
+                    'expansion',
+                    expansion.id,
+                    `No se ha retirado "${expansion.name}". ${explainBggError(bggSyncError.value)}`
+                );
             },
 
             onFinish: () => {
@@ -1469,6 +1510,15 @@ watch(
                                             : 'Confirmar baja'
                                     }}
                                 </button>
+                                <p
+                                    v-if="bggRemovalError?.kind === 'game' && bggRemovalError.id === game.id"
+                                    :id="`bgg-removal-error-game-${game.id}`"
+                                    role="alert"
+                                    tabindex="-1"
+                                    class="w-full scroll-mt-24 rounded-xl border border-red-300 bg-red-50 p-3 text-sm font-semibold text-red-900 outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200"
+                                >
+                                    {{ bggRemovalError.message }}
+                                </p>
                             </div>
                         </div>
 
@@ -1535,6 +1585,15 @@ watch(
                                             : 'Confirmar baja'
                                     }}
                                 </button>
+                                <p
+                                    v-if="bggRemovalError?.kind === 'expansion' && bggRemovalError.id === expansion.id"
+                                    :id="`bgg-removal-error-expansion-${expansion.id}`"
+                                    role="alert"
+                                    tabindex="-1"
+                                    class="w-full scroll-mt-24 rounded-xl border border-red-300 bg-red-50 p-3 text-sm font-semibold text-red-900 outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200"
+                                >
+                                    {{ bggRemovalError.message }}
+                                </p>
                             </div>
                         </div>
 

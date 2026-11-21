@@ -86,3 +86,75 @@ test('no confirma la baja si la expansión vuelve a figurar como propia en BGG',
         'expansion_id' => $this->expansion->id,
     ]);
 });
+
+test('la baja BGG de un juego conserva su ficha y solo quita la asociacion', function () {
+    $preview = [
+        'games' => [['bgg_id' => 987]],
+        'expansions' => [],
+    ];
+
+    Cache::put(
+        $this->collection->bggPreviewCacheKey(),
+        $preview,
+        now()->addMinutes(5)
+    );
+
+    $this->mock(BggCollectionService::class)
+        ->shouldReceive('preview')
+        ->once()
+        ->with('clover81')
+        ->andReturn($preview);
+
+    $this->actingAs($this->user)
+        ->post(route('collections.bgg.remove', [$this->collection, $this->game]))
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    $this->assertDatabaseMissing('game_collection_game', [
+        'game_collection_id' => $this->collection->id,
+        'game_id' => $this->game->id,
+    ]);
+
+    $this->assertDatabaseHas('games', [
+        'id' => $this->game->id,
+    ]);
+});
+
+test('no retira el juego si comienza otra sincronizacion durante la comprobacion', function (string $status) {
+    $preview = [
+        'games' => [['bgg_id' => 987]],
+        'expansions' => [],
+    ];
+
+    Cache::put(
+        $this->collection->bggPreviewCacheKey(),
+        $preview,
+        now()->addMinutes(5)
+    );
+
+    $this->mock(BggCollectionService::class)
+        ->shouldReceive('preview')
+        ->once()
+        ->with('clover81')
+        ->andReturnUsing(function () use ($preview, $status) {
+            $this->collection->forceFill([
+                'bgg_sync_status' => $status,
+            ])->save();
+
+            return $preview;
+        });
+
+    $this->actingAs($this->user)
+        ->post(route('collections.bgg.remove', [$this->collection, $this->game]))
+        ->assertRedirect()
+        ->assertSessionHasErrors('bgg');
+
+    $this->assertDatabaseHas('game_collection_game', [
+        'game_collection_id' => $this->collection->id,
+        'game_id' => $this->game->id,
+    ]);
+
+    $this->assertDatabaseHas('games', [
+        'id' => $this->game->id,
+    ]);
+})->with(['pending', 'running']);

@@ -553,9 +553,33 @@ class GameCollectionController extends Controller
             ]);
         }
 
-        // Solo retirar la relación con esta colección.
-        // NO eliminar el juego de la base de datos.
-        $collection->games()->detach($game->id);
+        // Evitar desvincular un juego si ha comenzado
+        // otra sincronización durante las consultas a BGG.
+        $removed = DB::transaction(function () use ($collection, $game) {
+            $current = GameCollection::query()
+                ->lockForUpdate()
+                ->findOrFail($collection->id);
+
+            if (in_array(
+                $current->bgg_sync_status,
+                ['pending', 'running'],
+                true
+            )) {
+                return false;
+            }
+
+            // Desvincular únicamente esta colección.
+            // La ficha, otras colecciones y el historial se conservan.
+            $current->games()->detach($game->id);
+
+            return true;
+        });
+
+        if (!$removed) {
+            return back()->withErrors([
+                'bgg' => 'Se ha iniciado otra sincronización. No se ha aplicado la baja.',
+            ]);
+        }
 
         Cache::put($collection->bggPreviewCacheKey(), $second, now()->addMinutes(5));
 
