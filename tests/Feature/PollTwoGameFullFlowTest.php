@@ -151,17 +151,31 @@ test('dos juegos tienen votos resultados y partidas independientes', function ()
             ])
         );
 
+    $firstExpansion = $games[0]->expansions()->create([
+        'name' => 'Expansión del primer juego',
+        'is_active' => true,
+    ]);
+
+    $secondExpansion = $games[4]->expansions()->create([
+        'name' => 'Expansión del segundo juego',
+        'is_active' => true,
+    ]);
+
     $this->post(route('plays.store'), [
         'poll_id' => $first->id,
         'game_ids' => [$games[0]->id],
+        'expansion_ids' => [$games[0]->id => $firstExpansion->id],
         'player_ids' => $players->pluck('id')->all(),
+        'winner_player_ids' => [$games[0]->id => [$players[1]->id]],
         'played_at' => '2026-11-17',
     ])->assertSessionHasNoErrors();
 
     $this->post(route('plays.store'), [
         'poll_id' => $second->id,
         'game_ids' => [$games[4]->id],
+        'expansion_ids' => [$games[4]->id => $secondExpansion->id],
         'player_ids' => [$players[0]->id, $players[2]->id],
+        'winner_player_ids' => [$games[4]->id => [$players[2]->id]],
         'played_at' => '2026-11-17',
     ])->assertSessionHasNoErrors();
 
@@ -179,4 +193,54 @@ test('dos juegos tienen votos resultados y partidas independientes', function ()
             $players[0]->id,
             $players[2]->id,
         ]);
+
+    expect($firstPlay->expansion_id)->toBe($firstExpansion->id)
+        ->and($secondPlay->expansion_id)->toBe($secondExpansion->id);
+
+    $this->assertDatabaseHas('play_player', [
+        'play_id' => $firstPlay->id,
+        'player_id' => $players[1]->id,
+        'is_winner' => 1,
+    ]);
+
+    $this->assertDatabaseHas('play_player', [
+        'play_id' => $secondPlay->id,
+        'player_id' => $players[2]->id,
+        'is_winner' => 1,
+    ]);
+
+    // Cambiar el ganador del segundo juego no debe alterar el primero.
+    $this->put(route('plays.update', $secondPlay), [
+        'game_id' => $games[4]->id,
+        'expansion_id' => $secondExpansion->id,
+        'player_ids' => [$players[0]->id, $players[2]->id],
+        'winner_player_ids' => [$players[0]->id],
+        'played_at' => '2026-11-17',
+        'notes' => 'Ganador corregido del juego 2',
+    ])->assertSessionHasNoErrors();
+
+    $this->assertDatabaseCount('plays', 2);
+
+    expect($firstPlay->fresh()->poll_id)->toBe($first->id)
+        ->and($secondPlay->fresh()->poll_id)->toBe($second->id)
+        ->and($firstPlay->fresh()->expansion_id)->toBe($firstExpansion->id)
+        ->and($secondPlay->fresh()->expansion_id)->toBe($secondExpansion->id);
+
+    $this->assertDatabaseHas('play_player', [
+        'play_id' => $firstPlay->id,
+        'player_id' => $players[1]->id,
+        'is_winner' => 1,
+    ]);
+
+    $this->assertDatabaseHas('play_player', [
+        'play_id' => $secondPlay->id,
+        'player_id' => $players[0]->id,
+        'is_winner' => 1,
+    ]);
+
+    $this->assertDatabaseHas('play_player', [
+        'play_id' => $secondPlay->id,
+        'player_id' => $players[2]->id,
+        'is_winner' => 0,
+    ]);
 });
