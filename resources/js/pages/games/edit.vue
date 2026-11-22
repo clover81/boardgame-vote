@@ -295,7 +295,7 @@ const submit = () => {
         return;
     }
 
-    form.put(`/games/${props.game.id}?back=${encodeURIComponent(backToGames.value)}`, {
+    form.put(updateUrl.value, {
         preserveScroll: true,
         onError: async () => {
             await nextTick();
@@ -305,11 +305,20 @@ const submit = () => {
 };
 
 const page = usePage();
+const fromHistory = computed(() =>
+    new URLSearchParams(page.url.split('?')[1]).get('from') === 'history',
+);
 const backToGames = computed(() => {
     const back = new URLSearchParams(page.url.split('?')[1]).get('back');
 
     return back?.startsWith('/games?') ? back : '/games';
 });
+
+const updateUrl = computed(() =>
+    fromHistory.value
+        ? `/games/${props.game.id}?from=history`
+        : `/games/${props.game.id}?back=${encodeURIComponent(backToGames.value)}`
+);
 
 const deleting = ref(false);
 const removingCollectionId = ref<number | null>(null);
@@ -386,10 +395,10 @@ const confirmDeleteGame = () => {
         <div class="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 2xl:max-w-7xl">
             <div class="mb-6">
                 <Link
-                    :href="backToGames"
+                    :href="fromHistory ? '/plays' : backToGames"
                     class="text-sm font-medium text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                 >
-                    ← Volver a la colección
+                    {{ fromHistory ? '← Volver al historial' : '← Volver a la colección' }}
                 </Link>
 
                 <h1 class="mt-4 text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">

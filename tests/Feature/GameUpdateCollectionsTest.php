@@ -44,6 +44,42 @@ beforeEach(function () {
     ];
 });
 
+test('editing a game from history returns to the play list', function (bool $shared) {
+    if (! $shared) {
+        $this->game->collections()->detach($this->foreignCollection);
+    }
+
+    $payload = $shared
+        ? ['collection_ids' => [$this->ownedCollections[0]->id]]
+        : [
+            ...$this->payload,
+            'collection_ids' => [$this->ownedCollections[0]->id],
+        ];
+
+    $this->actingAs($this->user)
+        ->put(route('games.update', [
+            'game' => $this->game,
+            'from' => 'history',
+        ]), $payload)
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('plays.index'));
+})->with([
+    'shared game' => [true],
+    'exclusive game' => [false],
+]);
+
+test('an unrecognised origin cannot change the game update destination', function () {
+    $this->actingAs($this->user)
+        ->put(route('games.update', [
+            'game' => $this->game,
+            'from' => 'https://example.com',
+        ]), [
+            'collection_ids' => [$this->ownedCollections[0]->id],
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('games.index'));
+});
+
 test('updating a shared game changes only the current users collection memberships', function () {
     $selectedIds = [
         $this->ownedCollections[0]->id,

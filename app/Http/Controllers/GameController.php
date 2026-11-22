@@ -553,6 +553,15 @@ class GameController extends Controller
             }
         });
 
+        if ($request->query('from') === 'history') {
+            return redirect()->route('plays.index')->with(
+                'success',
+                $usedByAnotherUser
+                    ? 'Se han actualizado tus colecciones. La ficha compartida no se ha modificado.'
+                    : 'Juego actualizado correctamente.'
+            );
+        }
+
         $filters = $this->gameListReturnFilters($request);
 
         if ($usedByAnotherUser) {
