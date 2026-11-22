@@ -210,6 +210,14 @@ const props = defineProps<{
     canChangeVotingMode: boolean;
 }>();
 
+const formatPlayedDate = (date: string): string => {
+    return new Intl.DateTimeFormat('es-ES', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    }).format(new Date(`${date}T12:00:00`));
+};
+
 const page = usePage();
 const pollQuery = computed(() => new URLSearchParams(page.url.split('?')[1]));
 const fromHistory = computed(() => pollQuery.value.get('from') === 'history');
@@ -1901,7 +1909,7 @@ const modeLabel = (
                             </p>
 
                             <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                                <CalendarHeart class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-lime-700 dark:text-[#CCFF00]" :stroke-width="2.2" aria-hidden="true" /> {{ play.played_at }}
+                                <CalendarHeart class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-lime-700 dark:text-[#CCFF00]" :stroke-width="2.2" aria-hidden="true" /> {{ formatPlayedDate(play.played_at) }}
                             </p>
 
                             <p
@@ -1921,7 +1929,7 @@ const modeLabel = (
                                 class="mt-2 inline-flex flex-wrap items-center gap-1.5 text-sm font-semibold text-amber-700 dark:text-amber-300"
                             >
                                 <Trophy class="h-4 w-4 shrink-0" aria-hidden="true" />
-                                Ganó:
+                                {{ play.players.filter(player => player.is_winner).length > 1 ? 'Ganaron:' : 'Ganó:' }}
                                 {{
                                     play.players
                                         .filter(player => player.is_winner)
