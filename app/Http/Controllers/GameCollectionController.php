@@ -248,7 +248,32 @@ class GameCollectionController extends Controller
          *
          * Los juegos NO se eliminan.
          */
-        $collection->delete();
+        // Evitar eliminar una colección mientras BGG la sincroniza.
+        // La comprobación y el borrado se realizan bajo bloqueo.
+        $deleted = DB::transaction(function () use ($collection): bool {
+            $current = GameCollection::query()
+                ->lockForUpdate()
+                ->findOrFail($collection->id);
+
+            if (in_array(
+                $current->bgg_sync_status,
+                ['pending', 'running'],
+                true
+            )) {
+                return false;
+            }
+
+            $current->delete();
+
+            return true;
+        });
+
+        if (! $deleted) {
+            return back()->withErrors([
+                'collection' =>
+                    'No puedes eliminar esta colección mientras se sincroniza con BGG. Espera a que termine.',
+            ]);
+        }
 
         return back()->with(
             'success',

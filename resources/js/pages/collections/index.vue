@@ -186,12 +186,30 @@ const togglePublic = (collection: Collection) => {
 const collectionToDelete = ref<Collection | null>(null);
 const deleteCollectionDialogOpen = ref(false);
 const deletingCollection = ref(false);
+const deleteCollectionError = ref('');
+
+const collectionSyncInProgress = (collection: Collection): boolean =>
+    collection.bgg_sync_status === 'pending' ||
+    collection.bgg_sync_status === 'running';
+
+const selectedCollectionSyncInProgress = computed(() =>
+    props.collections.some(collection =>
+        collection.id === collectionToDelete.value?.id &&
+        collectionSyncInProgress(collection)
+    )
+);
 
 const deleteCollection = (collection: Collection) => {
-    if (collection.is_default || deletingCollection.value) {
+    if (
+        collection.is_default ||
+        deletingCollection.value ||
+        selectedCollectionSyncInProgress.value ||
+        collectionSyncInProgress(collection)
+    ) {
         return;
     }
 
+    deleteCollectionError.value = '';
     collectionToDelete.value = collection;
     deleteCollectionDialogOpen.value = true;
 };
@@ -217,6 +235,11 @@ const confirmDeleteCollection = () => {
         onSuccess: () => {
             deleteCollectionDialogOpen.value = false;
             collectionToDelete.value = null;
+        },
+
+        onError: (errors) => {
+            deleteCollectionError.value =
+                errors.collection ?? 'No se ha podido eliminar la colección.';
         },
 
         onFinish: () => {
@@ -1072,9 +1095,15 @@ watch(
                                     </DropdownMenuItem>
                                     <template v-if="!collection.is_default">
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem variant="destructive" @select="deleteCollection(collection)">
+                                        <DropdownMenuItem
+                                            variant="destructive"
+                                            :disabled="collectionSyncInProgress(collection)"
+                                            @select="deleteCollection(collection)"
+                                        >
                                             <Trash2 class="size-4" aria-hidden="true" />
-                                            Eliminar colección
+                                            {{ collectionSyncInProgress(collection)
+                                                ? 'Eliminar (BGG en curso)'
+                                                : 'Eliminar colección' }}
                                         </DropdownMenuItem>
                                     </template>
                                 </DropdownMenuContent>
@@ -1833,6 +1862,16 @@ watch(
                     </p>
                 </div>
 
+                <p
+                    v-if="selectedCollectionSyncInProgress || deleteCollectionError"
+                    role="alert"
+                    class="mt-3 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-700 dark:bg-red-950/30 dark:text-red-300"
+                >
+                    {{ selectedCollectionSyncInProgress
+                        ? 'No puedes eliminar la colección mientras BGG la sincroniza.'
+                        : deleteCollectionError }}
+                </p>
+
                 <DialogFooter class="mt-3 gap-2 sm:gap-3">
                     <button
                         type="button"
@@ -1845,7 +1884,7 @@ watch(
 
                     <button
                         type="button"
-                        :disabled="deletingCollection"
+                        :disabled="deletingCollection || selectedCollectionSyncInProgress"
                         class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white transition hover:bg-red-700 disabled:opacity-50"
                         @click="confirmDeleteCollection"
                     >
