@@ -367,19 +367,23 @@ test('legacy expansions are checked against the game for manual and poll registr
         ? route('plays.create-from-poll', $this->poll)
         : route('plays.create');
 
-    if ($kind !== 'missing') {
+    if ($kind === 'inactive') {
         $this->actingAs($this->user)->post(route('plays.store'), $this->payload)
             ->assertSessionHasNoErrors()
             ->assertRedirect($fromPoll ? route('polls.show', $this->poll) : route('games.index'));
 
-        expect(Play::sole()->expansion_id)->toBe($kind === 'foreign' ? null : $this->payload['expansion_ids'][$this->game->id]);
+        expect(Play::sole()->expansion_id)->toBe($this->payload['expansion_ids'][$this->game->id]);
 
         return;
     }
 
     $this->actingAs($this->user)->from($returnUrl)->post(route('plays.store'), $this->payload)
         ->assertRedirect($returnUrl)
-        ->assertSessionHasErrors("expansion_ids.{$this->game->id}")
+        ->assertSessionHasErrors(
+            $kind === 'foreign'
+                ? 'expansion_ids'
+                : "expansion_ids.{$this->game->id}"
+        )
         ->assertSessionHasInput('game_ids', [$this->game->id])
         ->assertSessionHasInput('expansion_ids', $this->payload['expansion_ids'])
         ->assertSessionHasInput('player_ids', [$this->player->id]);
@@ -394,3 +398,106 @@ test('legacy expansions are checked against the game for manual and poll registr
     'manual with nonexistent expansion' => ['missing', false],
     'poll with nonexistent expansion' => ['missing', true],
 ]);
+
+
+test('multiple games keep their own expansions and winners', function () {
+    $secondGame = Game::create([
+        'name' => 'Segundo juego de la sesión',
+        'min_players' => 1,
+        'max_players' => 4,
+        'game_mode' => 'cooperative',
+        'is_active' => true,
+    ]);
+
+    $this->collection->games()->attach($secondGame->id);
+
+    $secondPlayer = Player::create([
+        'created_by' => $this->user->id,
+        'name' => 'Bea',
+        'is_active' => true,
+    ]);
+
+    $firstExpansion = $this->game->expansions()->create([
+        'name' => 'Expansión A',
+        'is_active' => true,
+    ]);
+
+    $secondExpansion = $secondGame->expansions()->create([
+        'name' => 'Expansión B',
+        'is_active' => true,
+    ]);
+
+    $payload = array_replace($this->payload, [
+        'game_ids' => [$this->game->id, $secondGame->id],
+        'expansion_ids' => [
+            $this->game->id => $firstExpansion->id,
+            $secondGame->id => $secondExpansion->id,
+        ],
+        'player_ids' => [$this->player->id, $secondPlayer->id],
+        'winner_player_ids' => [
+            $this->game->id => [$this->player->id],
+            $secondGame->id => [$secondPlayer->id],
+        ],
+    ]);
+
+    $this->actingAs($this->user)
+        ->post(route('plays.store'), $payload)
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('success', 'Partidas registradas correctamente.');
+
+    $this->assertDatabaseCount('plays', 2);
+
+    $firstPlay = Play::where('game_id', $this->game->id)->sole();
+    $secondPlay = Play::where('game_id', $secondGame->id)->sole();
+
+    expect($firstPlay->poll_id)->toBe($this->poll->id)
+        ->and($secondPlay->poll_id)->toBe($this->poll->id)
+        ->and($firstPlay->expansion_id)->toBe($firstExpansion->id)
+        ->and($secondPlay->expansion_id)->toBe($secondExpansion->id);
+
+    foreach ([
+        [$firstPlay, $this->player, 1],
+        [$firstPlay, $secondPlayer, 0],
+        [$secondPlay, $this->player, 0],
+        [$secondPlay, $secondPlayer, 1],
+    ] as [$play, $player, $winner]) {
+        $this->assertDatabaseHas('play_player', [
+            'play_id' => $play->id,
+            'player_id' => $player->id,
+            'is_winner' => $winner,
+        ]);
+    }
+});
+
+test('invalid expansion in second game rolls back the entire registration', function () {
+    $secondGame = Game::create([
+        'name' => 'Segundo juego',
+        'min_players' => 1,
+        'max_players' => 4,
+        'game_mode' => 'cooperative',
+        'is_active' => true,
+    ]);
+
+    $this->collection->games()->attach($secondGame->id);
+
+    $firstExpansion = $this->game->expansions()->create([
+        'name' => 'Expansión del primer juego',
+        'is_active' => true,
+    ]);
+
+    $payload = array_replace($this->payload, [
+        'game_ids' => [$this->game->id, $secondGame->id],
+        'expansion_ids' => [
+            $this->game->id => $firstExpansion->id,
+            $secondGame->id => $firstExpansion->id,
+        ],
+    ]);
+
+    $this->actingAs($this->user)
+        ->from(route('plays.create-from-poll', $this->poll))
+        ->post(route('plays.store'), $payload)
+        ->assertSessionHasErrors('expansion_ids');
+
+    $this->assertDatabaseCount('plays', 0);
+    $this->assertDatabaseCount('play_player', 0);
+});

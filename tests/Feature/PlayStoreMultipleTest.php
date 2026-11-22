@@ -161,17 +161,19 @@ test('multiple play registration validates every game and the poll before saving
     $this->assertDatabaseCount('play_player', 0);
 })->with(['game', 'owner', 'status']);
 
-test('an expansion of an unselected game is not assigned to any selected game', function () {
+test('an expansion of an unselected game rejects the entire registration', function () {
     $expansion = $this->games[2]->expansions()->create([
         'name' => 'Expansión de otro juego',
         'is_active' => true,
     ]);
     $this->payload['expansion_ids'] = [$this->games[0]->id => $expansion->id];
 
-    $this->actingAs($this->user)->post(route('plays.store'), $this->payload)->assertSessionHasNoErrors();
+    $this->actingAs($this->user)
+        ->post(route('plays.store'), $this->payload)
+        ->assertSessionHasErrors('expansion_ids');
 
-    expect(Play::count())->toBe(2)
-        ->and(Play::whereNotNull('expansion_id')->count())->toBe(0);
+    $this->assertDatabaseCount('plays', 0);
+    $this->assertDatabaseCount('play_player', 0);
 });
 
 test('a manual play returns to its game detail preserving catalog filters', function () {
@@ -393,17 +395,19 @@ test('the old expansion field is ignored when storing multiple games', function 
         ->and(Play::whereNotNull('expansion_id')->count())->toBe(0);
 });
 
-test('a mismatched expansion becomes null without affecting another games valid expansion', function () {
+test('a mismatched expansion prevents saving both plays even if the other expansion is valid', function () {
     $expansion = $this->games[1]->expansions()->create(['name' => 'Matcha', 'is_active' => true]);
     $this->payload['expansion_ids'] = [
         $this->games[0]->id => $expansion->id,
         $this->games[1]->id => $expansion->id,
     ];
 
-    $this->actingAs($this->user)->post(route('plays.store'), $this->payload)->assertSessionHasNoErrors();
+    $this->actingAs($this->user)
+        ->post(route('plays.store'), $this->payload)
+        ->assertSessionHasErrors('expansion_ids');
 
-    expect(Play::where('game_id', $this->games[0]->id)->sole()->expansion_id)->toBeNull()
-        ->and(Play::where('game_id', $this->games[1]->id)->sole()->expansion_id)->toBe($expansion->id);
+    $this->assertDatabaseCount('plays', 0);
+    $this->assertDatabaseCount('play_player', 0);
 });
 
 test('invalid per-game expansions prevent all plays and player links from being saved', function ($kind) {

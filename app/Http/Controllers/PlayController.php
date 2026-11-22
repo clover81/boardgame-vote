@@ -745,7 +745,10 @@ class PlayController extends Controller
                         ->exists();
 
                     if (!$belongsToGame) {
-                        $expansionId = null;
+                        throw ValidationException::withMessages([
+                            'expansion_ids' =>
+                                'La expansión seleccionada no pertenece al juego correspondiente.',
+                        ]);
                     }
                 }
 
