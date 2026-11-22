@@ -223,6 +223,17 @@ const withPollReturn = (path: string) => backToPolls.value === '/polls'
     ? path
     : `${path}?back=${encodeURIComponent(backToPolls.value)}`;
 
+const pollNavigationUrl = (id: number): string => {
+    const params = new URLSearchParams();
+
+    if (fromHistory.value) params.set('from', 'history');
+    if (backToPolls.value !== '/polls') {
+        params.set('back', backToPolls.value);
+    }
+
+    return `/polls/${id}${params.size ? `?${params}` : ''}`;
+};
+
 const changingVotingMode = ref(false);
 
 const maximumRankingSlots = computed(() =>
@@ -698,7 +709,7 @@ const modeLabel = (
             <!-- ================================================== -->
             <div v-if="poll.original_poll" class="mt-3">
                 <Link
-                    :href="`/polls/${poll.original_poll.id}`"
+                    :href="pollNavigationUrl(poll.original_poll.id)"
                     class="inline-flex min-h-11 items-center text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                 >
                     ← Volver a la votación original: {{ poll.original_poll.name }}
@@ -769,7 +780,7 @@ const modeLabel = (
                             </p>
 
                             <Link
-                                :href="withPollReturn(`/polls/${poll.linked_poll.id}`)"
+                                :href="pollNavigationUrl(poll.linked_poll.id)"
                                 class="mt-3 inline-flex min-h-11 max-w-full items-center rounded-xl border border-violet-300 bg-white px-4 py-2.5 text-sm font-bold text-[#5200FF] transition hover:bg-violet-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-violet-700 dark:bg-zinc-900 dark:text-violet-200 dark:hover:bg-violet-950"
                             >
                                 {{ poll.is_second_game ? 'Ver juego 1' : 'Ver juego 2' }}
@@ -1319,7 +1330,7 @@ const modeLabel = (
                         class="group relative cursor-pointer overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/30 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-violet-500"
                     >
                         <a
-                            :href="`/games/${candidate.game.id}/edit`"
+                            :href="`/games/${candidate.game.id}/edit?poll_return=${encodeURIComponent(page.url)}`"
                             target="_blank"
                             rel="noopener noreferrer"
                             :aria-label="`Editar ${candidate.game.name} en otra pestaña`"
@@ -1637,7 +1648,7 @@ const modeLabel = (
                         </p>
                         <Link
                             v-if="poll.tie_break_poll"
-                            :href="`/polls/${poll.tie_break_poll.id}`"
+                            :href="pollNavigationUrl(poll.tie_break_poll.id)"
                             class="mt-3 inline-flex min-h-11 items-center text-sm font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                         >
                             Ver resultados del desempate
@@ -1684,7 +1695,7 @@ const modeLabel = (
 
                         <Link
                             v-else-if="poll.tie_break_poll"
-                            :href="`/polls/${poll.tie_break_poll.id}`"
+                            :href="pollNavigationUrl(poll.tie_break_poll.id)"
                             class="mt-4 inline-flex min-h-11 items-center rounded-xl bg-[#5200FF] px-4 py-3 text-sm font-bold text-white hover:bg-[#4100CC]"
                         >
                             Ver desempate ({{ statusLabel(poll.tie_break_poll.status) }})
@@ -1781,7 +1792,7 @@ const modeLabel = (
                         <div class="flex-1 max-sm:min-w-0">
                             <h3 class="text-lg font-bold max-sm:text-base max-sm:leading-snug">
                                 <Link
-                                    :href="`/games/${result.game.id}`"
+                                    :href="`/games/${result.game.id}?poll_return=${encodeURIComponent(page.url)}`"
                                     class="rounded text-zinc-900 transition-colors hover:text-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-zinc-100 dark:hover:text-violet-300"
                                 >
                                     {{ result.game.name }}
@@ -1875,7 +1886,7 @@ const modeLabel = (
                             class="rounded-xl bg-zinc-50 p-4 dark:bg-zinc-900"
                         >
                             <Link
-                                :href="`/games/${play.game.id}`"
+                                :href="`/games/${play.game.id}?poll_return=${encodeURIComponent(page.url)}`"
                                 class="font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                             >
                                 {{ play.game.name }} →
@@ -1921,7 +1932,7 @@ const modeLabel = (
                     class="mt-8"
                 >
                     <Link
-                        :href="`/polls/${poll.original_poll.id}`"
+                        :href="pollNavigationUrl(poll.original_poll.id)"
                         class="inline-flex min-h-11 items-center rounded-xl bg-[#5200FF] px-5 py-2.5 font-bold text-white hover:bg-[#4100CC]"
                     >
                         Volver a la votación original para registrar la partida

@@ -8,6 +8,7 @@ use App\Models\Game;
 use App\Models\GameCollection;
 use App\Models\Play;
 use App\Models\Player;
+use App\Models\Poll;
 use App\Services\BggService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -552,6 +553,17 @@ class GameController extends Controller
                 }
             }
         });
+
+        $pollReturn = $this->gamePollReturnUrl($request, $game);
+
+        if ($pollReturn !== null) {
+            return redirect()->to($pollReturn)->with(
+                'success',
+                $usedByAnotherUser
+                    ? 'Se han actualizado tus colecciones. La ficha compartida no se ha modificado.'
+                    : 'Juego actualizado correctamente.'
+            );
+        }
 
         if ($request->query('from') === 'history') {
             return redirect()->route('plays.index')->with(
@@ -1411,6 +1423,45 @@ class GameController extends Controller
         }
 
         return $usedByAnotherUser;
+    }
+
+    private function gamePollReturnUrl(Request $request, Game $game): ?string
+    {
+        $return = $request->query('poll_return');
+
+        if (!is_string($return) ||
+            !preg_match('~^/polls/([1-9][0-9]*)(?:\\?([^#]*))?$~D', $return, $matches)) {
+            return null;
+        }
+
+        $pollId = (int) $matches[1];
+
+        $allowed = Poll::query()
+            ->whereKey($pollId)
+            ->where('created_by', $request->user()->id)
+            ->where(function ($query) use ($game) {
+                $query->whereHas('candidates',
+                    fn ($candidate) => $candidate->where('game_id', $game->id))
+                    ->orWhereHas('plays',
+                        fn ($play) => $play->where('game_id', $game->id));
+            })
+            ->exists();
+
+        if (!$allowed) return null;
+
+        parse_str($matches[2] ?? '', $input);
+        $params = ['poll' => $pollId];
+
+        if (($input['from'] ?? null) === 'history') {
+            $params['from'] = 'history';
+        }
+
+        $back = $input['back'] ?? null;
+        if (is_string($back) && str_starts_with($back, '/polls?')) {
+            $params['back'] = $back;
+        }
+
+        return route('polls.show', $params);
     }
 
     private function gameListReturnFilters(Request $request): array

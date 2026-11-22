@@ -20,6 +20,7 @@ import {
 import AppLayout from '@/layouts/AppLayout.vue';
 import BggExpansionsImporter from '@/components/BggExpansionsImporter.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
+import { getPollReturnUrl } from '@/lib/poll-return';
 import {
     Dialog,
     DialogContent,
@@ -127,6 +128,8 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
+const pollReturn = computed(() => getPollReturnUrl(page.url));
+
 const fromHistory = computed(() =>
     new URLSearchParams(page.url.split('?')[1]).get('from') === 'history',
 );
@@ -145,9 +148,11 @@ const backToGames = computed(() => {
 });
 
 const gameEditUrl = computed(() =>
-    fromHistory.value
-        ? `/games/${props.game.id}/edit?from=history`
-        : `/games/${props.game.id}/edit?back=${encodeURIComponent(backToGames.value)}`
+    pollReturn.value
+        ? `/games/${props.game.id}/edit?poll_return=${encodeURIComponent(pollReturn.value)}`
+        : fromHistory.value
+            ? `/games/${props.game.id}/edit?from=history`
+            : `/games/${props.game.id}/edit?back=${encodeURIComponent(backToGames.value)}`
 );
 
 const removingCollectionId = ref<number | null>(null);
@@ -374,10 +379,10 @@ const formatGameMode = (
             <!-- VOLVER -->
 
             <Link
-                :href="fromHistory ? '/plays' : backToGames"
+                :href="pollReturn ?? (fromHistory ? '/plays' : backToGames)"
                 class="text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
             >
-                {{ fromHistory ? '← Volver a mis partidas' : '← Mi colección' }}
+                {{ pollReturn ? '← Volver a la votación' : fromHistory ? '← Volver a mis partidas' : '← Mi colección' }}
             </Link>
 
             <!-- CABECERA -->

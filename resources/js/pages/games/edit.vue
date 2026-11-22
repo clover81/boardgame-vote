@@ -9,6 +9,7 @@ import BggExpansionsImporter from '@/components/BggExpansionsImporter.vue';
 import AlertError from '@/components/AlertError.vue';
 import InputError from '@/components/InputError.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
+import { getPollReturnUrl } from '@/lib/poll-return';
 import {
     Dialog,
     DialogContent,
@@ -305,6 +306,7 @@ const submit = () => {
 };
 
 const page = usePage();
+const pollReturn = computed(() => getPollReturnUrl(page.url));
 const fromHistory = computed(() =>
     new URLSearchParams(page.url.split('?')[1]).get('from') === 'history',
 );
@@ -315,9 +317,11 @@ const backToGames = computed(() => {
 });
 
 const updateUrl = computed(() =>
-    fromHistory.value
-        ? `/games/${props.game.id}?from=history`
-        : `/games/${props.game.id}?back=${encodeURIComponent(backToGames.value)}`
+    pollReturn.value
+        ? `/games/${props.game.id}?poll_return=${encodeURIComponent(pollReturn.value)}`
+        : fromHistory.value
+            ? `/games/${props.game.id}?from=history`
+            : `/games/${props.game.id}?back=${encodeURIComponent(backToGames.value)}`
 );
 
 const deleting = ref(false);
@@ -395,10 +399,10 @@ const confirmDeleteGame = () => {
         <div class="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 2xl:max-w-7xl">
             <div class="mb-6">
                 <Link
-                    :href="fromHistory ? '/plays' : backToGames"
+                    :href="pollReturn ?? (fromHistory ? '/plays' : backToGames)"
                     class="text-sm font-medium text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                 >
-                    {{ fromHistory ? '← Volver al historial' : '← Volver a la colección' }}
+                    {{ pollReturn ? '← Volver a la votación' : fromHistory ? '← Volver al historial' : '← Volver a la colección' }}
                 </Link>
 
                 <h1 class="mt-4 text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">

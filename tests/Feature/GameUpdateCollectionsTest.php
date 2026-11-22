@@ -80,6 +80,111 @@ test('an unrecognised origin cannot change the game update destination', functio
         ->assertRedirect(route('games.index'));
 });
 
+test('editing from a poll preserves its origin and list filters', function (bool $shared) {
+    if (!$shared) {
+        $this->game->collections()->detach($this->foreignCollection);
+    }
+
+    $poll = Poll::create([
+        'created_by' => $this->user->id,
+        'name' => 'Votación de prueba',
+        'token' => 'RETURNPOLL',
+        'status' => 'closed',
+    ]);
+    $poll->candidates()->create(['game_id' => $this->game->id]);
+
+    $list = '/polls?status=closed';
+    $return = route('polls.show', [
+        'poll' => $poll,
+        'from' => 'history',
+        'back' => $list,
+    ], false);
+
+    $payload = $shared
+        ? ['collection_ids' => [$this->ownedCollections[0]->id]]
+        : [
+            ...$this->payload,
+            'collection_ids' => [$this->ownedCollections[0]->id],
+        ];
+
+    $this->actingAs($this->user)
+        ->put(route('games.update', [
+            'game' => $this->game,
+            'poll_return' => $return,
+        ]), $payload)
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('polls.show', [
+            'poll' => $poll,
+            'from' => 'history',
+            'back' => $list,
+        ]));
+})->with([
+    'shared game' => [true],
+    'exclusive game' => [false],
+]);
+
+test('a registered game can return to its poll even if it was not a candidate', function () {
+    $poll = Poll::create([
+        'created_by' => $this->user->id,
+        'name' => 'Partida registrada',
+        'token' => 'RETURNPLAY',
+        'status' => 'closed',
+    ]);
+
+    Play::create([
+        'created_by' => $this->user->id,
+        'game_id' => $this->game->id,
+        'poll_id' => $poll->id,
+        'played_at' => '2026-11-01',
+    ]);
+
+    $this->actingAs($this->user)
+        ->put(route('games.update', [
+            'game' => $this->game,
+            'poll_return' => route('polls.show', $poll, false),
+        ]), [
+            'collection_ids' => [$this->ownedCollections[0]->id],
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('polls.show', $poll));
+});
+
+test('editing a game rejects unrelated or external poll return destinations', function () {
+    $foreign = Poll::create([
+        'created_by' => User::factory()->create()->id,
+        'name' => 'Votación ajena',
+        'token' => 'FOREIGNRETURN',
+        'status' => 'closed',
+    ]);
+    $foreign->candidates()->create(['game_id' => $this->game->id]);
+
+    $unrelated = Poll::create([
+        'created_by' => $this->user->id,
+        'name' => 'Votación sin este juego',
+        'token' => 'UNRELATEDRETURN',
+        'status' => 'closed',
+    ]);
+
+    foreach ([
+        'https://example.com',
+        '//example.com',
+        '/collections',
+        '/polls/999999',
+        route('polls.show', $foreign, false),
+        route('polls.show', $unrelated, false),
+    ] as $destination) {
+        $this->actingAs($this->user)
+            ->put(route('games.update', [
+                'game' => $this->game,
+                'poll_return' => $destination,
+            ]), [
+                'collection_ids' => [$this->ownedCollections[0]->id],
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('games.index'));
+    }
+});
+
 test('updating a shared game changes only the current users collection memberships', function () {
     $selectedIds = [
         $this->ownedCollections[0]->id,
