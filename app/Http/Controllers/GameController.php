@@ -395,7 +395,16 @@ class GameController extends Controller
 
         $usedByAnotherUser = $this->hasForeignGameReferences($game, $userId);
 
-        $validated = $request->validate([
+        $validated = $request->validate($usedByAnotherUser
+            ? [
+                'collection_ids' => ['nullable', 'array'],
+                'collection_ids.*' => [
+                    'integer',
+                    'distinct',
+                    'exists:game_collections,id',
+                ],
+            ]
+            : [
             'name' => ['required', 'string', 'max:255'],
 
             'image_url' => ['nullable', 'url'],
@@ -467,17 +476,19 @@ class GameController extends Controller
 
         // Mantener una modalidad principal para las pantallas antiguas.
         // Si la anterior sigue seleccionada, la conservamos.
-        $modes = $validated['game_modes'];
+        $idealPlayerCounts = $validated['ideal_player_counts'] ?? [];
 
-        $validated['game_mode'] = in_array(
-            $game->game_mode,
-            $modes,
-            true
-        )
-            ? $game->game_mode
-            : ($modes[0] ?? null);
+        if (! $usedByAnotherUser) {
+            $modes = $validated['game_modes'];
 
-        $idealPlayerCounts = $validated['ideal_player_counts'];
+            $validated['game_mode'] = in_array(
+                $game->game_mode,
+                $modes,
+                true
+            )
+                ? $game->game_mode
+                : ($modes[0] ?? null);
+        }
 
         /*
         |--------------------------------------------------------------------------

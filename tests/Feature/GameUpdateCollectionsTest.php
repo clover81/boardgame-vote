@@ -396,6 +396,49 @@ test('rejects ideal player counts outside the supported player range', function 
     expect($this->game->fresh()->name)->toBe('The White Castle');
 });
 
+test('shared games accept collection-only changes without updating global data', function () {
+    $selectedId = $this->ownedCollections[2]->id;
+
+    $this->actingAs($this->user)
+        ->put(route('games.update', $this->game), [
+            'collection_ids' => [$selectedId],
+            'name' => '',
+            'min_players' => 'invalido',
+            'game_modes' => ['desconocido'],
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('games.index'));
+
+    expect($this->game->fresh()->name)->toBe('The White Castle');
+
+    expect($this->game->fresh()->collections->modelKeys())
+        ->toEqualCanonicalizing([
+            $selectedId,
+            $this->foreignCollection->id,
+        ]);
+
+    expect($this->game->fresh()->idealPlayerCounts
+        ->pluck('player_count')->all())->toBe([2]);
+});
+
+test('unshared games still require valid global fields', function () {
+    $this->game->collections()->detach($this->foreignCollection);
+
+    $this->actingAs($this->user)
+        ->put(route('games.update', $this->game), [
+            'collection_ids' => [$this->ownedCollections[0]->id],
+        ])
+        ->assertSessionHasErrors([
+            'name',
+            'min_players',
+            'max_players',
+            'game_modes',
+            'ideal_player_counts',
+        ]);
+
+    expect($this->game->fresh()->name)->toBe('The White Castle');
+});
+
 test('a shared game without ideal recommendations can update its collections', function () {
     $this->game->idealPlayerCounts()->delete();
 
