@@ -144,15 +144,23 @@ const gameMode = (): string => {
         competitive: 'Competitivo',
         cooperative: 'Cooperativo',
         semi_cooperative: 'Semicooperativo',
+        solo: 'Solitario',
+        unclassified: 'Sin clasificar',
     };
 
-    if (props.game.game_modes.length === 0) {
+    const modes = props.game.game_modes.length
+        ? props.game.game_modes
+        : props.game.game_mode
+            ? [props.game.game_mode]
+            : [];
+
+    if (!modes.length) {
         return props.game.max_players === 1
             ? 'Solitario'
             : 'Sin clasificar';
     }
 
-    return props.game.game_modes
+    return modes
         .map(mode => labels[mode] ?? mode)
         .join(' · ');
 };
@@ -333,7 +341,7 @@ const tutorialUrl = (game: Game): string =>
                     </div>
 
                     <p class="mt-3 text-sm font-medium text-zinc-500 sm:mt-5">
-                        Modalidad: <Swords v-if="game.game_modes.includes('competitive')" class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-orange-700" :stroke-width="2.2" aria-hidden="true" /> {{ gameMode() }}
+                        Modalidad: <Swords v-if="game.game_modes.includes('competitive') || (game.game_modes.length === 0 && game.game_mode === 'competitive')" class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-orange-700" :stroke-width="2.2" aria-hidden="true" /> {{ gameMode() }}
                     </p>
 
                     <!-- ENLACES EXTERNOS -->

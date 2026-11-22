@@ -196,6 +196,13 @@ const gameModeLabels: Record<string, string> = {
     unclassified: 'Sin clasificar',
 };
 
+const visibleGameModes = (game: Game): string[] =>
+    game.game_modes.length
+        ? game.game_modes
+        : game.game_mode
+            ? [game.game_mode]
+            : [];
+
 type FilterKey = 'search' | 'players' | 'collection' | 'duration' | 'difficulty' | 'mode';
 type FilterChip = { key: FilterKey; label: string };
 
@@ -511,7 +518,7 @@ const formatDate = (date: string | null): string => {
 
                         <div class="mt-3 flex flex-wrap gap-2">
                             <span
-                                v-for="mode in game.game_modes"
+                                v-for="mode in visibleGameModes(game)"
                                 :key="mode"
                                 class="rounded-full px-3 py-1 text-xs font-bold"
                                 :class="{
@@ -528,7 +535,7 @@ const formatDate = (date: string | null): string => {
                             </span>
 
                             <span
-                                v-if="game.game_modes.length === 0"
+                                v-if="visibleGameModes(game).length === 0"
                                 class="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
                             >
                                 {{

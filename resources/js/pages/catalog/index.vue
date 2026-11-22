@@ -63,7 +63,11 @@ const gameModeLabels: Record<string, string> = {
 };
 
 const catalogGameModes = (game: Game): string[] =>
-    game.game_modes.length ? game.game_modes : [game.max_players === 1 ? 'solo' : 'unclassified'];
+    game.game_modes.length
+        ? game.game_modes
+        : game.game_mode
+            ? [game.game_mode]
+            : [game.max_players === 1 ? 'solo' : 'unclassified'];
 
 const gameModeOptions = computed(() => {
     const availableModes = new Set(props.games.flatMap(catalogGameModes));
