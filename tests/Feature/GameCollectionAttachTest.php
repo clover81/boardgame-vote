@@ -78,3 +78,38 @@ test('guests cannot add games to collections', function () {
 
     $this->assertDatabaseCount('game_collection_game', 2);
 });
+
+test('updating memberships requires previous ownership of the game', function () {
+    $privateGame = Game::create([
+        'name' => 'Juego de otra cuenta',
+        'min_players' => 1,
+        'max_players' => 4,
+    ]);
+
+    $privateGame->collections()->attach($this->foreignCollection);
+
+    $this->actingAs($this->user)
+        ->put(route('games.collections.update', $privateGame), [
+            'collection_ids' => [$this->ownedCollections[1]->id],
+        ])
+        ->assertForbidden();
+
+    expect($privateGame->fresh()->collections->modelKeys())
+        ->toBe([$this->foreignCollection->id]);
+});
+
+test('updating owned memberships preserves other users collections', function () {
+    $this->actingAs($this->user)
+        ->from(route('games.index'))
+        ->put(route('games.collections.update', $this->game), [
+            'collection_ids' => [$this->ownedCollections[1]->id],
+        ])
+        ->assertRedirect(route('games.index'))
+        ->assertSessionHasNoErrors();
+
+    expect($this->game->fresh()->collections->modelKeys())
+        ->toEqualCanonicalizing([
+            $this->ownedCollections[1]->id,
+            $this->foreignCollection->id,
+        ]);
+});

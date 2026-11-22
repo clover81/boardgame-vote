@@ -86,6 +86,19 @@ test('game summaries count only the signed in users plays and agree with the gam
         );
 });
 
+test('private collection counters exclude inactive games', function () {
+    $this->actingAs($this->user)
+        ->get(route('games.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('games', 3)
+            ->where('collections.0.id', $this->collection->id)
+            ->where('collections.0.games_count', 2)
+            ->where('collections.1.id', $this->secondCollection->id)
+            ->where('collections.1.games_count', 2)
+        );
+});
+
 test('the collection filter selects only games in that owned collection', function () {
     $this->actingAs($this->user)->get(route('games.index', [
         'collection_id' => $this->secondCollection->id,

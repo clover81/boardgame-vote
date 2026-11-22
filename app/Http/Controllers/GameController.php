@@ -607,7 +607,10 @@ class GameController extends Controller
 
         $collections = GameCollection::query()
             ->where('created_by', $userId)
-            ->withCount('games')
+            ->withCount([
+                'games' => fn ($query) => $query
+                    ->where('games.is_active', true),
+            ])
             ->orderByDesc('is_default')
             ->orderBy('name')
             ->get();

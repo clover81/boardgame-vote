@@ -59,6 +59,15 @@ class GameCollectionMembershipController extends Controller
         Request $request,
         Game $game
     ): RedirectResponse {
+        // Esta operación modifica las asociaciones existentes.
+        // El juego debe pertenecer ya a una colección de esta cuenta.
+        abort_unless(
+            $game->collections()
+                ->where('game_collections.created_by', $request->user()->id)
+                ->exists(),
+            403
+        );
+
         $validated = $request->validate([
             'collection_ids' => [
                 'required',

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Game;
 use App\Models\GameCollection;
 use App\Models\User;
 use Illuminate\Support\Str;
@@ -64,6 +65,42 @@ test('the owner can share and hide collections while keeping the same catalog to
         ->assertRedirect($indexUrl);
     $this->assertDatabaseHas('game_collections', ['id' => $otherCollection->id, 'is_public' => true]);
     expect($user->fresh()->catalog_share_token)->toBe($token);
+});
+
+test('collection cards count only active games', function () {
+    $this->withoutVite();
+
+    $user = User::factory()->create();
+
+    $collection = GameCollection::create([
+        'created_by' => $user->id,
+        'name' => 'Colección con juego inactivo',
+    ]);
+
+    $active = Game::create([
+        'name' => 'Juego activo',
+        'min_players' => 1,
+        'max_players' => 4,
+        'is_active' => true,
+    ]);
+
+    $inactive = Game::create([
+        'name' => 'Juego inactivo',
+        'min_players' => 1,
+        'max_players' => 4,
+        'is_active' => false,
+    ]);
+
+    $collection->games()->attach([$active->id, $inactive->id]);
+
+    $this->actingAs($user)
+        ->get(route('collections.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('collections/index')
+            ->has('collections', 1)
+            ->where('collections.0.games_count', 1)
+        );
 });
 
 test('another account cannot change a collections visibility', function () {
