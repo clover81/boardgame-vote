@@ -52,6 +52,8 @@ interface Poll {
     participants_count: number;
     candidates_count: number;
     has_registered_play: boolean;
+    votes_count: number;
+    delete_block_reason: string | null;
 
     collections?: Collection[];
 
@@ -238,23 +240,48 @@ const formatDate = (
 const pollToDelete = ref<Poll | null>(null);
 const deleteDialogOpen = ref(false);
 const deletingPollId = ref<number | null>(null);
+const deletionConfirmation = ref('');
 
-const requestDraftDeletion = (poll: Poll) => {
-    if (poll.status !== 'draft' || deletingPollId.value !== null) return;
+const requiresDeletionWord = computed(() =>
+    pollToDelete.value !== null &&
+    (
+        pollToDelete.value.status !== 'draft' ||
+        pollToDelete.value.votes_count > 0
+    )
+);
+
+const canConfirmDeletion = computed(() =>
+    pollToDelete.value !== null &&
+    pollToDelete.value.delete_block_reason === null &&
+    deletingPollId.value === null &&
+    (
+        !requiresDeletionWord.value ||
+        deletionConfirmation.value === 'ELIMINAR'
+    )
+);
+
+const requestPollDeletion = (poll: Poll) => {
+    if (deletingPollId.value !== null || poll.delete_block_reason !== null) {
+        return;
+    }
+
     pollToDelete.value = poll;
+    deletionConfirmation.value = '';
     deleteDialogOpen.value = true;
 };
 
-const confirmDraftDeletion = () => {
+const confirmPollDeletion = () => {
     const poll = pollToDelete.value;
-    if (!poll || deletingPollId.value !== null) return;
+    if (!poll || !canConfirmDeletion.value) return;
 
     deletingPollId.value = poll.id;
 
     const filters = new URLSearchParams();
 
     for (const [key, value] of Object.entries(currentFilters.value)) {
-        if (value !== undefined) filters.set(key, String(value));
+        if (value !== undefined) {
+            filters.set(key, String(value));
+        }
     }
 
     const url = filters.size
@@ -262,10 +289,21 @@ const confirmDraftDeletion = () => {
         : `/polls/${poll.id}`;
 
     router.delete(url, {
+        data: requiresDeletionWord.value
+            ? { confirmation: deletionConfirmation.value }
+            : {},
         preserveScroll: true,
-        onSuccess: () => {
-            deleteDialogOpen.value = false;
-            pollToDelete.value = null;
+        onSuccess: (page) => {
+            const remaining = page.props.polls;
+
+            if (
+                Array.isArray(remaining) &&
+                !remaining.some(item => item.id === poll.id)
+            ) {
+                deleteDialogOpen.value = false;
+                pollToDelete.value = null;
+                deletionConfirmation.value = '';
+            }
         },
         onFinish: () => {
             deletingPollId.value = null;
@@ -587,18 +625,6 @@ const confirmDraftDeletion = () => {
                                 </span>
                             </div>
 
-                            <p
-                                v-if="
-                                    poll.status === 'draft' &&
-                                    poll.session_position === 1 &&
-                                    poll.linked_poll_id !== null
-                                "
-                                class="mt-3 text-xs leading-5 text-zinc-600 dark:text-zinc-400"
-                            >
-                                Para eliminar este borrador, primero debes
-                                eliminar la votación del juego 2, siempre
-                                que esta siga en borrador.
-                            </p>
                         </div>
 
                         <!-- ACCIONES -->
@@ -666,15 +692,23 @@ const confirmDraftDeletion = () => {
                                 <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Registrar partida
                             </Link>
 
-                            <button
-                                v-if="poll.status === 'draft' && !(poll.session_position === 1 && poll.linked_poll_id !== null)"
-                                type="button"
-                                :disabled="deletingPollId !== null"
-                                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-red-300 px-4 py-2.5 text-sm font-bold text-red-700 transition hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:opacity-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
-                                @click="requestDraftDeletion(poll)"
-                            >
-                                Eliminar borrador
-                            </button>
+                            <div class="flex max-w-sm flex-col gap-1">
+                                <button
+                                    v-if="poll.delete_block_reason === null"
+                                    type="button"
+                                    :disabled="deletingPollId !== null"
+                                    class="inline-flex min-h-11 items-center justify-center rounded-xl border border-red-300 px-4 py-2.5 text-sm font-bold text-red-700 transition hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:opacity-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+                                    @click="requestPollDeletion(poll)"
+                                >
+                                    Eliminar votación
+                                </button>
+                                <p
+                                    v-else
+                                    class="text-xs leading-5 text-zinc-600 dark:text-zinc-400"
+                                >
+                                    {{ poll.delete_block_reason }}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </article>
@@ -705,24 +739,57 @@ const confirmDraftDeletion = () => {
             <Dialog v-model:open="deleteDialogOpen">
                 <DialogContent class="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>¿Eliminar este borrador?</DialogTitle>
+                        <DialogTitle>¿Eliminar esta votación definitivamente?</DialogTitle>
                         <DialogDescription class="pt-2">
                             Vas a eliminar «{{ pollToDelete?.name }}».
+                            Esta acción no se puede deshacer.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <p class="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
-                        Se eliminarán sus candidatos y participantes.
-                        Los juegos del catálogo y las demás votaciones
-                        se conservarán.
-                    </p>
+                    <div class="space-y-3 text-sm leading-6 text-zinc-700 dark:text-zinc-300">
+                        <p>
+                            Se eliminarán los votos, candidatos y participantes
+                            asociados a esta votación.
+                        </p>
 
-                    <p
-                        v-if="pollToDelete?.session_position === 2"
-                        class="text-sm font-semibold text-zinc-700 dark:text-zinc-200"
-                    >
-                        El primer juego de la sesión no se eliminará.
-                    </p>
+                        <p
+                            v-if="pollToDelete?.votes_count"
+                            class="font-semibold text-red-700 dark:text-red-300"
+                        >
+                            Contiene {{ pollToDelete?.votes_count }}
+                            registros de voto, incluidas las preferencias.
+                        </p>
+
+                        <p>
+                            Los juegos del catálogo, tus jugadores
+                            y las partidas registradas se conservarán.
+                        </p>
+
+                        <p
+                            v-if="pollToDelete?.session_position === 2"
+                            class="font-semibold"
+                        >
+                            La votación del primer juego de la sesión
+                            no se eliminará.
+                        </p>
+                    </div>
+
+                    <div v-if="requiresDeletionWord" class="mt-2">
+                        <label
+                            for="delete-poll-confirmation"
+                            class="block text-sm font-semibold text-zinc-800 dark:text-zinc-200"
+                        >
+                            Escribe ELIMINAR para confirmar
+                        </label>
+                        <input
+                            id="delete-poll-confirmation"
+                            v-model="deletionConfirmation"
+                            type="text"
+                            autocomplete="off"
+                            class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                            placeholder="ELIMINAR"
+                        />
+                    </div>
 
                     <DialogFooter class="mt-3 gap-2">
                         <button
@@ -736,11 +803,11 @@ const confirmDraftDeletion = () => {
 
                         <button
                             type="button"
-                            :disabled="deletingPollId !== null"
-                            class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white hover:bg-red-700 disabled:opacity-50"
-                            @click="confirmDraftDeletion"
+                            :disabled="!canConfirmDeletion"
+                            class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            @click="confirmPollDeletion"
                         >
-                            {{ deletingPollId !== null ? 'Eliminando...' : 'Sí, eliminar borrador' }}
+                            {{ deletingPollId !== null ? 'Eliminando...' : 'Eliminar definitivamente' }}
                         </button>
                     </DialogFooter>
                 </DialogContent>

@@ -48,7 +48,12 @@ class PollController extends Controller
 
         $polls = Poll::query()
             ->where('created_by', $userId)
-            ->withCount(['participants', 'candidates'])
+            ->withCount([
+                'participants',
+                'candidates',
+                'votes',
+                'tieBreakPoll as tie_break_round_count',
+            ])
             ->with([
                 'gameCollections' => fn ($query) => $query
                     ->where('created_by', $userId),
@@ -67,15 +72,68 @@ class PollController extends Controller
             ->latest()
             ->get();
 
-        // Una sola consulta adicional para las partidas registradas del usuario.
-        $playedPollIds = DB::table('plays')
-            ->where('created_by', $userId)
-            ->whereNotNull('poll_id')
+        // Una sola consulta para las partidas de votaciones propias.
+        // Los indicadores públicos solo usan partidas del usuario,
+        // pero el borrado protege cualquier partida vinculada.
+        $playLinks = DB::table('plays')
+            ->join('polls as played_poll', 'played_poll.id', '=', 'plays.poll_id')
+            ->where('played_poll.created_by', $userId)
+            ->select([
+                'plays.poll_id',
+                'plays.created_by as play_owner_id',
+                'played_poll.parent_poll_id',
+            ])
+            ->get();
+
+        $playedPollIds = $playLinks
+            ->filter(fn ($play) => (int) $play->play_owner_id === (int) $userId)
             ->pluck('poll_id')
             ->map(fn ($id) => (int) $id)
+            ->unique()
             ->all();
 
-        $polls = $polls->map(fn (Poll $poll) => [
+        $allPlayedPollIds = $playLinks
+            ->pluck('poll_id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->all();
+
+        $originalsWithPlayedSecondIds = $playLinks
+            ->pluck('parent_poll_id')
+            ->filter(fn ($id) => $id !== null)
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->all();
+
+        $polls = $polls->map(function (Poll $poll) use (
+            $playedPollIds,
+            $allPlayedPollIds,
+            $originalsWithPlayedSecondIds
+        ) {
+            $relatedIds = array_values(array_unique(array_filter([
+                (int) $poll->parent_poll_id,
+                (int) $poll->tie_break_for_poll_id,
+            ])));
+
+            $relatedHasPlay = collect($relatedIds)->contains(
+                fn ($id) =>
+                    in_array($id, $allPlayedPollIds, true)
+                    || in_array($id, $originalsWithPlayedSecondIds, true)
+            );
+
+            $deleteBlockReason = match (true) {
+                in_array((int) $poll->id, $allPlayedPollIds, true) =>
+                    'Tiene partidas registradas. No puede eliminarse.',
+                $poll->secondGamePoll !== null =>
+                    'Elimina primero la votación del juego 2.',
+                (int) $poll->tie_break_round_count > 0 =>
+                    'Elimina primero su ronda de desempate.',
+                $relatedHasPlay =>
+                    'Pertenece a una sesión con partidas registradas.',
+                default => null,
+            };
+
+            return [
             'id' => $poll->id,
             'name' => $poll->name,
             'token' => $poll->token,
@@ -105,13 +163,16 @@ class PollController extends Controller
                 true
             ),
             'created_at' => $poll->created_at?->toIso8601String(),
+            'votes_count' => (int) $poll->votes_count,
+            'delete_block_reason' => $deleteBlockReason,
             'collections' => $poll->gameCollections
                 ->map(fn ($collection) => [
                     'id' => $collection->id,
                     'name' => $collection->name,
                 ])
                 ->values(),
-        ]);
+            ];
+        });
 
         return Inertia::render('polls/index', [
             'polls' => $polls,
@@ -1496,45 +1557,102 @@ class PollController extends Controller
     }
 
     /**
-     * Eliminar exclusivamente borradores sin actividad histórica.
-     * Nunca se elimina automáticamente otro juego de la sesión.
+     * Eliminar una votación propia sin destruir partidas ni otras
+     * votaciones accidentalmente.
+     *
+     * Las votaciones con votos o fuera de borrador necesitan
+     * confirmación expresa.
      */
     public function destroy(Request $request, Poll $poll): RedirectResponse
     {
-        abort_unless(
-            (int) $poll->created_by === (int) $request->user()->id,
-            403
-        );
+        $userId = (int) $request->user()->id;
+
+        abort_unless((int) $poll->created_by === $userId, 403);
 
         $blockedReason = DB::transaction(
-            function () use ($poll, $request): ?string {
+            function () use ($poll, $request, $userId): ?string {
                 $current = Poll::query()
                     ->lockForUpdate()
                     ->findOrFail($poll->id);
 
                 abort_unless(
-                    (int) $current->created_by === (int) $request->user()->id,
+                    (int) $current->created_by === $userId,
                     403
                 );
 
-                if ($current->status !== 'draft') {
-                    return 'Solo puedes eliminar votaciones en borrador.';
-                }
-
-                if ($current->votes()->exists()) {
-                    return 'Esta votación ya tiene votos y no se puede eliminar.';
-                }
-
                 if ($current->plays()->exists()) {
-                    return 'Esta votación tiene partidas registradas y no se puede eliminar.';
+                    return 'Esta votación tiene partidas registradas. No se ha eliminado.';
                 }
 
                 if ($current->secondGamePoll()->exists()) {
                     return 'Primero debes eliminar el segundo juego de esta sesión.';
                 }
 
-                // Las relaciones de participantes, candidatos y
-                // colecciones tienen eliminación en cascada.
+                if ($current->tieBreakPoll()->exists()) {
+                    return 'Primero debes eliminar la ronda de desempate vinculada.';
+                }
+
+                // Comprobar también las partidas del origen de un
+                // segundo juego o de una ronda de desempate.
+                $relatedPolls = [];
+
+                $relatedIds = array_unique(array_filter([
+                    $current->parent_poll_id,
+                    $current->tie_break_for_poll_id,
+                ]));
+
+                foreach ($relatedIds as $relatedId) {
+                    $related = Poll::query()
+                        ->lockForUpdate()
+                        ->find((int) $relatedId);
+
+                    if ($related === null) {
+                        continue;
+                    }
+
+                    if ((int) $related->created_by !== $userId) {
+                        return 'No puedes modificar una votación vinculada de otra cuenta.';
+                    }
+
+                    if (
+                        $related->plays()->exists()
+                        || $related->secondGamePoll()
+                            ->whereHas('plays')
+                            ->exists()
+                    ) {
+                        return 'Esta votación pertenece a una sesión con partidas registradas.';
+                    }
+
+                    $relatedPolls[$related->id] = $related;
+                }
+
+                $hasVotes = $current->votes()->exists();
+
+                if (
+                    ($current->status !== 'draft' || $hasVotes)
+                    && $request->input('confirmation') !== 'ELIMINAR'
+                ) {
+                    return 'Debes escribir ELIMINAR para confirmar el borrado definitivo.';
+                }
+
+                // Si se elimina un desempate sin partidas asociadas,
+                // no puede quedar un sorteo apuntando a esa ronda.
+                if ($current->tie_break_for_poll_id !== null) {
+                    $original = $relatedPolls[
+                        $current->tie_break_for_poll_id
+                    ] ?? null;
+
+                    if ($original !== null) {
+                        $original->update([
+                            'tie_break_draw_winner_game_id' => null,
+                            'tie_break_drawn_at' => null,
+                        ]);
+                    }
+                }
+
+                // Los participantes, candidatos, votos y vínculos
+                // con colecciones se eliminan mediante sus FK.
+                // Los juegos, jugadores y partidas no se borran.
                 $current->delete();
 
                 return null;
@@ -1552,7 +1670,7 @@ class PollController extends Controller
 
         return redirect()
             ->route('polls.index', $filters)
-            ->with('success', 'Borrador eliminado correctamente.');
+            ->with('success', 'Votación eliminada definitivamente.');
     }
 
     public function updateVotingMode(Request $request, Poll $poll): RedirectResponse
