@@ -19,6 +19,7 @@ import {
 
 import AppLayout from '@/layouts/AppLayout.vue';
 import AlertError from '@/components/AlertError.vue';
+import PlayWinnersPicker from '@/components/PlayWinnersPicker.vue';
 import InputError from '@/components/InputError.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
@@ -98,6 +99,8 @@ const form = useForm({
 
     player_ids:
         (props.selected_player_id !== null ? [props.selected_player_id] : []) as number[],
+
+    winner_ids: [] as number[],
 
     notes:
         '',
@@ -231,15 +234,23 @@ watch(
 |--------------------------------------------------------------------------
 */
 
+watch(
+    () => [...form.player_ids],
+    ids => {
+        form.winner_ids = form.winner_ids.filter(id => ids.includes(id));
+    }
+);
+
 const saveError = ref<HTMLDivElement | null>(null);
 
 const submit = () => {
     if (form.processing) return;
 
-    form.transform(({ game_id, expansion_id, ...data }) => ({
+    form.transform(({ game_id, expansion_id, winner_ids, ...data }) => ({
         ...data,
         game_ids: game_id === null ? [] : [game_id],
         expansion_ids: game_id === null ? {} : { [game_id]: expansion_id },
+        winner_player_ids: game_id === null ? {} : { [game_id]: winner_ids },
     })).post(playStoreUrl.value, {
         preserveScroll: 'errors',
         onError: async (errors) => {
@@ -251,6 +262,12 @@ const submit = () => {
             const expansionError = errors.expansion_ids ?? errors[`expansion_ids.${form.game_id}`];
             if (expansionError) {
                 form.setError('expansion_id', expansionError);
+            }
+
+            const winnerError = errors.winner_player_ids;
+
+            if (winnerError) {
+                form.setError('winner_ids', winnerError);
             }
 
             await nextTick();
@@ -524,6 +541,14 @@ const submit = () => {
 
                     <InputError :message="form.errors.player_ids" />
                 </section>
+
+                <PlayWinnersPicker
+                    v-model="form.winner_ids"
+                    :players="players"
+                    :participant-ids="form.player_ids"
+                />
+
+                <InputError :message="form.errors.winner_ids" />
 
                 <!-- ================================================== -->
                 <!-- NOTAS                                              -->

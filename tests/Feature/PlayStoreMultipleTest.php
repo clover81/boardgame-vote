@@ -77,12 +77,14 @@ test('multiple games create separate plays with shared details and only their ow
             ->where('poll.plays.0.players', $this->players->map(fn ($player) => [
                 'id' => $player->id,
                 'name' => $player->name,
+                'is_winner' => false,
             ])->all())
             ->where('poll.plays.1.game.name', 'The White Castle')
             ->where('poll.plays.1.expansion.name', 'Matcha')
             ->where('poll.plays.1.players', $this->players->map(fn ($player) => [
                 'id' => $player->id,
                 'name' => $player->name,
+                'is_winner' => false,
             ])->all())
         );
 
@@ -207,6 +209,103 @@ test('manual play return rejects unrelated or external destinations', function (
 
     expect(Play::count())->toBe(1);
 })->with(['external', 'different-game', 'other-section']);
+
+test('multiple games can have different optional winners', function () {
+    $first = $this->games[0];
+    $second = $this->games[1];
+    $ana = $this->players[0];
+    $bea = $this->players[1];
+
+    $this->payload['winner_player_ids'] = [
+        $first->id => [$ana->id],
+        $second->id => [$bea->id],
+    ];
+
+    $this->actingAs($this->user)
+        ->post(route('plays.store'), $this->payload)
+        ->assertSessionHasNoErrors();
+
+    $plays = Play::query()->get()->keyBy('game_id');
+
+    $this->assertDatabaseHas('play_player', [
+        'play_id' => $plays[$first->id]->id,
+        'player_id' => $ana->id,
+        'is_winner' => 1,
+    ]);
+
+    $this->assertDatabaseHas('play_player', [
+        'play_id' => $plays[$first->id]->id,
+        'player_id' => $bea->id,
+        'is_winner' => 0,
+    ]);
+
+    $this->assertDatabaseHas('play_player', [
+        'play_id' => $plays[$second->id]->id,
+        'player_id' => $bea->id,
+        'is_winner' => 1,
+    ]);
+});
+
+test('multiple winners are supported and winners are optional', function () {
+    unset($this->payload['poll_id']);
+    $this->payload['winner_player_ids'] = [
+        $this->games[0]->id => $this->players->pluck('id')->all(),
+    ];
+
+    $this->actingAs($this->user)
+        ->post(route('plays.store'), $this->payload)
+        ->assertSessionHasNoErrors();
+
+    $plays = Play::query()->get()->keyBy('game_id');
+
+    foreach ($this->players as $player) {
+        $this->assertDatabaseHas('play_player', [
+            'play_id' => $plays[$this->games[0]->id]->id,
+            'player_id' => $player->id,
+            'is_winner' => 1,
+        ]);
+
+        $this->assertDatabaseHas('play_player', [
+            'play_id' => $plays[$this->games[1]->id]->id,
+            'player_id' => $player->id,
+            'is_winner' => 0,
+        ]);
+    }
+});
+
+test('winner must belong to the selected game and participants', function ($kind) {
+    unset($this->payload['poll_id']);
+    $this->payload['game_ids'] = [$this->games[0]->id];
+
+    $gameId = $kind === 'other-game'
+        ? $this->games[1]->id
+        : $this->games[0]->id;
+
+    $winnerIds = match ($kind) {
+        'not-participant' => [
+            Player::create([
+                'created_by' => $this->user->id,
+                'name' => 'Invitado',
+                'is_active' => true,
+            ])->id,
+        ],
+        'duplicate' => [
+            $this->players[0]->id,
+            $this->players[0]->id,
+        ],
+        default => [$this->players[0]->id],
+    };
+
+    $this->payload['winner_player_ids'] = [
+        $gameId => $winnerIds,
+    ];
+
+    $this->actingAs($this->user)
+        ->post(route('plays.store'), $this->payload)
+        ->assertSessionHasErrors('winner_player_ids');
+
+    $this->assertDatabaseCount('plays', 0);
+})->with(['other-game', 'not-participant', 'duplicate']);
 
 test('multiple manual plays can be stored without a poll', function () {
     unset($this->payload['poll_id']);

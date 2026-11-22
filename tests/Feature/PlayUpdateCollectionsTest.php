@@ -98,6 +98,60 @@ test('update accepts a game from another owned collection and its active expansi
     expect($play->players->modelKeys())->toBe([$this->newPlayer->id]);
 });
 
+test('editing a play can set and clear its winners', function () {
+    $this->payload['winner_player_ids'] = [$this->newPlayer->id];
+
+    $this->actingAs($this->user)
+        ->put(route('plays.update', $this->play), $this->payload)
+        ->assertSessionHasNoErrors();
+
+    $this->assertDatabaseHas('play_player', [
+        'play_id' => $this->play->id,
+        'player_id' => $this->newPlayer->id,
+        'is_winner' => 1,
+    ]);
+
+    $this->payload['winner_player_ids'] = [];
+
+    $this->put(route('plays.update', $this->play), $this->payload)
+        ->assertSessionHasNoErrors();
+
+    $this->assertDatabaseHas('play_player', [
+        'play_id' => $this->play->id,
+        'player_id' => $this->newPlayer->id,
+        'is_winner' => 0,
+    ]);
+});
+
+test('editing rejects a winner who did not participate', function () {
+    $this->payload['winner_player_ids'] = [$this->originalPlayer->id];
+
+    $this->actingAs($this->user)
+        ->put(route('plays.update', $this->play), $this->payload)
+        ->assertSessionHasErrors('winner_player_ids');
+
+    expect($this->play->fresh()->players->modelKeys())
+        ->toBe([$this->originalPlayer->id]);
+});
+
+test('editing without a winner field preserves existing winners', function () {
+    $this->play->players()->updateExistingPivot(
+        $this->originalPlayer->id,
+        ['is_winner' => true]
+    );
+    $this->payload['player_ids'] = [$this->originalPlayer->id];
+
+    $this->actingAs($this->user)
+        ->put(route('plays.update', $this->play), $this->payload)
+        ->assertSessionHasNoErrors();
+
+    $this->assertDatabaseHas('play_player', [
+        'play_id' => $this->play->id,
+        'player_id' => $this->originalPlayer->id,
+        'is_winner' => 1,
+    ]);
+});
+
 test('update can clear an expansion', function ($input) {
     if ($input === 'omitted') {
         unset($this->payload['expansion_id']);

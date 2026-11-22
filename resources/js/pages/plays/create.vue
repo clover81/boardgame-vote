@@ -20,6 +20,7 @@ import {
 
 import AppLayout from '@/layouts/AppLayout.vue';
 import AlertError from '@/components/AlertError.vue';
+import PlayWinnersPicker from '@/components/PlayWinnersPicker.vue';
 import InputError from '@/components/InputError.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
@@ -122,6 +123,8 @@ const form = useForm({
     player_ids:
         [...(props.initial_player_ids ?? props.defaults.player_ids)],
 
+    winner_player_ids: {} as Record<number, number[]>,
+
     notes: '',
 });
 
@@ -223,6 +226,19 @@ watch(
 |--------------------------------------------------------------------------
 */
 
+watch(
+    () => [...form.player_ids],
+    ids => {
+        for (const key of Object.keys(form.winner_player_ids)) {
+            const gameId = Number(key);
+            const current = form.winner_player_ids[gameId] ?? [];
+            form.winner_player_ids[gameId] = current.filter(
+                id => ids.includes(id)
+            );
+        }
+    }
+);
+
 const saveError = ref<HTMLDivElement | null>(null);
 
 const submit = () => {
@@ -232,6 +248,12 @@ const submit = () => {
         ...data,
         expansion_ids: Object.fromEntries(
             data.game_ids.map((gameId) => [gameId, data.expansion_ids[gameId] ?? null])
+        ),
+        winner_player_ids: Object.fromEntries(
+            data.game_ids.map((gameId) => [
+                gameId,
+                data.winner_player_ids[gameId] ?? [],
+            ])
         ),
     })).post(`/plays${pollReturnQuery.value}`, {
         preserveScroll: 'errors',
@@ -557,6 +579,20 @@ const submit = () => {
 
                     <InputError :message="form.errors.player_ids" />
                 </section>
+
+                <div v-if="selectedGames.length" class="space-y-4">
+                    <PlayWinnersPicker
+                        v-for="game in selectedGames"
+                        :key="game.id"
+                        :players="players"
+                        :participant-ids="form.player_ids"
+                        :model-value="form.winner_player_ids[game.id] ?? []"
+                        :heading="`Ganadores de ${game.name}`"
+                        @update:model-value="(ids: number[]) => (form.winner_player_ids[game.id] = ids)"
+                    />
+                </div>
+
+                <InputError :message="form.errors.winner_player_ids" />
 
                 <!-- ================================================== -->
                 <!-- NOTAS                                              -->

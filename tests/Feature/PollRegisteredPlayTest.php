@@ -51,7 +51,7 @@ test('registered play data reflects the actual game expansion players and vote o
         'expansion_id' => $expansion->id,
         'played_at' => '2026-10-25',
     ]);
-    $play->players()->attach($player->id);
+    $play->players()->attach($player->id, ['is_winner' => true]);
 
     $this->actingAs($this->user)->get(route('polls.show', $this->poll))
         ->assertOk()
@@ -64,14 +64,14 @@ test('registered play data reflects the actual game expansion players and vote o
                 'played_at' => '2026-10-25',
                 'game' => ['id' => $game->id, 'name' => $game->name],
                 'expansion' => ['id' => $expansion->id, 'name' => $expansion->name],
-                'players' => [['id' => $player->id, 'name' => 'Jugador real']],
+                'players' => [['id' => $player->id, 'name' => 'Jugador real', 'is_winner' => true]],
             ]])
             ->where('poll.registered_play', [
                 'id' => $play->id,
                 'played_at' => '2026-10-25',
                 'game' => ['id' => $game->id, 'name' => $game->name, 'image_url' => null],
                 'expansion' => ['id' => $expansion->id, 'name' => $expansion->name],
-                'players' => [['id' => $player->id, 'name' => 'Jugador real']],
+                'players' => [['id' => $player->id, 'name' => 'Jugador real', 'is_winner' => true]],
                 'was_candidate' => $wasCandidate,
                 'was_winner' => $wasWinner,
             ])

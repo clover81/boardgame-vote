@@ -2,7 +2,7 @@
 import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
 import MeepleIcon from '@/components/icons/MeepleIcon.vue';
 import { playerNameColor } from '@/lib/player-colors';
-import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, CalendarHeart, UsersRound, HourglassCog, Swords, BrainCog, NotebookPen } from '@lucide/vue';
+import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, CalendarHeart, UsersRound, Trophy, HourglassCog, Swords, BrainCog, NotebookPen } from '@lucide/vue';
 
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 
@@ -90,6 +90,7 @@ interface Game {
 interface HistoryPlayer {
     id: number;
     name: string;
+    is_winner: boolean;
 }
 
 interface HistoryExpansion {
@@ -1230,6 +1231,12 @@ const formatGameMode = (
                                         >
                                             <MeepleIcon class="h-4 w-4 shrink-0" />
                                             {{ player.name }}
+                                            <Trophy
+                                                v-if="player.is_winner"
+                                                class="ml-1 h-4 w-4 shrink-0 text-amber-500"
+                                                role="img"
+                                                aria-label="Ganador de la partida"
+                                            />
                                         </span>
                                     </div>
                                 </div>

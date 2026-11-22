@@ -18,6 +18,7 @@ import {
 
 import AppLayout from '@/layouts/AppLayout.vue';
 import AlertError from '@/components/AlertError.vue';
+import PlayWinnersPicker from '@/components/PlayWinnersPicker.vue';
 import InputError from '@/components/InputError.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
@@ -50,6 +51,7 @@ interface Play {
     notes: string | null;
 
     player_ids: number[];
+    winner_player_ids: number[];
 }
 
 const props = defineProps<{
@@ -77,6 +79,9 @@ const form = useForm({
 
     player_ids:
         [...props.play.player_ids],
+
+    winner_player_ids:
+        [...props.play.winner_player_ids],
 
     notes:
         props.play.notes ?? '',
@@ -203,6 +208,15 @@ watch(
 | Guardar
 |--------------------------------------------------------------------------
 */
+
+watch(
+    () => [...form.player_ids],
+    ids => {
+        form.winner_player_ids = form.winner_player_ids.filter(
+            id => ids.includes(id)
+        );
+    }
+);
 
 const saveError = ref<HTMLDivElement | null>(null);
 
@@ -535,6 +549,14 @@ const submit = () => {
 
                     <InputError :message="form.errors.player_ids" />
                 </section>
+
+                <PlayWinnersPicker
+                    v-model="form.winner_player_ids"
+                    :players="players"
+                    :participant-ids="form.player_ids"
+                />
+
+                <InputError :message="form.errors.winner_player_ids" />
 
                 <!-- NOTAS -->
 

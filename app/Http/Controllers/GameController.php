@@ -242,6 +242,9 @@ class GameController extends Controller
                                                 'name' =>
                                                 $player
                                                     ->name,
+
+                                                'is_winner' =>
+                                                (bool) $player->pivot->is_winner,
                                             ]
                                         )
                                         ->values(),

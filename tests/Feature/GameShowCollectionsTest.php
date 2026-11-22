@@ -102,7 +102,7 @@ test('a shared game page exposes only the current users play history', function 
         'played_at' => '2026-10-25',
         'notes' => 'Mi partida',
     ]);
-    $latestPlay->players()->attach($player);
+    $latestPlay->players()->attach($player, ['is_winner' => true]);
     Play::create([
         'created_by' => $otherUser->id,
         'game_id' => $game->id,
@@ -124,7 +124,7 @@ test('a shared game page exposes only the current users play history', function 
             ->where('history.plays.0.id', $latestPlay->id)
             ->where('history.plays.0.notes', 'Mi partida')
             ->where('history.plays.0.expansion', ['id' => $zExpansion->id, 'name' => 'Zeta'])
-            ->where('history.plays.0.players', [['id' => $player->id, 'name' => 'Ana']])
+            ->where('history.plays.0.players', [['id' => $player->id, 'name' => 'Ana', 'is_winner' => true]])
             ->where('history.plays.1.id', $olderPlay->id)
         );
 

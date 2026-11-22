@@ -4,7 +4,7 @@ import { playerNameColor } from '@/lib/player-colors';
 import MeepleIcon from '@/components/icons/MeepleIcon.vue';
 import { BuildingComplexPlus } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
-import { CalendarHeart, NotebookPen, SlidersHorizontal } from '@lucide/vue';
+import { CalendarHeart, NotebookPen, SlidersHorizontal, Trophy } from '@lucide/vue';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import {
     Head,
@@ -33,6 +33,7 @@ import {
 interface Player {
     id: number;
     name: string;
+    is_winner: boolean;
 }
 
 interface Game {
@@ -791,6 +792,14 @@ const confirmDeletePlay = () => {
                                         class="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 sm:text-sm dark:bg-zinc-800 dark:text-zinc-200"
                                     >
                                         <span :class="['inline-flex items-center gap-1.5', playerNameColor(player.name)]"><MeepleIcon class="h-3.5 w-3.5 shrink-0" />{{ player.name }}</span>
+                                        <span
+                                            v-if="player.is_winner"
+                                            class="ml-1 inline-flex items-center text-amber-600 dark:text-amber-400"
+                                            title="Ganador de la partida"
+                                        >
+                                            <Trophy class="h-4 w-4" aria-hidden="true" />
+                                            <span class="sr-only">Ganador de la partida</span>
+                                        </span>
                                     </span>
                                     <span
                                         v-if="play.players.length === 0"

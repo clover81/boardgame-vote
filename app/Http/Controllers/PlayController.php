@@ -108,6 +108,9 @@ class PlayController extends Controller
 
                                     'name' =>
                                     $player->name,
+
+                                    'is_winner' =>
+                                    (bool) $player->pivot->is_winner,
                                 ]
                             )
                             ->values(),
@@ -497,6 +500,23 @@ class PlayController extends Controller
     |--------------------------------------------------------------------------
     */
 
+    private function playerWinnerSync(
+        array $playerIds,
+        array $winnerIds
+    ): array {
+        $winners = array_fill_keys($winnerIds, true);
+        $result = [];
+
+        foreach ($playerIds as $playerId) {
+            $id = (int) $playerId;
+            $result[$id] = [
+                'is_winner' => isset($winners[$id]),
+            ];
+        }
+
+        return $result;
+    }
+
     private function pollReturnQuery(Request $request): array
     {
         $back = $request->query('back');
@@ -551,6 +571,13 @@ class PlayController extends Controller
                 'player_ids.*' => [
                     'integer',
                     'distinct',
+                    'exists:players,id',
+                ],
+
+                'winner_player_ids' => ['sometimes', 'array'],
+                'winner_player_ids.*' => ['array'],
+                'winner_player_ids.*.*' => [
+                    'integer',
                     'exists:players,id',
                 ],
 
@@ -632,6 +659,36 @@ class PlayController extends Controller
             ]);
         }
 
+        // Los ganadores deben ser participantes de la partida.
+        // Cada juego puede tener ganadores distintos.
+        $winnerGroups = [];
+
+        foreach ($validated['winner_player_ids'] ?? [] as $gameId => $winners) {
+            if (
+                !ctype_digit((string) $gameId)
+                || !$gameIds->contains((int) $gameId)
+            ) {
+                throw ValidationException::withMessages([
+                    'winner_player_ids' =>
+                        'Los ganadores deben corresponder a un juego seleccionado.',
+                ]);
+            }
+
+            $winnerIds = array_map('intval', $winners);
+
+            if (
+                count($winnerIds) !== count(array_unique($winnerIds))
+                || count(array_diff($winnerIds, $playerIds->all())) > 0
+            ) {
+                throw ValidationException::withMessages([
+                    'winner_player_ids' =>
+                        'Solo puedes marcar como ganadores a los participantes.',
+                ]);
+            }
+
+            $winnerGroups[(int) $gameId] = $winnerIds;
+        }
+
         /*
          * Si procede de una votación:
          *
@@ -648,7 +705,8 @@ class PlayController extends Controller
             $gameIds,
             $pollId,
             $validated,
-            $playerIds
+            $playerIds,
+            $winnerGroups
         ): bool {
             if ($pollId) {
                 $poll = Poll::query()
@@ -700,7 +758,12 @@ class PlayController extends Controller
                     'notes' => $validated['notes'] ?? null,
                 ]);
 
-                $play->players()->sync($playerIds->all());
+                $play->players()->sync(
+                    $this->playerWinnerSync(
+                        $playerIds->all(),
+                        $winnerGroups[$gameId] ?? []
+                    )
+                );
             }
 
             return true;
@@ -887,6 +950,12 @@ class PlayController extends Controller
                     $play->players
                         ->pluck('id')
                         ->values(),
+
+                    'winner_player_ids' =>
+                    $play->players
+                        ->filter(fn ($player) => (bool) $player->pivot->is_winner)
+                        ->pluck('id')
+                        ->values(),
                 ],
 
                 'games' =>
@@ -947,6 +1016,13 @@ class PlayController extends Controller
                     'exists:players,id',
                 ],
 
+                'winner_player_ids' => ['sometimes', 'array'],
+                'winner_player_ids.*' => [
+                    'integer',
+                    'distinct',
+                    'exists:players,id',
+                ],
+
                 'notes' => [
                     'nullable',
                     'string',
@@ -990,12 +1066,41 @@ class PlayController extends Controller
             }
         }
 
+        // Mantener los ganadores anteriores si un cliente antiguo
+        // todavía no envía este campo.
+        $winnerIds = array_key_exists('winner_player_ids', $validated)
+            ? array_map('intval', $validated['winner_player_ids'])
+            : $play->players()
+                ->wherePivot('is_winner', true)
+                ->pluck('players.id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+        $selectedIds = array_map('intval', $validated['player_ids']);
+        $validWinnerIds = array_values(array_intersect(
+            $winnerIds,
+            $selectedIds
+        ));
+
+        if (
+            array_key_exists('winner_player_ids', $validated)
+            && count($validWinnerIds) !== count($winnerIds)
+        ) {
+            throw ValidationException::withMessages([
+                'winner_player_ids' =>
+                    'Solo puedes marcar como ganadores a los participantes.',
+            ]);
+        }
+
+        $winnerIds = $validWinnerIds;
+
         DB::transaction(
             function () use (
                 $play,
                 $game,
                 $expansionId,
-                $validated
+                $validated,
+                $winnerIds
             ) {
                 $play->update([
                     'game_id' =>
@@ -1014,7 +1119,10 @@ class PlayController extends Controller
                 $play
                     ->players()
                     ->sync(
-                        $validated['player_ids']
+                        $this->playerWinnerSync(
+                            $validated['player_ids'],
+                            $winnerIds
+                        )
                     );
             }
         );

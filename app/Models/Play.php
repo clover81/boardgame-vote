@@ -107,6 +107,7 @@ class Play extends Model
                 Player::class,
                 'play_player'
             )
+            ->withPivot('is_winner')
             ->withTimestamps();
     }
 }

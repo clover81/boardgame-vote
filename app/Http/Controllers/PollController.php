@@ -1296,6 +1296,7 @@ class PollController extends Controller
                         'players' => $play->players->map(fn ($player) => [
                             'id' => $player->id,
                             'name' => $player->name,
+                            'is_winner' => (bool) $player->pivot->is_winner,
                         ])->values(),
                     ])->values(),
 
@@ -1318,6 +1319,7 @@ class PollController extends Controller
                                 ->map(fn ($player) => [
                                     'id' => $player->id,
                                     'name' => $player->name,
+                                    'is_winner' => (bool) $player->pivot->is_winner,
                                 ])
                                 ->values(),
                             'was_candidate' => $candidateGameIds->contains($registeredPlay->game_id),

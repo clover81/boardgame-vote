@@ -113,6 +113,7 @@ interface Result {
 interface RegisteredPlayPlayer {
     id: number;
     name: string;
+    is_winner: boolean;
 }
 
 interface RegisteredPlay {
@@ -1910,6 +1911,20 @@ const modeLabel = (
                                 <UsersRound class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#C4B5FD]" :stroke-width="2.2" role="img" aria-label="Jugadores" />
                                 {{
                                     play.players
+                                        .map(player => player.name)
+                                        .join(', ')
+                                }}
+                            </p>
+
+                            <p
+                                v-if="play.players.some(player => player.is_winner)"
+                                class="mt-2 inline-flex flex-wrap items-center gap-1.5 text-sm font-semibold text-amber-700 dark:text-amber-300"
+                            >
+                                <Trophy class="h-4 w-4 shrink-0" aria-hidden="true" />
+                                Ganó:
+                                {{
+                                    play.players
+                                        .filter(player => player.is_winner)
                                         .map(player => player.name)
                                         .join(', ')
                                 }}
