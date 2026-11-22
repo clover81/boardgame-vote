@@ -586,6 +586,8 @@ class GameController extends Controller
             'competitive',
             'cooperative',
             'semi_cooperative',
+            'solo',
+            'unclassified',
         ];
 
         if (!in_array($gameMode, $allowedModes, true)) {
@@ -623,12 +625,23 @@ class GameController extends Controller
                     'heavy' => $query->where('complexity', '>', 3),
                 };
             })
-            ->when($gameMode !== '', fn ($query) => $query
-                ->where(fn ($modes) => $modes
+            ->when($gameMode !== '', function ($query) use ($gameMode) {
+                if (in_array($gameMode, ['solo', 'unclassified'], true)) {
+                    return $query
+                        ->where('max_players', $gameMode === 'solo' ? '=' : '>', 1)
+                        ->where(fn ($modes) => $modes
+                            ->whereJsonLength('games.game_modes', 0)
+                            ->orWhere(fn ($legacy) => $legacy
+                                ->whereNull('games.game_modes')
+                                ->whereNull('games.game_mode')));
+                }
+
+                return $query->where(fn ($modes) => $modes
                     ->whereJsonContains('games.game_modes', $gameMode)
                     ->orWhere(fn ($legacy) => $legacy
                         ->whereNull('games.game_modes')
-                        ->where('games.game_mode', $gameMode))))
+                        ->where('games.game_mode', $gameMode)));
+            })
             ->when($search, function ($query, $search) {
                 $replacements = [
                     "'" => '', '‘' => '', '’' => '',

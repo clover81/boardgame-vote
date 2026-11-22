@@ -351,6 +351,39 @@ test('private catalog filters time and difficulty with the same ranges as public
     }
 });
 
+test('private mode filter supports solo and unclassified games', function () {
+    $this->castle->update([
+        'max_players' => 1,
+        'game_mode' => null,
+        'game_modes' => [],
+    ]);
+
+    $this->sky->update([
+        'game_mode' => null,
+        'game_modes' => [],
+    ]);
+
+    $this->heat->update([
+        'game_mode' => 'competitive',
+        'game_modes' => ['competitive'],
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('games.index', ['mode' => 'solo']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('games', 1)
+            ->where('games.0.id', $this->castle->id)
+            ->where('filters.mode', 'solo'));
+
+    $this->get(route('games.index', ['mode' => 'unclassified']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('games', 1)
+            ->where('games.0.id', $this->sky->id)
+            ->where('filters.mode', 'unclassified'));
+});
+
 test('non-text filter values use the default collection filters', function () {
     $this->actingAs($this->user)->get(route('games.index', [
         'q' => ['Heat'],

@@ -3,8 +3,8 @@ import YoutubeLogoIcon from '@/components/icons/YoutubeLogoIcon.vue';
 import { ChevronDown, Link as ChainIcon, UsersRound, HourglassCog, Swords, BrainCog } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
 
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
 
 interface Collection {
@@ -410,6 +410,58 @@ watch(
         }
     },
 );
+
+// Mantener la URL sincronizada con los filtros visibles.
+// Se agrupan las pulsaciones para no modificar el historial en cada tecla.
+let catalogUrlTimer: ReturnType<typeof setTimeout> | null = null;
+
+watch(
+    [
+        search,
+        playerCount,
+        collectionId,
+        durationLimit,
+        difficulty,
+        selectedGameMode,
+        sortBy,
+        showAdvancedFilters,
+    ],
+    () => {
+        if (catalogUrlTimer !== null) clearTimeout(catalogUrlTimer);
+
+        catalogUrlTimer = setTimeout(() => {
+            const filtersActive =
+                search.value.trim() !== '' ||
+                playerCount.value !== '' ||
+                collectionId.value !== '' ||
+                durationLimit.value !== '' ||
+                difficulty.value !== '' ||
+                selectedGameMode.value !== '' ||
+                sortBy.value !== 'name';
+
+            const query = filtersActive
+                ? `?${filteredCatalogQuery.value}&panel=${showAdvancedFilters.value ? 'open' : 'closed'}`
+                : '';
+
+            const target = `${window.location.pathname}${query}`;
+            const current = `${window.location.pathname}${window.location.search}`;
+
+            if (target !== current) {
+                router.replace({
+                    url: target,
+                    preserveScroll: true,
+                    preserveState: true,
+                });
+            }
+
+            catalogUrlTimer = null;
+        }, 300);
+    },
+);
+
+onBeforeUnmount(() => {
+    if (catalogUrlTimer !== null) clearTimeout(catalogUrlTimer);
+});
 
 const sortedGames = computed(() => {
     const searchTerms = normalizeText(search.value).split(/\s+/).filter(Boolean);

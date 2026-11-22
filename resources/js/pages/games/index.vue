@@ -192,6 +192,8 @@ const gameModeLabels: Record<string, string> = {
     competitive: 'Competitivo',
     cooperative: 'Cooperativo',
     semi_cooperative: 'Semicooperativo',
+    solo: 'Solitario',
+    unclassified: 'Sin clasificar',
 };
 
 type FilterKey = 'search' | 'players' | 'collection' | 'duration' | 'difficulty' | 'mode';
@@ -374,6 +376,8 @@ const formatDate = (date: string | null): string => {
                                 <option value="competitive">Competitivo</option>
                                 <option value="cooperative">Cooperativo</option>
                                 <option value="semi_cooperative">Semicooperativo</option>
+                                <option value="solo">Solitario</option>
+                                <option value="unclassified">Sin clasificar</option>
                             </select>
                         </div>
                     </div>
