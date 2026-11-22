@@ -2,6 +2,7 @@
 import YoutubeLogoIcon from '@/components/icons/YoutubeLogoIcon.vue';
 import { ChevronDown, Link as ChainIcon, UsersRound, HourglassCog, Swords, BrainCog } from '@lucide/vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
+import { Trophy, Dices, Layers3 } from '@lucide/vue';
 
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
@@ -658,44 +659,63 @@ const tutorialUrl = (game: Game): string =>
 
         <!-- CABECERA PUBLICA COMPACTA - Clover -->
         <div class="mx-auto max-w-7xl px-4 pt-5 sm:px-8 sm:pt-8">
-            <header class="relative overflow-hidden rounded-[28px] bg-[#181424] px-5 py-5 text-white shadow-lg shadow-[#181424]/10 sm:px-8 sm:py-6">
-                <Link
-                    v-if="catalogBasePath"
-                    href="/collections#friend-collections"
-                    class="relative mb-5 inline-flex min-h-11 items-center text-sm font-bold text-[#CCFF00] underline-offset-4 hover:underline focus-visible:underline"
-                >
-                    ← Volver a mis colecciones
-                </Link>
-                <!-- Iluminación discreta, sin alterar el contraste ni añadir imágenes. -->
-                <div aria-hidden="true" class="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-[#5200FF]/20 blur-3xl"></div>
+            <header class="relative isolate overflow-hidden rounded-[28px] bg-[#190c30] text-white shadow-xl shadow-[#181424]/15 sm:rounded-[32px]">
+                <!-- Ilustración independiente del contenido, optimizada y decorativa. -->
+                <img
+                    src="/images/catalog-shelf-comic.webp"
+                    alt=""
+                    aria-hidden="true"
+                    width="1672"
+                    height="941"
+                    loading="eager"
+                    decoding="async"
+                    class="pointer-events-none absolute inset-0 h-full w-full object-cover object-[center_40%] sm:object-[center_35%]"
+                />
+                <!-- Degradados para garantizar la lectura en móvil y escritorio. -->
+                <div aria-hidden="true" class="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#170927]/90 via-[#250940]/35 to-[#19072b]/10"></div>
+                <div aria-hidden="true" class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#24083e]/70 via-[#210d3b]/10 to-transparent"></div>
 
-                <div class="relative flex items-center gap-3">
-                    <span class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#CCFF00] text-[#5200FF] shadow-sm" aria-hidden="true">
-                        <PlayingCardsFanIcon class="!m-0 !size-6 shrink-0" />
-                    </span>
-                    <div class="min-w-0">
-                        <p class="text-base font-black leading-tight tracking-tight sm:text-lg">Juegos de mesa</p>
-                        <p class="mt-1 text-xs font-medium text-zinc-300">Clover</p>
+                <div class="relative z-10 flex min-h-[320px] flex-col justify-between gap-10 px-5 py-6 sm:min-h-[360px] sm:px-8 sm:py-8 lg:min-h-[390px] lg:px-10 lg:py-9">
+                    <div>
+                        <Link
+                            v-if="catalogBasePath"
+                            href="/collections#friend-collections"
+                            class="mb-5 inline-flex min-h-11 items-center text-sm font-bold text-[#CCFF00] underline-offset-4 hover:underline focus-visible:underline"
+                        >
+                            ← Volver a mis colecciones
+                        </Link>
+                        <div class="flex items-center gap-3 sm:gap-4">
+                            <span class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[#CCFF00] text-[#5200FF] shadow-lg shadow-[#18072b]/30 sm:size-14" aria-hidden="true">
+                                <Trophy class="size-6 sm:size-7" :stroke-width="2.2" />
+                            </span>
+                            <div class="min-w-0 drop-shadow-sm">
+                                <p class="text-base font-black leading-tight tracking-tight sm:text-xl">Juegos de mesa</p>
+                                <p class="mt-1 text-xs font-medium text-zinc-200 sm:text-sm">Clover</p>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <div class="relative mt-5 grid gap-3 sm:mt-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-6">
-                    <div class="min-w-0">
-                        <h1 class="break-words text-2xl font-bold leading-tight sm:text-3xl">
-                            {{ catalogOwnerName ? `Colección de ${catalogOwnerName}` : 'Catálogo de juegos' }}
-                        </h1>
-                        <p v-if="catalogBasePath" class="mt-2 text-sm font-semibold text-[#CCFF00]">
-                            Solo consulta
-                        </p>
-                    </div>
+                    <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
+                        <div class="min-w-0 lg:max-w-[70%]">
+                            <div aria-hidden="true" class="mb-4 h-1.5 w-20 rounded-full bg-[#CCFF00] shadow-[0_0_18px_rgba(204,255,0,0.45)] sm:mb-5"></div>
+                            <h1 class="max-w-full break-words text-[1.9rem] font-black leading-[1.08] tracking-tight text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)] sm:text-[3rem] lg:text-[3.35rem]">
+                                {{ catalogOwnerName ? `Colección de ${catalogOwnerName}` : 'Catálogo de juegos' }}
+                            </h1>
+                            <p v-if="catalogBasePath" class="mt-3 text-sm font-bold text-[#CCFF00]">
+                                Solo consulta
+                            </p>
+                        </div>
 
-                    <div class="flex flex-wrap gap-2 text-xs font-semibold sm:text-sm lg:justify-end">
-                        <span class="rounded-full border border-white/10 bg-white/10 px-3 py-1.5">
-                            {{ games.length }} {{ games.length === 1 ? 'juego' : 'juegos' }}
-                        </span>
-                        <span class="rounded-full border border-white/10 bg-white/10 px-3 py-1.5">
-                            {{ collections.length }} {{ collections.length === 1 ? 'colección' : 'colecciones' }}
-                        </span>
+                        <div class="flex flex-wrap items-center gap-2 text-xs font-bold sm:gap-3 sm:text-sm lg:shrink-0 lg:justify-end">
+                            <span class="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/25 bg-[#321b50]/65 px-4 py-2 text-white shadow-sm backdrop-blur-sm">
+                                <Dices class="size-4 shrink-0 text-[#CCFF00] sm:size-5" aria-hidden="true" />
+                                {{ games.length }} {{ games.length === 1 ? 'juego' : 'juegos' }}
+                            </span>
+                            <span class="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/25 bg-[#321b50]/65 px-4 py-2 text-white shadow-sm backdrop-blur-sm">
+                                <Layers3 class="size-4 shrink-0 text-[#CCFF00] sm:size-5" aria-hidden="true" />
+                                {{ collections.length }} {{ collections.length === 1 ? 'colección' : 'colecciones' }}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </header>

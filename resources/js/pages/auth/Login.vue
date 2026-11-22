@@ -16,6 +16,8 @@ defineProps<{
     status?: string;
     canResetPassword: boolean;
 }>();
+
+const heroImage = '/images/login-estanteria-estilo-catalogo.webp';
 </script>
 
 <template>
@@ -23,51 +25,62 @@ defineProps<{
 
     <div class="min-h-svh bg-[#f7f7f5] text-[#181424] dark:bg-[#100d19] dark:text-white lg:grid lg:grid-cols-2">
         <!-- Identidad de marca en escritorio; en móvil se muestra una cabecera compacta. -->
-        <aside class="relative hidden min-h-svh flex-col justify-between overflow-hidden bg-[#181424] p-10 text-white lg:flex xl:p-16">
-            <div aria-hidden="true" class="pointer-events-none absolute -left-32 top-1/3 size-96 rounded-full bg-[#5200FF]/30 blur-3xl" />
-            <div aria-hidden="true" class="pointer-events-none absolute -right-40 bottom-0 size-[30rem] rounded-full bg-[#5200FF]/35 blur-3xl" />
+        <!-- CL0VER-LOGIN-COMIC-2026: mismo tratamiento gráfico del catálogo, solo panel visual -->
+        <aside class="relative hidden min-h-svh overflow-hidden bg-[#160a29] text-white lg:block">
+            <img :src="heroImage" alt="" class="absolute inset-0 h-full w-full object-cover object-[center_40%]" />
+            <!-- Degradados concentrados donde hay texto: estantería visible en los laterales. -->
+            <div aria-hidden="true" class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_72%_55%_at_50%_55%,rgba(18,5,36,0.90)_0%,rgba(21,6,43,0.71)_35%,rgba(23,7,43,0.10)_83%,transparent_100%)]" />
+            <div aria-hidden="true" class="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,4,31,0.53)_0%,rgba(15,4,31,0.02)_24%,rgba(17,6,37,0.06)_65%,rgba(17,6,37,0.77)_100%)]" />
 
-            <div class="relative z-10 flex items-center gap-3">
-                <div class="flex size-12 items-center justify-center rounded-2xl bg-[#5200FF] shadow-lg shadow-black/20">
-                    <RollingDicesIcon class="size-8 text-[#CCFF00]" />
+            <div class="relative z-10 flex min-h-svh w-full flex-col justify-between gap-5 px-8 py-8 xl:px-12 xl:py-10">
+                <div class="flex w-fit items-center gap-3 rounded-2xl border border-white/10 bg-[#170a2d]/80 px-3 py-2 shadow-lg backdrop-blur-md">
+                    <div class="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-[#4e13a8]/95 shadow-lg shadow-black/20">
+                        <RollingDicesIcon class="size-8 text-[#cdd87a]" />
+                    </div>
+                    <div>
+                        <p class="text-lg font-extrabold leading-tight tracking-tight drop-shadow-md">Juegos de mesa</p>
+                        <p class="text-xs font-semibold tracking-[0.2em] text-[#cdd87a]">CLOVER</p>
+                    </div>
                 </div>
-                <div>
-                    <p class="text-lg font-extrabold leading-tight tracking-tight">Juegos de mesa</p>
-                    <p class="text-xs font-semibold tracking-[0.2em] text-[#CCFF00]">CLOVER</p>
-                </div>
-            </div>
 
-            <div class="relative z-10 mx-auto flex w-full max-w-lg flex-col items-center py-10 text-center">
-                <div class="relative mb-12 flex size-64 items-center justify-center rounded-[3.5rem] border border-white/10 bg-[#5200FF]/20 shadow-[0_24px_80px_rgba(0,0,0,0.25)] xl:size-80">
-                    <div aria-hidden="true" class="absolute inset-6 rounded-[3rem] border border-[#CCFF00]/10" />
-                    <RollingDicesIcon class="relative size-44 text-[#CCFF00] drop-shadow-[0_18px_14px_rgba(0,0,0,0.25)] xl:size-56" />
+                <div class="mx-auto flex w-full max-w-lg flex-col items-center py-3 text-center xl:py-6">
+                    <div class="relative mb-6 flex size-40 items-center justify-center rounded-[2.6rem] border border-violet-400/25 bg-[#291153]/90 shadow-[0_20px_60px_rgba(12,2,26,0.35)] xl:size-44">
+                        <div aria-hidden="true" class="absolute inset-5 rounded-[2rem] border border-white/10" />
+                        <RollingDicesIcon class="relative size-24 text-[#cdd87a] drop-shadow-[0_10px_12px_rgba(0,0,0,0.27)] xl:size-28" />
+                    </div>
+                    <div class="w-full rounded-[28px] border border-white/10 bg-[#160a2b]/80 px-5 py-6 shadow-[0_20px_55px_rgba(10,2,25,0.25)] backdrop-blur-[5px]">
+                    <p class="mb-4 text-xs font-bold uppercase tracking-[0.36em] text-[#cdd87a]">Alea iacta est</p>
+                    <h2 class="max-w-md text-3xl font-black leading-tight tracking-tight drop-shadow-[0_3px_14px_rgba(10,3,20,0.92)] xl:text-4xl">
+                        Más juegos.<br />Más momentos juntos.
+                    </h2>
+                    <p class="mt-4 max-w-sm text-sm leading-relaxed text-white/85 drop-shadow-[0_2px_9px_rgba(10,3,20,0.95)]">
+                        Un espacio para organizar partidas de juegos de mesa, compartir experiencias y descubrir nuevos juegos.
+                    </p>
+                    </div>
                 </div>
-                <p class="mb-4 text-xs font-bold uppercase tracking-[0.50em] text-[#CCFF00]">Alea iacta est</p>
-                <h2 class="max-w-md text-4xl font-black leading-tight tracking-tight xl:text-5xl">Más juegos.<br />Más momentos juntos.</h2>
-                <p class="mt-4 text-sm leading-relaxed text-white/70">Un espacio para organizar partidas de juegos de mesa, compartir experiencias y descubrir nuevos juegos.</p>
-            </div>
 
-            <div class="relative z-10 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs font-semibold text-white/55">
-                <span>Colección</span>
-                <span>Votaciones</span>
-                <span>Partidas</span>
+                <div class="flex flex-wrap justify-center gap-2 text-xs font-semibold text-white/85">
+                    <span class="rounded-full border border-white/15 bg-[#1c0a36]/75 px-3 py-1.5">Colección</span>
+                    <span class="rounded-full border border-white/15 bg-[#1c0a36]/75 px-3 py-1.5">Votaciones</span>
+                    <span class="rounded-full border border-white/15 bg-[#1c0a36]/75 px-3 py-1.5">Partidas</span>
+                </div>
             </div>
         </aside>
 
         <main class="flex min-h-svh items-center justify-center px-5 py-8 sm:px-10 lg:px-14">
             <div class="w-full max-w-[440px]">
                 <div class="mb-10 flex items-center gap-3 lg:hidden">
-                    <div class="flex size-11 items-center justify-center rounded-xl bg-[#5200FF]">
-                        <RollingDicesIcon class="size-7 text-[#CCFF00]" />
+                    <div class="flex size-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#8c2bff] to-[#5200FF]">
+                        <RollingDicesIcon class="size-7 text-[#cdd87a]" />
                     </div>
                     <div>
                         <p class="text-base font-black leading-tight">Juegos de mesa</p>
-                        <p class="text-xs font-bold tracking-[0.16em] text-[#5200FF] dark:text-[#CCFF00]">CLOVER</p>
+                        <p class="text-xs font-bold tracking-[0.16em] text-[#5200FF] dark:text-[#cdd87a]">CLOVER</p>
                     </div>
                 </div>
 
                 <div class="mb-7">
-                    <p class="mb-3 text-xs font-bold uppercase tracking-[0.30em] text-[#5200FF] dark:text-[#CCFF00]">Bienvenido de nuevo</p>
+                    <p class="mb-3 text-xs font-bold uppercase tracking-[0.30em] text-[#5200FF] dark:text-[#cdd87a]">Bienvenido de nuevo</p>
 
                     <p class="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Entra para organizar tu próxima partida.</p>
                 </div>
