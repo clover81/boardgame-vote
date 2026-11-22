@@ -664,21 +664,28 @@ class GameController extends Controller
                 };
             })
             ->when($gameMode !== '', function ($query) use ($gameMode) {
-                if (in_array($gameMode, ['solo', 'unclassified'], true)) {
-                    return $query
-                        ->where('max_players', $gameMode === 'solo' ? '=' : '>', 1)
-                        ->where(fn ($modes) => $modes
-                            ->whereJsonLength('games.game_modes', 0)
-                            ->orWhere(fn ($legacy) => $legacy
-                                ->whereNull('games.game_modes')
-                                ->whereNull('games.game_mode')));
-                }
+                // La clasificación antigua se usa únicamente cuando
+                // no existe una lista de modalidades con contenido.
+                $withoutExplicitModes = static fn ($builder) => $builder
+                    ->whereNull('games.game_modes')
+                    ->orWhereJsonLength('games.game_modes', 0);
 
-                return $query->where(fn ($modes) => $modes
-                    ->whereJsonContains('games.game_modes', $gameMode)
-                    ->orWhere(fn ($legacy) => $legacy
-                        ->whereNull('games.game_modes')
-                        ->where('games.game_mode', $gameMode)));
+                return $query->where(function ($modes) use ($gameMode, $withoutExplicitModes) {
+                    $modes
+                        ->whereJsonContains('games.game_modes', $gameMode)
+                        ->orWhere(fn ($legacy) => $legacy
+                            ->where($withoutExplicitModes)
+                            ->where('games.game_mode', $gameMode));
+
+                    // Si no hay clasificación, deducirla por
+                    // el número máximo de jugadores.
+                    if (in_array($gameMode, ['solo', 'unclassified'], true)) {
+                        $modes->orWhere(fn ($fallback) => $fallback
+                            ->where($withoutExplicitModes)
+                            ->whereNull('games.game_mode')
+                            ->where('games.max_players', $gameMode === 'solo' ? '=' : '>', 1));
+                    }
+                });
             })
             ->when($search, function ($query, $search) {
                 $replacements = [

@@ -433,8 +433,9 @@ test('mode filter supports legacy classifications without overriding current mod
         ->get(route('games.index', ['mode' => 'competitive']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->has('games', 1)
-            ->where('games.0.id', $this->castle->id)
+            ->has('games', 2)
+            ->where('games.0.id', $this->heat->id)
+            ->where('games.1.id', $this->castle->id)
         );
 
     $this->get(route('games.index', ['mode' => 'cooperative']))
@@ -443,4 +444,35 @@ test('mode filter supports legacy classifications without overriding current mod
             ->has('games', 1)
             ->where('games.0.id', $this->sky->id)
         );
+});
+
+
+test('empty mode lists respect legacy classifications in solo and unclassified filters', function () {
+    $this->castle->update([
+        'max_players' => 1,
+        'game_mode' => 'competitive',
+        'game_modes' => [],
+    ]);
+
+    $this->sky->update([
+        'game_mode' => 'cooperative',
+        'game_modes' => [],
+    ]);
+
+    $this->heat->update([
+        'game_mode' => null,
+        'game_modes' => [],
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('games.index', ['mode' => 'solo']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('games', 0));
+
+    $this->get(route('games.index', ['mode' => 'unclassified']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('games', 1)
+            ->where('games.0.id', $this->heat->id));
 });
