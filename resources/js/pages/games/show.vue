@@ -413,7 +413,7 @@ const formatGameMode = (
                     class="flex flex-wrap gap-2"
                 >
                     <Link
-                        :href="`/plays/create?game_id=${game.id}`"
+                        :href="`/plays/create?game_id=${game.id}&back=${encodeURIComponent(page.url)}`"
                         class="rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90 dark:bg-[#CCFF00] dark:text-[#181424]"
                     >
                         <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-current" aria-hidden="true" /> Registrar partida

@@ -172,6 +172,42 @@ test('an expansion of an unselected game is not assigned to any selected game', 
         ->and(Play::whereNotNull('expansion_id')->count())->toBe(0);
 });
 
+test('a manual play returns to its game detail preserving catalog filters', function () {
+    unset($this->payload['poll_id']);
+
+    $game = $this->games[0];
+    $this->payload['game_ids'] = [$game->id];
+
+    $back = route('games.show', $game, false)
+        . '?back=' . rawurlencode('/games?players=2&sort=name_desc');
+
+    $this->actingAs($this->user)
+        ->post(route('plays.store', ['back' => $back]), $this->payload)
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(url($back));
+
+    expect(Play::count())->toBe(1);
+});
+
+test('manual play return rejects unrelated or external destinations', function (string $kind) {
+    unset($this->payload['poll_id']);
+
+    $this->payload['game_ids'] = [$this->games[0]->id];
+
+    $back = match ($kind) {
+        'external' => 'https://example.com/',
+        'different-game' => route('games.show', $this->games[1], false),
+        'other-section' => '/collections',
+    };
+
+    $this->actingAs($this->user)
+        ->post(route('plays.store', ['back' => $back]), $this->payload)
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('games.index'));
+
+    expect(Play::count())->toBe(1);
+})->with(['external', 'different-game', 'other-section']);
+
 test('multiple manual plays can be stored without a poll', function () {
     unset($this->payload['poll_id']);
 

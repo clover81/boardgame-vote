@@ -725,6 +725,29 @@ class PlayController extends Controller
                 );
         }
 
+        // Si la partida se registra desde la ficha del juego,
+        // regresar a ella conservando los filtros originales.
+        // Nunca aceptar destinos externos ni fichas de otros juegos.
+        $back = $request->query('back');
+
+        $gamePath = $gameIds->count() === 1
+            ? route('games.show', $gameIds->first(), false)
+            : null;
+
+        if (
+            is_string($back) &&
+            $gamePath !== null &&
+            (
+                $back === $gamePath ||
+                str_starts_with($back, $gamePath . '?')
+            )
+        ) {
+            return redirect()->to($back)->with(
+                'success',
+                'Partida registrada correctamente.'
+            );
+        }
+
         return redirect()
             ->route(
                 'games.index'

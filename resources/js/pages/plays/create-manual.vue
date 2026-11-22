@@ -14,6 +14,7 @@ import {
     Head,
     Link,
     useForm,
+    usePage,
 } from '@inertiajs/vue3';
 
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -53,6 +54,31 @@ const props = defineProps<{
         number | null;
     selected_player_id: number | null;
 }>();
+const currentPage = usePage();
+
+// Solo aceptamos regresar a la ficha del juego preseleccionado.
+const gameReturnUrl = computed(() => {
+    if (props.selected_game_id === null) return null;
+
+    const back = new URLSearchParams(
+        currentPage.url.split('?')[1] ?? ''
+    ).get('back');
+
+    if (!back) return null;
+
+    const expected = `/games/${props.selected_game_id}`;
+
+    return back === expected || back.startsWith(`${expected}?`)
+        ? back
+        : null;
+});
+
+const playStoreUrl = computed(() =>
+    gameReturnUrl.value
+        ? `/plays?back=${encodeURIComponent(gameReturnUrl.value)}`
+        : '/plays'
+);
+
 
 /*
 |--------------------------------------------------------------------------
@@ -214,7 +240,7 @@ const submit = () => {
         ...data,
         game_ids: game_id === null ? [] : [game_id],
         expansion_ids: game_id === null ? {} : { [game_id]: expansion_id },
-    })).post('/plays', {
+    })).post(playStoreUrl.value, {
         preserveScroll: 'errors',
         onError: async (errors) => {
             const gameError = errors.game_ids ?? errors['game_ids.0'];
@@ -244,10 +270,10 @@ const submit = () => {
             <!-- VOLVER -->
 
             <Link
-                href="/plays"
+                :href="gameReturnUrl ?? '/plays'"
                 class="text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
             >
-                ← Volver al historial
+                {{ gameReturnUrl ? '← Volver al juego' : '← Volver al historial' }}
             </Link>
 
             <!-- CABECERA -->
