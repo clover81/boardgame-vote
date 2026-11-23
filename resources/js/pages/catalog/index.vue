@@ -157,18 +157,21 @@ const filteredGames = computed(() => {
 
     const normalizedData = normalizedGameSearch.value;
 
-    // Mostrar todos los títulos que contienen los términos buscados.
-    const titleMatches = candidates.filter(game => {
-        const name = normalizedData.get(game.id)?.name ?? '';
-        return terms.every(term => name.includes(term));
-    });
-
-    if (titleMatches.length) return titleMatches;
-
-    // Si no hay títulos coincidentes, buscar por temática.
-    // Evitar que "nova" coincida con "innovador" o "renovado".
+    // Buscar simultáneamente por título y descripción.
+    // No descartar las coincidencias temáticas cuando exista
+    // algún título coincidente.
     return candidates.filter(game => {
-        const words = (normalizedData.get(game.id)?.text ?? '')
+        const data = normalizedData.get(game.id);
+        if (!data) return false;
+
+        // Coincidencia por título, con búsqueda parcial.
+        if (terms.every(term => data.name.includes(term))) {
+            return true;
+        }
+
+        // Coincidencia temática por principio de palabra.
+        // Evitar que "nova" coincida con "innovador".
+        const words = data.text
             .split(/[^\p{L}\p{N}]+/u)
             .filter(Boolean);
 
