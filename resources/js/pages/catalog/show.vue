@@ -194,7 +194,7 @@ const tutorialUrl = (game: Game): string =>
     <div class="catalog-public-light min-h-screen bg-[#f7f7f5] text-zinc-950">
         <!-- CABECERA -->
         <header class="bg-[#181424] text-white">
-            <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-8 sm:py-4">
+            <div class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-8 sm:py-4">
                 <Link
                     :href="catalogUrl"
                     class="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-zinc-300 transition hover:text-[#CCFF00] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#CCFF00]"
@@ -214,7 +214,7 @@ const tutorialUrl = (game: Game): string =>
             </div>
         </header>
 
-        <main class="mx-auto max-w-6xl px-4 py-4 sm:px-8 sm:py-10">
+        <main class="mx-auto max-w-7xl px-4 py-4 sm:px-8 sm:py-10">
             <!-- PRESENTACIÓN -->
             <section class="grid gap-4 sm:gap-9 lg:grid-cols-[minmax(0,380px)_1fr]">
                 <!-- PORTADA AMPLIABLE -->
