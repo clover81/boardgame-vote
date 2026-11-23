@@ -65,6 +65,14 @@ test('existing games keep their manually configured ideal counts even with an ou
         ...$this->details,
         'name' => 'Nombre propio',
         'game_mode' => 'competitive',
+        'game_modes' => ['competitive'],
+        'image_url' => 'https://example.com/portada-propia.jpg',
+        'short_description' => 'Resumen escrito por mí',
+        'full_description' => 'Descripción extensa personalizada',
+        'description_source' => 'manual',
+        'additional_information' => 'Notas personales',
+        'bgg_url' => 'https://example.com/enlace-propio',
+        'youtube_url' => 'https://example.com/tutorial-propio',
     ]);
     $ideal = $game->idealPlayerCounts()->create(['player_count' => 2]);
     $before = $game->fresh()->getAttributes();
