@@ -15,6 +15,10 @@ Schedule::call(function () {
         true
     );
 
+    // Reponer de forma controlada si está habilitado.
+    app(\App\Services\GameDescriptionAutoRefill::class)
+        ->refillIfNeeded();
+
     // Procesar como máximo un trabajo.
     Artisan::call('queue:work', [
         'connection' => 'database',

@@ -11,6 +11,8 @@ return [
     'game_descriptions' => [
         'enabled' => env('GAME_DESCRIPTIONS_AI_ENABLED', false),
 
+        'auto_refill' => env('GAME_DESCRIPTIONS_AUTO_REFILL', false),
+
         'api_key' => env('OPENAI_API_KEY'),
 
         'model' => env(
