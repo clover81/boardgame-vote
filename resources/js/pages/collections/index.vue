@@ -390,6 +390,20 @@ const selectedBggCollection = computed(() => {
     );
 });
 
+const bggSyncDateFormatter = new Intl.DateTimeFormat('es-ES', {
+    dateStyle: 'short',
+    timeStyle: 'medium',
+});
+
+const lastBggSyncLocalTime = computed(() => {
+    const timestamp = selectedBggCollection.value?.bgg_last_synced_at;
+    if (!timestamp) return null;
+
+    // Laravel envía esta fecha en UTC, sin indicar la zona horaria.
+    const utcDate = new Date(timestamp.replace(' ', 'T') + 'Z');
+    return Number.isNaN(utcDate.getTime()) ? null : bggSyncDateFormatter.format(utcDate);
+});
+
 watch(
     () => [
         selectedBggCollection.value?.bgg_sync_status,
@@ -696,13 +710,22 @@ const bggRemoving = computed(() =>
     bggRemovingId.value !== null || bggRemovingExpansionId.value !== null
 );
 
+const bggImportInProgress = computed(() => {
+    const collection = selectedBggCollection.value;
+    return bggSyncing.value || (collection !== undefined && collectionSyncInProgress(collection));
+});
+
+const bggPreviewBlocked = computed(() =>
+    bggLoading.value || bggImportInProgress.value || bggRemoving.value ||
+    bggCollectionId.value === '' || bggRetryMinutes.value > 0
+);
+
 const bggChangesBlocked = computed(() =>
     bggRetryMinutes.value > 0 ||
     bggCollectionId.value === '' ||
     bggLoading.value ||
-    bggSyncing.value ||
-    bggRemoving.value ||
-    ['pending', 'running'].includes(selectedBggCollection.value?.bgg_sync_status ?? '')
+    bggImportInProgress.value ||
+    bggRemoving.value
 );
 
 const bggExpansionToRemove = ref<{
@@ -792,9 +815,7 @@ const executeBggExpansionRemoval = (expansion: {
 };
 
 const loadBggPreview = async () => {
-    if (bggCollectionId.value === '' || bggRetryMinutes.value > 0 || bggRemoving.value) return;
-
-    bggPreviewRequest?.abort();
+    if (bggPreviewBlocked.value) return;
     const request = new AbortController();
     bggPreviewRequest = request;
 
@@ -881,10 +902,12 @@ const showCompletedBggSync = () => {
         'Para consultar altas y bajas, pulsa «Consultar BGG». ' +
         'No hacemos otra consulta automáticamente para evitar límites de BGG.';
 
-    if (bggSyncMessage.value === message) return;
-
+    bggPreviewRequest?.abort();
+    bggPreviewRequest = null;
+    bggLoading.value = false;
     bggSyncMessage.value = message;
     bggPreview.value = null;
+    bggPreviewFeedback.value = '';
     bggError.value = '';
 };
 
@@ -892,8 +915,9 @@ watch(
     [
         () => selectedBggCollection.value?.id,
         () => selectedBggCollection.value?.bgg_sync_status,
+        () => selectedBggCollection.value?.bgg_last_synced_at,
     ],
-    ([currentId, currentStatus], [previousId, previousStatus]) => {
+    ([currentId, currentStatus, currentSync], [previousId, previousStatus, previousSync]) => {
         if (currentId !== previousId) return;
 
         const wasSyncing =
@@ -906,9 +930,7 @@ watch(
                 || 'No se ha podido completar la sincronización con BGG.';
         }
 
-        // Cuando la sincronización termina correctamente,
-        // actualizamos automáticamente la vista previa.
-        if (wasSyncing && currentStatus === 'completed') {
+        if (currentStatus === 'completed' && (wasSyncing || currentSync !== previousSync)) {
             showCompletedBggSync();
         }
     }
@@ -1296,7 +1318,7 @@ watch(
 
                     <button
                         type="button"
-                        :disabled="bggLoading || bggRemoving || bggCollectionId === '' || bggRetryMinutes > 0"
+                        :disabled="bggPreviewBlocked"
                         class="w-full min-w-0 rounded-xl bg-[#5200FF] px-5 py-3 text-center font-bold whitespace-nowrap text-white disabled:opacity-50 sm:w-52 sm:shrink-0"
                         @click="loadBggPreview"
                     >
@@ -1305,7 +1327,9 @@ watch(
                             ? 'Consultando...'
                             : bggRetryMinutes > 0
                                 ? `Disponible en ${bggRetryMinutes} min`
-                                : 'Consultar BGG'
+                                : bggImportInProgress
+                                    ? 'Importación en curso'
+                                    : 'Consultar BGG'
                     }}
                     </button>
                     <span role="status" class="sr-only">
@@ -1559,11 +1583,11 @@ watch(
                         </p>
 
                         <p
-                            v-if="selectedBggCollection.bgg_sync_status === 'completed'"
-                            class="mt-3 text-xs text-zinc-500"
+                            v-if="selectedBggCollection.bgg_sync_status === 'completed' && lastBggSyncLocalTime"
+                            class="mt-3 text-xs text-zinc-500 dark:text-zinc-400"
                         >
                             Última sincronización:
-                            {{ selectedBggCollection.bgg_last_synced_at }}
+                            {{ lastBggSyncLocalTime }}
                         </p>
                     </template>
 
