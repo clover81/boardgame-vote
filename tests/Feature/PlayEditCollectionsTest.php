@@ -81,11 +81,12 @@ test('editing a play lists unique owned games including inactive games and only 
         );
 });
 
-test('editing a play without owned collections returns no games', function () {
+test('editing a play without owned collections only lists its original game', function () {
     $this->actingAs($this->user)->get(route('plays.edit', $this->play))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->where('games', [])
+            ->has('games', 1)
+            ->where('games.0.id', $this->game->id)
         );
 });
 

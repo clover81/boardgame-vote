@@ -7,6 +7,7 @@ use App\Models\Game;
 use App\Models\Play;
 use App\Models\Player;
 use App\Models\Poll;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -852,6 +853,15 @@ class PlayController extends Controller
         ];
     }
 
+    /** @return Builder<Game> */
+    private function editableGames(Play $play, int $userId): Builder
+    {
+        return Game::query()->where(fn ($query) => $query
+            ->whereKey($play->game_id)
+            ->orWhereHas('collections', fn ($collections) => $collections
+                ->where('game_collections.created_by', $userId)));
+    }
+
     public function edit(
         Request $request,
         Play $play
@@ -870,9 +880,7 @@ class PlayController extends Controller
 
         $userId = (int) $request->user()->id;
 
-        $games = Game::query()
-            ->whereHas('collections', fn ($query) => $query
-                ->where('game_collections.created_by', $userId))
+        $games = $this->editableGames($play, $userId)
             ->with([
                 'expansions' => function ($query) use ($play) {
                     $query
@@ -1048,11 +1056,8 @@ class PlayController extends Controller
             ]);
         }
 
-        $game = Game::query()
-            ->whereKey($validated['game_id'])
-            ->whereHas('collections', fn ($query) => $query
-                ->where('game_collections.created_by', $userId))
-            ->firstOrFail();
+        $game = $this->editableGames($play, $userId)
+            ->findOrFail($validated['game_id']);
 
         $expansionId = $validated['expansion_id'] ?? null;
 

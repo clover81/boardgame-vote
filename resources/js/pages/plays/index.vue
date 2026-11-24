@@ -216,128 +216,42 @@ watch([search, selectedGameId, selectedPlayerId, sortBy, showAdvancedFilters], (
     }
 });
 
+const sortedPlays = computed(() => {
+    const direction = sortBy.value === 'newest' ? -1 : 1;
+
+    return [...props.plays].sort((a, b) => {
+        if (a.played_at === b.played_at) return (a.id - b.id) * direction;
+
+        return (a.played_at < b.played_at ? -1 : 1) * direction;
+    });
+});
+
+const searchablePlayText = computed(() => new Map(props.plays.map(play => [
+    play.id,
+    normalizeHistorySearch([
+        play.game.name,
+        play.expansion?.name ?? '',
+        play.notes ?? '',
+        play.poll?.name ?? '',
+        ...play.players.map(player => player.name),
+    ].join(' ')),
+])));
+
 const filteredPlays = computed(() => {
-    let result = [...props.plays];
+    const terms = normalizeHistorySearch(search.value).split(/\s+/).filter(Boolean);
+    const gameId = selectedGameId.value;
+    const playerId = selectedPlayerId.value;
+    const plays = sortedPlays.value;
 
-    /*
-    |--------------------------------------------------------------------------
-    | Buscar
-    |--------------------------------------------------------------------------
-    |
-    | Buscamos por:
-    |
-    | - juego
-    | - expansión
-    | - jugador
-    | - notas
-    |
-    */
+    if (!terms.length && gameId === null && playerId === null) return plays;
 
-    // Permitir varias palabras en cualquier orden,
-    // incluso si pertenecen a campos distintos.
-    const terms = normalizeHistorySearch(search.value)
-        .split(/\s+/)
-        .filter(Boolean);
+    const searchableText = terms.length ? searchablePlayText.value : null;
 
-    if (terms.length) {
-        result = result.filter((play) => {
-            const searchableText = normalizeHistorySearch([
-                play.game.name,
-                play.expansion?.name ?? '',
-                play.notes ?? '',
-                play.poll?.name ?? '',
-                ...play.players.map(player => player.name),
-            ].join(' '));
-
-            return terms.every(term => searchableText.includes(term));
-        });
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Filtro por juego
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-        selectedGameId.value !==
-        null
-    ) {
-        result = result.filter(
-            (play) =>
-                play.game.id ===
-                selectedGameId.value
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Filtro por jugador
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-        selectedPlayerId.value !==
-        null
-    ) {
-        result = result.filter(
-            (play) =>
-                play.players.some(
-                    (player) =>
-                        player.id ===
-                        selectedPlayerId.value
-                )
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Orden
-    |--------------------------------------------------------------------------
-    */
-
-    result.sort(
-        (a, b) => {
-            const dateA =
-                new Date(
-                    `${a.played_at}T12:00:00`
-                ).getTime();
-
-            const dateB =
-                new Date(
-                    `${b.played_at}T12:00:00`
-                ).getTime();
-
-            if (
-                sortBy.value ===
-                'newest'
-            ) {
-                if (
-                    dateA !== dateB
-                ) {
-                    return (
-                        dateB -
-                        dateA
-                    );
-                }
-
-                return b.id - a.id;
-            }
-
-            if (
-                dateA !== dateB
-            ) {
-                return (
-                    dateA -
-                    dateB
-                );
-            }
-
-            return a.id - b.id;
-        }
+    return plays.filter(play =>
+        (gameId === null || play.game.id === gameId) &&
+        (playerId === null || play.players.some(player => player.id === playerId)) &&
+        (!searchableText || terms.every(term => searchableText.get(play.id)?.includes(term))),
     );
-
-    return result;
 });
 
 /*
@@ -384,22 +298,14 @@ const clearFilters = async () => {
 |--------------------------------------------------------------------------
 */
 
-const formatDate = (
-    date: string
-): string => {
-    return new Intl.DateTimeFormat(
-        'es-ES',
-        {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-        }
-    ).format(
-        new Date(
-            `${date}T12:00:00`
-        )
-    );
-};
+const historyDateFormatter = new Intl.DateTimeFormat('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+});
+
+const formatDate = (date: string): string =>
+    historyDateFormatter.format(new Date(`${date}T12:00:00`));
 
 /*
 |--------------------------------------------------------------------------

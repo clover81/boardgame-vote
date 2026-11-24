@@ -325,12 +325,13 @@ const submit = () => {
                     </h2>
 
                     <p
+                        v-if="games.length"
                         class="mt-1 text-sm text-zinc-500 dark:text-zinc-400"
                     >
                         Busca y selecciona el juego base.
                     </p>
 
-                    <div class="mt-5">
+                    <div v-if="games.length" class="mt-5">
                         <label
                             for="manual-game-search"
                             class="block text-sm font-semibold text-zinc-700 dark:text-zinc-200"
@@ -350,7 +351,19 @@ const submit = () => {
                         </p>
                     </div>
 
-                    <div ref="gameResults" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <div v-else class="mt-3">
+                        <p class="text-sm text-zinc-600 dark:text-zinc-400">
+                            Necesitas un juego activo en una de tus colecciones para registrar la partida.
+                        </p>
+                        <Link
+                            href="/games"
+                            class="mt-1 inline-flex min-h-11 items-center rounded text-sm font-bold text-[#5200FF] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-[#CCFF00]"
+                        >
+                            Ir a Mis juegos
+                        </Link>
+                    </div>
+
+                    <div v-if="games.length" ref="gameResults" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         <label
                             v-for="game in visibleGames"
                             :key="game.id"
@@ -508,6 +521,7 @@ const submit = () => {
                     </h2>
 
                     <p
+                        v-if="players.length"
                         class="mt-1 text-sm text-zinc-500 dark:text-zinc-400"
                     >
                         Selecciona los participantes
@@ -515,6 +529,7 @@ const submit = () => {
                     </p>
 
                     <div
+                        v-if="players.length"
                         class="mt-5 grid gap-3 sm:grid-cols-2"
                     >
                         <label
@@ -543,6 +558,18 @@ const submit = () => {
                                 </span>
                             </div>
                         </label>
+                    </div>
+
+                    <div v-else class="mt-3">
+                        <p class="text-sm text-zinc-600 dark:text-zinc-400">
+                            Añade o reactiva un jugador para poder seleccionarlo.
+                        </p>
+                        <Link
+                            href="/players"
+                            class="mt-1 inline-flex min-h-11 items-center rounded text-sm font-bold text-[#5200FF] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-[#CCFF00]"
+                        >
+                            Gestionar jugadores
+                        </Link>
                     </div>
 
                     <InputError :message="form.errors.player_ids" />
