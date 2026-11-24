@@ -160,21 +160,15 @@ const gameBackLink = computed(() => {
 const gameEditUrl = computed(() =>
     pollReturn.value
         ? `/games/${props.game.id}/edit?poll_return=${encodeURIComponent(pollReturn.value)}`
-        : fromHistory.value
-            ? `/games/${props.game.id}/edit?from=history`
+        : fromHistory.value || gameSource.value === 'statistics'
+            ? `/games/${props.game.id}/edit?from=${gameSource.value}`
             : `/games/${props.game.id}/edit?back=${encodeURIComponent(backToGames.value)}`
 );
 
 const removingCollectionId = ref<number | null>(null);
 const coverHasError = ref(false);
 
-const brokenExpansionIds = ref<number[]>([]);
-
-const markExpansionAsBroken = (expansionId: number) => {
-    if (!brokenExpansionIds.value.includes(expansionId)) {
-        brokenExpansionIds.value.push(expansionId);
-    }
-};
+const brokenExpansionCovers = ref<Record<number, string | null>>({});
 
 const detachCollection = (collection: Collection) => {
     if (removingCollectionId.value !== null) {
@@ -705,14 +699,15 @@ const formatGameMode = (
                         >
                             <!-- IMAGEN -->
                             <div
-                                v-if="expansion.image_url && !brokenExpansionIds.includes(expansion.id)"
+                                v-if="expansion.image_url && brokenExpansionCovers[expansion.id] !== expansion.image_url"
                                 class="flex aspect-[4/3] items-center justify-center bg-zinc-100 p-3 dark:bg-zinc-900"
                             >
                                 <img
+                                    :key="expansion.image_url"
                                     :src="expansion.image_url"
                                     :alt="expansion.name"
                                     class="h-full w-full object-contain"
-                                    @error="markExpansionAsBroken(expansion.id)"
+                                    @error="brokenExpansionCovers[expansion.id] = expansion.image_url"
                                 />
                             </div>
 

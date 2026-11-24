@@ -568,8 +568,14 @@ class GameController extends Controller
             );
         }
 
-        if ($request->query('from') === 'history') {
-            return redirect()->route('plays.index')->with(
+        $returnRoute = match ($request->query('from')) {
+            'history' => 'plays.index',
+            'statistics' => 'statistics.index',
+            default => null,
+        };
+
+        if ($returnRoute !== null) {
+            return redirect()->route($returnRoute)->with(
                 'success',
                 $usedByAnotherUser
                     ? 'Se han actualizado tus colecciones. La ficha compartida no se ha modificado.'

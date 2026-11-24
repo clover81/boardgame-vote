@@ -113,6 +113,7 @@ const form = useForm({
     collection_ids: [...props.game_collection_ids] as number[],
 });
 
+const brokenExpansionCovers = ref<Record<number, string | null>>({});
 const imagePreviewFailed = ref(false);
 watch(() => form.image_url, () => {
     imagePreviewFailed.value = false;
@@ -307,8 +308,8 @@ const submit = () => {
 
 const page = usePage();
 const pollReturn = computed(() => getPollReturnUrl(page.url));
-const fromHistory = computed(() =>
-    new URLSearchParams(page.url.split('?')[1]).get('from') === 'history',
+const gameSource = computed(() =>
+    new URLSearchParams(page.url.split('?')[1]).get('from'),
 );
 const backToGames = computed(() => {
     const back = new URLSearchParams(page.url.split('?')[1]).get('back');
@@ -316,11 +317,19 @@ const backToGames = computed(() => {
     return back?.startsWith('/games?') ? back : '/games';
 });
 
+const gameBackLink = computed(() => {
+    if (pollReturn.value) return { href: pollReturn.value, label: 'Volver a la votación' };
+    if (gameSource.value === 'history') return { href: '/plays', label: 'Volver al historial' };
+    if (gameSource.value === 'statistics') return { href: '/statistics', label: 'Volver a estadísticas' };
+
+    return { href: backToGames.value, label: 'Volver a la colección' };
+});
+
 const updateUrl = computed(() =>
     pollReturn.value
         ? `/games/${props.game.id}?poll_return=${encodeURIComponent(pollReturn.value)}`
-        : fromHistory.value
-            ? `/games/${props.game.id}?from=history`
+        : gameSource.value === 'history' || gameSource.value === 'statistics'
+            ? `/games/${props.game.id}?from=${gameSource.value}`
             : `/games/${props.game.id}?back=${encodeURIComponent(backToGames.value)}`
 );
 
@@ -399,10 +408,10 @@ const confirmDeleteGame = () => {
         <div class="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 2xl:max-w-7xl">
             <div class="mb-6">
                 <Link
-                    :href="pollReturn ?? (fromHistory ? '/plays' : backToGames)"
+                    :href="gameBackLink.href"
                     class="text-sm font-medium text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                 >
-                    {{ pollReturn ? '← Volver a la votación' : fromHistory ? '← Volver al historial' : '← Volver a la colección' }}
+                    ← {{ gameBackLink.label }}
                 </Link>
 
                 <h1 class="mt-4 text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
@@ -860,16 +869,12 @@ const confirmDeleteGame = () => {
                                 class="h-28 w-20 shrink-0 overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-900"
                             >
                                 <img
-                                    v-if="
-                                        expansion.image_url
-                                    "
-                                    :src="
-                                        expansion.image_url
-                                    "
-                                    :alt="
-                                        expansion.name
-                                    "
+                                    v-if="expansion.image_url && brokenExpansionCovers[expansion.id] !== expansion.image_url"
+                                    :key="expansion.image_url"
+                                    :src="expansion.image_url"
+                                    :alt="expansion.name"
                                     class="h-full w-full object-contain p-1"
+                                    @error="brokenExpansionCovers[expansion.id] = expansion.image_url"
                                 />
 
                                 <div

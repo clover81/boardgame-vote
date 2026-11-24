@@ -44,7 +44,7 @@ beforeEach(function () {
     ];
 });
 
-test('editing a game from history returns to the play list', function (bool $shared) {
+test('editing a game returns to its original listing', function (string $origin, string $destination, bool $shared) {
     if (! $shared) {
         $this->game->collections()->detach($this->foreignCollection);
     }
@@ -59,13 +59,15 @@ test('editing a game from history returns to the play list', function (bool $sha
     $this->actingAs($this->user)
         ->put(route('games.update', [
             'game' => $this->game,
-            'from' => 'history',
+            'from' => $origin,
         ]), $payload)
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('plays.index'));
+        ->assertRedirect(route($destination));
 })->with([
-    'shared game' => [true],
-    'exclusive game' => [false],
+    'history with a shared game' => ['history', 'plays.index', true],
+    'history with an exclusive game' => ['history', 'plays.index', false],
+    'statistics with a shared game' => ['statistics', 'statistics.index', true],
+    'statistics with an exclusive game' => ['statistics', 'statistics.index', false],
 ]);
 
 test('an unrecognised origin cannot change the game update destination', function () {
