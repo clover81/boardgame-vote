@@ -87,14 +87,12 @@ const searchTerms = computed(() => normalizeSearchText(search.value).split(' ').
 
 // Normalizar cada juego una sola vez, únicamente cuando se busque.
 const normalizedGameSearch = computed(() =>
-    new Map<number, { name: string; words: string[] }>(
+    new Map<number, { name: string; descriptionWords: string[] }>(
         props.games.map(game => [
             game.id,
             {
                 name: normalizeSearchText(game.name),
-                words: normalizeSearchText(
-                    `${game.name} ${game.short_description ?? ''}`
-                ).split(' '),
+                descriptionWords: normalizeSearchText(game.short_description ?? '').split(' '),
             },
         ]),
     ),
@@ -155,15 +153,11 @@ const filteredGames = computed(() => {
         const data = normalizedData.get(game.id);
         if (!data) return false;
 
-        // Coincidencia por título, con búsqueda parcial.
-        if (terms.every(term => data.name.includes(term))) {
-            return true;
-        }
-
-        // Coincidencia temática por principio de palabra.
-        // Evitar que "nova" coincida con "innovador".
+        // Cada término puede coincidir con parte del título o con el inicio
+        // de una palabra del resumen.
         return terms.every(term =>
-            data.words.some(word => word.startsWith(term))
+            data.name.includes(term) ||
+            data.descriptionWords.some(word => word.startsWith(term))
         );
     });
 });
@@ -497,10 +491,14 @@ const sortedGames = computed(() => {
         return descending ? b - a : a - b;
     };
 
-    return [...filteredGames.value].sort((a, b) => {
-        // Priorizar coincidencias solo con la ordenación predeterminada.
-        if (sortBy.value === 'name' && terms.length) {
-            const byRelevance = relevance(a) - relevance(b);
+    const games = [...filteredGames.value];
+    const relevanceById = sortBy.value === 'name' && terms.length
+        ? new Map(games.map(game => [game.id, relevance(game)]))
+        : null;
+
+    return games.sort((a, b) => {
+        if (relevanceById) {
+            const byRelevance = (relevanceById.get(a.id) ?? 2) - (relevanceById.get(b.id) ?? 2);
             if (byRelevance !== 0) return byRelevance;
         }
 
