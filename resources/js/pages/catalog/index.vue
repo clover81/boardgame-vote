@@ -7,6 +7,7 @@ import { Trophy, Dices, Layers3 } from '@lucide/vue';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
+import { normalizeSearchText } from '@/lib/search-text';
 
 interface Collection {
     id: number;
@@ -81,16 +82,7 @@ const playerOptions = computed(() =>
         .sort((a, b) => a - b),
 );
 
-const normalizeText = (text: string): string =>
-    text
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/['‘’]/g, '')
-        .replace(/[^\p{L}\p{N}]+/gu, ' ')
-        .toLocaleLowerCase()
-        .trim();
-
-const searchTerms = computed(() => normalizeText(search.value).split(' ').filter(Boolean));
+const searchTerms = computed(() => normalizeSearchText(search.value).split(' ').filter(Boolean));
 
 // Normalizar cada juego una sola vez, únicamente cuando se busque.
 const normalizedGameSearch = computed(() =>
@@ -98,8 +90,8 @@ const normalizedGameSearch = computed(() =>
         props.games.map(game => [
             game.id,
             {
-                name: normalizeText(game.name),
-                words: normalizeText(
+                name: normalizeSearchText(game.name),
+                words: normalizeSearchText(
                     `${game.name} ${game.short_description ?? ''}`
                 ).split(' '),
             },

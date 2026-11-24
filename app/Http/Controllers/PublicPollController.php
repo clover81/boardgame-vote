@@ -81,16 +81,17 @@ class PublicPollController extends Controller
                         'created_by',
                         $poll->created_by
                     )
-                    ->with(
-                        'players'
-                    )
+                    ->select(['id', 'game_id', 'played_at'])
+                    ->with('players:id')
                     ->orderByDesc(
                         'played_at'
                     );
             },
-
-            'candidates.votes',
         ]);
+
+        if ($poll->status === 'closed') {
+            $poll->loadMissing('candidates.votes');
+        }
 
         /*
         |--------------------------------------------------------------------------
@@ -636,12 +637,13 @@ class PublicPollController extends Controller
         $linked->load([
             'candidates.game',
             'candidates.expansion',
-            'candidates.votes',
         ]);
 
         $winnerId = null;
 
         if ($linked->status === 'closed') {
+            $linked->loadMissing('candidates.votes');
+
             $scores = $linked->candidates->map(function ($candidate) use ($linked) {
                 $first = $candidate->votes->where('position', 1)->count();
                 $second = $candidate->votes->where('position', 2)->count();

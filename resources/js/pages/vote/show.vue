@@ -21,6 +21,7 @@ import {
 
 import AlertError from '@/components/AlertError.vue';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
+import { normalizeSearchText } from '@/lib/search-text';
 
 /*
 |--------------------------------------------------------------------------
@@ -266,15 +267,12 @@ const clearCandidateSearch = (event: MouseEvent) => {
     if (event.detail === 0) candidateSearchInput.value?.focus();
 };
 
-const normalizeCandidateName = (name: string) =>
-    name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
-
 const visibleCandidates = computed(() => {
-    const terms = normalizeCandidateName(candidateSearch.value).trim().split(/\s+/).filter(Boolean);
+    const terms = normalizeSearchText(candidateSearch.value).split(' ').filter(Boolean);
 
     return props.poll.candidates
         .filter(({ game }) => {
-            const name = normalizeCandidateName(game.name);
+            const name = normalizeSearchText(game.name);
             return terms.every(term => name.includes(term));
         })
         .sort((a, b) => {

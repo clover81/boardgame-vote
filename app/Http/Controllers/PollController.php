@@ -1887,9 +1887,14 @@ class PollController extends Controller
                 ]);
         }
 
-        $poll->update([
-            'status' => 'open',
-        ]);
+        $opened = Poll::query()
+            ->whereKey($poll->id)
+            ->where('status', 'draft')
+            ->update(['status' => 'open']);
+
+        if ($opened === 0) {
+            return back();
+        }
 
         return redirect()
             ->route(

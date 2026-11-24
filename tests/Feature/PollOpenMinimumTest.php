@@ -3,6 +3,7 @@
 use App\Models\Game;
 use App\Models\Poll;
 use App\Models\User;
+use Illuminate\Support\Facades\Route;
 
 test('opening a poll requires at least two participants and one candidate game', function ($participants, $candidates, $canOpen) {
     $user = User::factory()->create();
@@ -50,3 +51,32 @@ test('opening a poll requires at least two participants and one candidate game',
     'exactly two of each' => [2, 2, true],
     'more than two of each' => [3, 3, true],
 ]);
+
+test('a stale open request cannot overwrite a later poll status', function (string $status) {
+    $owner = User::factory()->create();
+    $stalePoll = Poll::create([
+        'created_by' => $owner->id,
+        'name' => 'Partida del domingo',
+        'token' => 'STALEOPEN',
+        'status' => 'draft',
+    ]);
+    $stalePoll->participants()->createMany([
+        ['display_name' => 'Ana'],
+        ['display_name' => 'Pablo'],
+    ]);
+    $game = Game::create(['name' => 'Parks', 'min_players' => 1, 'max_players' => 4]);
+    $stalePoll->candidates()->create(['game_id' => $game->id]);
+
+    // Simular una solicitud que resolvió su modelo antes del cambio de estado.
+    Poll::query()->whereKey($stalePoll->id)->update(['status' => $status]);
+    Route::bind('poll', fn () => $stalePoll);
+
+    $showUrl = route('polls.show', $stalePoll);
+    $this->actingAs($owner)
+        ->from($showUrl)
+        ->patch(route('polls.open', $stalePoll))
+        ->assertRedirect($showUrl)
+        ->assertSessionMissing('success');
+
+    expect($stalePoll->fresh()->status)->toBe($status);
+})->with(['open', 'closed']);
