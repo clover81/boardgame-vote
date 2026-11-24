@@ -43,7 +43,21 @@ class PublicCatalogController extends Controller
                     )->orderBy('name'),
             ])
             ->orderBy('name')
-            ->get()
+            ->get([
+                'id',
+                'name',
+                'image_url',
+                'min_players',
+                'max_players',
+                'min_playtime',
+                'max_playtime',
+                'complexity',
+                'game_mode',
+                'game_modes',
+                'short_description',
+                'bgg_url',
+                'youtube_url',
+            ])
             ->map(fn (Game $game) => [
                 'id' => $game->id,
                 'name' => $game->name,
