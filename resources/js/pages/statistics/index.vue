@@ -38,7 +38,7 @@ const formatDate = (date: string | null): string => {
 };
 
 const counters = [
-    { key: 'games_count', label: 'Juegos en colección', href: '/games' },
+    { key: 'games_count', label: 'Juegos activos en colección', href: '/games' },
     { key: 'total_plays', label: 'Partidas registradas', href: '/plays' },
     { key: 'games_with_plays', label: 'Juegos con partidas', href: '/games' },
     { key: 'games_without_plays', label: 'Juegos sin partidas registradas', href: '/games' },
@@ -82,7 +82,7 @@ const counters = [
                                 <span v-else aria-hidden="true">🎲</span>
                             </div>
                             <div class="min-w-0 flex-1">
-                                <Link :href="`/games/${game.id}`" class="font-bold text-zinc-900 hover:text-[#5200FF] dark:text-zinc-100">{{ game.name }}</Link>
+                                <Link :href="`/games/${game.id}?from=statistics`" class="font-bold text-zinc-900 hover:text-[#5200FF] dark:text-zinc-100">{{ game.name }}</Link>
                                 <p class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">Última: {{ formatDate(game.last_played_at) }}</p>
                             </div>
                             <div class="shrink-0 text-right">
@@ -108,11 +108,13 @@ const counters = [
                                 <img v-if="game.image_url && !brokenCoverIds.includes(game.id)" :src="game.image_url" :alt="`Portada de ${game.name}`" loading="lazy" class="h-full w-full object-contain" @error="markCoverBroken(game.id)" />
                                 <span v-else aria-hidden="true">🎲</span>
                             </div>
-                            <Link :href="`/games/${game.id}`" class="min-w-0 flex-1 font-bold text-zinc-900 hover:text-[#5200FF] dark:text-zinc-100">{{ game.name }}</Link>
+                            <Link :href="`/games/${game.id}?from=statistics`" class="min-w-0 flex-1 font-bold text-zinc-900 hover:text-[#5200FF] dark:text-zinc-100">{{ game.name }}</Link>
                         </li>
                     </ul>
-                    <p v-else class="mt-5 rounded-xl bg-zinc-50 p-4 text-sm text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">Todos los juegos de tu colección tienen alguna partida registrada.</p>
-                    <p v-if="summary.games_without_plays > withoutPlays.length" class="mt-3 text-xs text-zinc-500 dark:text-zinc-400">Mostrando 10 de {{ summary.games_without_plays }}. Puedes consultar el resto en Mi colección.</p>
+                    <p v-else class="mt-5 rounded-xl bg-zinc-50 p-4 text-sm text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">{{ summary.games_count === 0
+                        ? 'Tu colección no tiene juegos activos.'
+                        : 'Todos los juegos activos de tu colección tienen alguna partida registrada.' }}</p>
+                    <p v-if="summary.games_without_plays > withoutPlays.length" class="mt-3 text-xs text-zinc-500 dark:text-zinc-400">Mostrando {{ withoutPlays.length }} de {{ summary.games_without_plays }} juegos sin partidas.</p>
                 </section>
             </div>
         </div>

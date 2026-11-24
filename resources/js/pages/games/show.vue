@@ -131,9 +131,10 @@ const props = defineProps<{
 const page = usePage();
 const pollReturn = computed(() => getPollReturnUrl(page.url));
 
-const fromHistory = computed(() =>
-    new URLSearchParams(page.url.split('?')[1]).get('from') === 'history',
+const gameSource = computed(() =>
+    new URLSearchParams(page.url.split('?')[1]).get('from'),
 );
+const fromHistory = computed(() => gameSource.value === 'history');
 
 const backToGames = computed(() => {
     const query = page.url.split('?')[1] ?? '';
@@ -146,6 +147,14 @@ const backToGames = computed(() => {
     }
 
     return '/games';
+});
+
+const gameBackLink = computed(() => {
+    if (pollReturn.value) return { href: pollReturn.value, label: 'Volver a la votación' };
+    if (fromHistory.value) return { href: '/plays', label: 'Volver a mis partidas' };
+    if (gameSource.value === 'statistics') return { href: '/statistics', label: 'Volver a estadísticas' };
+
+    return { href: backToGames.value, label: 'Mi colección' };
 });
 
 const gameEditUrl = computed(() =>
@@ -380,10 +389,10 @@ const formatGameMode = (
             <!-- VOLVER -->
 
             <Link
-                :href="pollReturn ?? (fromHistory ? '/plays' : backToGames)"
+                :href="gameBackLink.href"
                 class="text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
             >
-                {{ pollReturn ? '← Volver a la votación' : fromHistory ? '← Volver a mis partidas' : '← Mi colección' }}
+                ← {{ gameBackLink.label }}
             </Link>
 
             <!-- CABECERA -->

@@ -14,19 +14,20 @@ test('las estadisticas cuentan partidas propias y juegos de colecciones propias 
     $this->withoutVite();
     $user = User::factory()->create();
     $otherUser = User::factory()->create();
-    $game = fn (string $name) => Game::create([
+    $game = fn (string $name, bool $active = true) => Game::create([
         'name' => $name, 'min_players' => 1, 'max_players' => 4,
-        'game_mode' => 'competitive', 'is_active' => true,
+        'game_mode' => 'competitive', 'is_active' => $active,
     ]);
     $played = $game('Juego jugado');
     $withoutPlay = $game('Juego sin partidas');
     $uncollected = $game('Juego fuera de colección');
     $otherGame = $game('Juego ajeno');
+    $inactive = $game('Juego inactivo', false);
 
     $first = GameCollection::create(['created_by' => $user->id, 'name' => 'Colección 1']);
     $second = GameCollection::create(['created_by' => $user->id, 'name' => 'Colección 2']);
     $foreign = GameCollection::create(['created_by' => $otherUser->id, 'name' => 'Ajena']);
-    $first->games()->attach([$played->id, $withoutPlay->id]);
+    $first->games()->attach([$played->id, $withoutPlay->id, $inactive->id]);
     $second->games()->attach($played->id);
     $foreign->games()->attach([$played->id, $otherGame->id]);
 
@@ -35,11 +36,13 @@ test('las estadisticas cuentan partidas propias y juegos de colecciones propias 
     Play::create(['created_by' => $user->id, 'game_id' => $uncollected->id, 'played_at' => '2026-11-04']);
     Play::create(['created_by' => $otherUser->id, 'game_id' => $played->id, 'played_at' => '2026-11-05']);
 
+    Play::create(['created_by' => $user->id, 'game_id' => $inactive->id, 'played_at' => '2026-11-06']);
+
     $response = $this->actingAs($user)->get(route('statistics.index'))->assertOk();
     $response->assertInertia(fn (Assert $page) => $page
         ->component('statistics/index')
         ->where('summary', [
-            'total_plays' => 3,
+            'total_plays' => 4,
             'games_count' => 2,
             'games_with_plays' => 1,
             'games_without_plays' => 1,

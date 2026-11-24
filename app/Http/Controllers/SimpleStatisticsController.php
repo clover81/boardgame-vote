@@ -14,10 +14,11 @@ class SimpleStatisticsController extends Controller
     {
         $userId = (int) $request->user()->id;
 
-        // Solamente juegos de colecciones propias, sin duplicar los compartidos.
+        // Juegos activos de colecciones propias, sin duplicar los compartidos.
         // Las partidas se cuentan por propietario y no por todos los usuarios.
         $games = Game::query()
             ->select(['id', 'name', 'image_url'])
+            ->where('is_active', true)
             ->whereHas('collections', fn ($query) => $query
                 ->where('game_collections.created_by', $userId))
             ->withCount(['plays as times_played' => fn ($query) => $query
