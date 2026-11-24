@@ -236,7 +236,7 @@ const tutorialUrl = (game: Game): string =>
                         />
                     </button>
 
-                    <span v-else class="text-zinc-400">
+                    <span v-else class="text-zinc-600">
                         Sin portada disponible
                     </span>
                 </div>
@@ -462,7 +462,7 @@ const tutorialUrl = (game: Game): string =>
                     <article
                         v-for="expansion in game.expansions"
                         :key="expansion.id"
-                        class="group flex h-full flex-row overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#5200FF] hover:shadow-xl focus-within:border-[#5200FF] motion-reduce:transform-none motion-reduce:transition-none sm:flex-col"
+                        class="group flex h-full flex-row overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition-all duration-300 motion-safe:hover:-translate-y-1 hover:border-[#5200FF] hover:shadow-xl focus-within:border-[#5200FF] motion-reduce:transform-none motion-reduce:transition-none sm:flex-col"
                     >
                         <!-- PORTADA -->
                         <div
@@ -503,7 +503,7 @@ const tutorialUrl = (game: Game): string =>
                                     :aria-label="`Ver en BGG: ${expansion.name}`"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    class="inline-flex min-h-11 min-w-0 flex-1 basis-28 items-center justify-center rounded-xl bg-[#5200FF] px-2 py-2.5 text-center text-xs font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#4000cc] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:min-w-[125px] sm:px-3 sm:text-sm"
+                                    class="inline-flex min-h-11 min-w-0 flex-1 basis-28 items-center justify-center rounded-xl bg-[#5200FF] px-2 py-2.5 text-center text-xs font-bold text-white transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:bg-[#4000cc] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:min-w-[125px] sm:px-3 sm:text-sm"
                                 >
                                     Ver en BGG <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                                 </a>
@@ -514,7 +514,7 @@ const tutorialUrl = (game: Game): string =>
                                     :aria-label="`Ver tutorial: ${expansion.name}`"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    class="inline-flex min-h-11 min-w-0 flex-1 basis-28 items-center justify-center gap-1 rounded-xl border-2 border-[#5200FF] bg-white px-2 py-2 text-center text-xs font-bold text-[#5200FF] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f1ebff] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:min-w-[125px] sm:gap-1.5 sm:px-3 sm:text-sm"
+                                    class="inline-flex min-h-11 min-w-0 flex-1 basis-28 items-center justify-center gap-1 rounded-xl border-2 border-[#5200FF] bg-white px-2 py-2 text-center text-xs font-bold text-[#5200FF] transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:bg-[#f1ebff] hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none sm:min-w-[125px] sm:gap-1.5 sm:px-3 sm:text-sm"
                                 >
                                     <YoutubeLogoIcon class="size-4 shrink-0" aria-hidden="true" /> Ver tutorial <ChainIcon class="ml-1 inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" />
                                 </a>

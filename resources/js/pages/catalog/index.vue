@@ -977,7 +977,7 @@ const tutorialUrl = (game: Game): string =>
                 <article
                     v-for="(game, index) in sortedGames"
                     :key="game.id"
-                    class="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#5200FF] hover:shadow-xl"
+                    class="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition duration-300 motion-safe:hover:-translate-y-1 hover:border-[#5200FF] hover:shadow-xl motion-reduce:transition-none"
                 >
                     <!-- Enlace que permite abrir la ficha pulsando
                          sobre cualquier zona libre de la tarjeta -->
@@ -998,12 +998,12 @@ const tutorialUrl = (game: Game): string =>
                             :alt="`Portada de ${game.name}`"
                             :loading="index === 0 ? 'eager' : 'lazy'"
                             :fetchpriority="index === 0 ? 'high' : 'auto'"
-                            class="h-full w-full object-contain drop-shadow-xl transition-transform duration-500 group-hover:scale-105"
+                            class="h-full w-full object-contain drop-shadow-xl transition-transform duration-500 motion-safe:group-hover:scale-105 motion-reduce:transition-none"
                         />
 
                         <div
                             v-else
-                            class="flex flex-col items-center gap-2 text-zinc-400"
+                            class="flex flex-col items-center gap-2 text-zinc-600"
                         >
                             <span class="text-5xl"><PlayingCardsFanIcon class="mr-1 inline-block size-12 shrink-0 align-[-0.14em] text-violet-700" aria-hidden="true" /></span>
                             <span class="text-sm font-medium">
