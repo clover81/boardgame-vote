@@ -37,6 +37,11 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
         return 'bgg-collection-' . $this->collectionId;
     }
 
+    public function displayName(): string
+    {
+        return 'SyncBggCollection '.$this->uniqueId();
+    }
+
     public function handle(
         BggCollectionImporter $gamesImporter,
         BggExpansionImporter $expansionsImporter,

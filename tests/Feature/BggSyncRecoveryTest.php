@@ -1,8 +1,10 @@
 <?php
 
+use App\Jobs\SyncBggCollection;
 use App\Models\GameCollection;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -60,7 +62,7 @@ test('no desbloquea una solicitud reciente', function () {
     expect($this->collection->fresh()->bgg_sync_status)->toBe('pending');
 });
 
-test('no desbloquea si existe un trabajo en default aunque sea antiguo', function () {
+test('no desbloquea si existe un trabajo sin identificar en default', function () {
     ageBggCollection($this->collection);
     DB::table('jobs')->insert([
         'queue' => 'default', 'payload' => '{}', 'attempts' => 0,
@@ -71,6 +73,25 @@ test('no desbloquea si existe un trabajo en default aunque sea antiguo', functio
     $this->actingAs($this->user)->get(route('collections.index'))->assertOk();
     expect($this->collection->fresh()->bgg_sync_status)->toBe('pending');
 });
+
+test('la recuperación solo se bloquea por el trabajo de la misma colección', function (bool $sameCollection, bool $reserved) {
+    ageBggCollection($this->collection);
+    $id = $sameCollection ? $this->collection->id : $this->collection->id + 1;
+    $jobId = Queue::connection('database')->push(new SyncBggCollection($id));
+
+    if ($reserved) {
+        DB::table('jobs')->where('id', $jobId)->update(['reserved_at' => now()->timestamp]);
+    }
+
+    $this->actingAs($this->user)->get(route('collections.index'))->assertOk();
+    expect($this->collection->fresh()->bgg_sync_status)->toBe($sameCollection ? 'pending' : 'failed');
+    $this->assertDatabaseHas('jobs', ['id' => $jobId]);
+})->with([
+    'misma colección en espera' => [true, false],
+    'misma colección reservada' => [true, true],
+    'otra colección en espera' => [false, false],
+    'otra colección reservada' => [false, true],
+]);
 
 test('un trabajo de descriptions no bloquea recuperar la cola default', function () {
     ageBggCollection($this->collection);

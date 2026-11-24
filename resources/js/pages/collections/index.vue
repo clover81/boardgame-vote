@@ -588,11 +588,6 @@ const syncBggCollection = () => {
                         || 'No se ha podido completar la sincronización con BGG.';
                     return;
                 }
-                if (status !== 'pending' && status !== 'running') return;
-                bggSyncMessage.value =
-                    'Sincronización enviada a la cola. ' +
-                    'Los juegos y expansiones nuevos se incorporarán ' +
-                    'cuando termine el proceso.';
             },
 
             onError: (errors) => {
@@ -1440,6 +1435,7 @@ watch(
                         </h3>
 
                         <span
+                            role="status"
                             class="rounded-full px-3 py-1 text-xs font-bold"
                             :class="{
                                 'bg-amber-100 text-amber-800':
@@ -1473,11 +1469,10 @@ watch(
                         )"
                         class="mt-3 text-sm text-blue-700 dark:text-blue-300"
                     >
-                        Hay una sincronización pendiente o en curso.
-                        Para evitar duplicados, no se puede iniciar otra
-                        hasta que termine. El estado se actualiza automáticamente.
-                        Si el proceso se interrumpe, el sistema comprobará
-                        si puede recuperar la sincronización.
+                        {{ selectedBggCollection.bgg_sync_status === 'pending'
+                            ? 'La importación está en cola y empezará automáticamente.'
+                            : 'Se están importando las novedades de BGG.' }}
+                        El estado se actualiza automáticamente.
                     </p>
 
                     <template

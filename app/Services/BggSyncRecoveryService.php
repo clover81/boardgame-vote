@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\SyncBggCollection;
 use App\Models\GameCollection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -49,13 +50,32 @@ class BggSyncRecoveryService
         }
 
         try {
-            // Comprobacion conservadora: ante CUALQUIER trabajo en default,
-            // no recuperamos nada. Asi no interferimos con un job reservado,
-            // en espera, o que se este ejecutando.
-            $hasJobs = DB::connection(config('queue.connections.database.connection'))
+            $queuedCollections = [];
+            $jobs = DB::connection(config('queue.connections.database.connection'))
                 ->table(config('queue.connections.database.table', 'jobs'))
                 ->where('queue', config('queue.connections.database.queue', 'default'))
-                ->exists();
+                ->cursor();
+
+            foreach ($jobs as $job) {
+                $payload = json_decode($job->payload, true);
+                $command = $payload['data']['commandName'] ?? null;
+
+                // Si el trabajo no se puede identificar, conservar la protección anterior.
+                if (! is_string($command) || $command === '') {
+                    return;
+                }
+
+                if ($command !== SyncBggCollection::class) {
+                    continue;
+                }
+
+                $name = $payload['displayName'] ?? null;
+                if (! is_string($name) || ! preg_match('/^SyncBggCollection bgg-collection-([1-9][0-9]*)$/D', $name, $match)) {
+                    return;
+                }
+
+                $queuedCollections[$match[1]] = true;
+            }
         } catch (Throwable $exception) {
             // Si no podemos consultar la cola, tampoco podemos afirmar
             // que la sincronizacion haya desaparecido.
@@ -66,11 +86,11 @@ class BggSyncRecoveryService
             return;
         }
 
-        if ($hasJobs) {
-            return;
-        }
-
         foreach ($stale as $collection) {
+            if (isset($queuedCollections[$collection->id])) {
+                continue;
+            }
+
             // Evita pisar un estado mas reciente si se ha modificado
             // durante la comprobacion.
             $updated = GameCollection::query()
