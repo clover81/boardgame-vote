@@ -263,12 +263,6 @@ const resetBggExpansionLookup = () => {
 
 const searchBgg = async () => {
     if (bggBusy.value) return;
-    resetBggExpansionLookup();
-
-    selectedBggId.value = null;
-    selectedBggGame.value = null;
-    existingBggGame.value = null;
-    legacyBggGame.value = null;
 
     const query = bggQuery.value.trim();
 
@@ -282,7 +276,6 @@ const searchBgg = async () => {
     bggError.value = '';
     bggResults.value = [];
     brokenBggImages.value = [];
-    existingImportedBggGame.value = null;
 
     try {
         const response = await fetch(
@@ -313,15 +306,11 @@ const searchBgg = async () => {
 };
 
 const loadBggGame = async (result: BggSearchResult) => {
-    if (bggBusy.value) return;
-    resetBggExpansionLookup();
+    if (bggBusy.value || selectedBggGame.value?.bgg_id === result.bgg_id) return;
 
     selectedBggId.value = result.bgg_id;
-    selectedBggGame.value = null;
     bggLoading.value = true;
     bggError.value = '';
-    existingBggGame.value = null;
-    legacyBggGame.value = null;
 
     try {
         const response = await fetch(
@@ -338,19 +327,19 @@ const loadBggGame = async (result: BggSearchResult) => {
         if (!response.ok) {
             bggError.value =
                 data?.message ?? 'No se han podido cargar los datos del juego.';
-            selectedBggId.value = null;
+            selectedBggId.value = selectedBggGame.value?.bgg_id ?? null;
             return;
         }
 
         const game = data.game as BggGameDetail;
 
+        resetBggExpansionLookup();
         selectedBggGame.value = game;
         existingBggGame.value = data.existing_game ?? null;
         legacyBggGame.value = data.legacy_game ?? null;
 
         // Limpiamos los datos del importador anterior al cambiar de juego.
         existingImportedBggGame.value = null;
-        availableBggExpansions.value = null;
         form.bgg_expansion_ids = [];
         bggDescription.value = game.description;
 
@@ -389,7 +378,7 @@ const loadBggGame = async (result: BggSearchResult) => {
     } catch {
         bggError.value =
             'No se han podido cargar los datos desde BoardGameGeek.';
-        selectedBggId.value = null;
+        selectedBggId.value = selectedBggGame.value?.bgg_id ?? null;
     } finally {
         bggLoading.value = false;
     }
@@ -397,7 +386,6 @@ const loadBggGame = async (result: BggSearchResult) => {
 
 const importFromBgg = async () => {
     if (bggBusy.value) return;
-    resetBggExpansionLookup();
 
     if (!bggUrl.value.trim()) {
         bggImportError.value = 'Introduce una URL de BoardGameGeek.';
@@ -432,6 +420,8 @@ const importFromBgg = async () => {
         |--------------------------------------------------------------------------
         */
 
+        resetBggExpansionLookup();
+        form.bgg_expansion_ids = [];
         existingBggGame.value = null;
         legacyBggGame.value = null;
         selectedBggId.value = null;
@@ -450,7 +440,6 @@ const importFromBgg = async () => {
              * Limpiamos los datos de una importación anterior.
              */
             form.bgg_id = null;
-            availableBggExpansions.value = null;
             bggDescription.value = '';
 
             return;
@@ -464,12 +453,6 @@ const importFromBgg = async () => {
         form.bgg_id = game.bgg_id;
 
         availableBggExpansions.value = game.expansions ?? [];
-
-        /*
-         * No marcamos automáticamente ninguna expansión.
-         * El usuario decide cuáles posee.
-         */
-        form.bgg_expansion_ids = [];
 
         /*
         |--------------------------------------------------------------------------
@@ -694,8 +677,8 @@ const submit = () => {
                             <div class="mt-4">
                                 <button
                                     type="button"
-                                    :disabled="bggBusy"
-                                    class="rounded-lg bg-[#CCFF00] px-3 py-2 text-sm font-black text-black transition hover:opacity-80 disabled:cursor-wait disabled:opacity-40 sm:px-4"
+                                    :disabled="bggBusy || selectedBggGame?.bgg_id === result.bgg_id"
+                                    class="rounded-lg bg-[#CCFF00] px-3 py-2 text-sm font-black text-black transition enabled:hover:opacity-80 disabled:opacity-60 sm:px-4"
                                     @click="loadBggGame(result)"
                                 >
                                     {{ bggLoading && selectedBggId === result.bgg_id
