@@ -801,14 +801,14 @@ class PlayController extends Controller
             ? route('games.show', $gameIds->first(), false)
             : null;
 
-        if (
+        $returnsToPlayer = is_string($back) && str_starts_with($back, '/players/')
+            && $playerIds->contains(fn (int $id): bool => $back === route('players.show', $id, false));
+
+        if ($back === '/plays' || $returnsToPlayer || (
             is_string($back) &&
             $gamePath !== null &&
-            (
-                $back === $gamePath ||
-                str_starts_with($back, $gamePath . '?')
-            )
-        ) {
+            ($back === $gamePath || str_starts_with($back, $gamePath . '?'))
+        )) {
             return redirect()->to($back)->with(
                 'success',
                 'Partida registrada correctamente.'

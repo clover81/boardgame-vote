@@ -193,6 +193,32 @@ test('a manual play returns to its game detail preserving catalog filters', func
     expect(Play::count())->toBe(1);
 });
 
+test('a manual play started in the history returns to the history', function () {
+    unset($this->payload['poll_id']);
+    $this->payload['game_ids'] = [$this->games[0]->id];
+
+    $this->actingAs($this->user)
+        ->post(route('plays.store', ['back' => '/plays']), $this->payload)
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('plays.index'));
+
+    expect(Play::count())->toBe(1);
+});
+
+test('a manual play can return to a participant but not an unselected player', function (bool $isParticipant) {
+    unset($this->payload['poll_id']);
+    $this->payload['game_ids'] = [$this->games[0]->id];
+    $this->payload['player_ids'] = [$this->players[0]->id];
+    $player = $this->players[$isParticipant ? 0 : 1];
+
+    $this->actingAs($this->user)
+        ->post(route('plays.store', ['back' => route('players.show', $player, false)]), $this->payload)
+        ->assertSessionHasNoErrors()
+        ->assertRedirect($isParticipant ? route('players.show', $player) : route('games.index'));
+
+    expect(Play::count())->toBe(1);
+})->with(['participant' => [true], 'unselected player' => [false]]);
+
 test('manual play return rejects unrelated or external destinations', function (string $kind) {
     unset($this->payload['poll_id']);
 

@@ -57,15 +57,14 @@ const props = defineProps<{
 }>();
 const currentPage = usePage();
 
+const requestedBack = computed(() =>
+    new URLSearchParams(currentPage.url.split('?')[1] ?? '').get('back')
+);
+
 // Solo aceptamos regresar a la ficha del juego preseleccionado.
 const gameReturnUrl = computed(() => {
-    if (props.selected_game_id === null) return null;
-
-    const back = new URLSearchParams(
-        currentPage.url.split('?')[1] ?? ''
-    ).get('back');
-
-    if (!back) return null;
+    const back = requestedBack.value;
+    if (!back || props.selected_game_id === null) return null;
 
     const expected = `/games/${props.selected_game_id}`;
 
@@ -74,11 +73,12 @@ const gameReturnUrl = computed(() => {
         : null;
 });
 
-const playStoreUrl = computed(() =>
-    gameReturnUrl.value
-        ? `/plays?back=${encodeURIComponent(gameReturnUrl.value)}`
-        : '/plays'
-);
+const playerReturnUrl = computed(() => {
+    const playerId = props.selected_player_id;
+    const back = requestedBack.value;
+
+    return playerId !== null && back === `/players/${playerId}` ? back : null;
+});
 
 
 /*
@@ -104,6 +104,16 @@ const form = useForm({
 
     notes:
         '',
+});
+
+const playStoreUrl = computed(() => {
+    let back = gameReturnUrl.value ?? (requestedBack.value === '/plays' ? '/plays' : null);
+    const playerId = props.selected_player_id;
+    if (playerReturnUrl.value && playerId !== null) {
+        back = form.player_ids.includes(playerId) ? playerReturnUrl.value : '/plays';
+    }
+
+    return back ? `/plays?back=${encodeURIComponent(back)}` : '/plays';
 });
 
 /*
@@ -291,10 +301,10 @@ const submit = () => {
             <!-- VOLVER -->
 
             <Link
-                :href="gameReturnUrl ?? '/plays'"
+                :href="gameReturnUrl ?? playerReturnUrl ?? '/plays'"
                 class="text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
             >
-                {{ gameReturnUrl ? '← Volver al juego' : '← Volver al historial' }}
+                {{ gameReturnUrl ? '← Volver al juego' : playerReturnUrl ? '← Volver al jugador' : '← Volver al historial' }}
             </Link>
 
             <!-- CABECERA -->

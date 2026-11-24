@@ -378,7 +378,7 @@ const confirmDeletePlay = () => {
                 </h1>
 
                 <Link
-                    href="/plays/create"
+                    href="/plays/create?back=%2Fplays"
                     class="inline-flex w-full items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90 sm:w-auto"
                 >
                     + Registrar partida
@@ -819,7 +819,7 @@ const confirmDeletePlay = () => {
 
                 <div class="mt-5 flex flex-wrap justify-center gap-3">
                     <Link
-                        href="/plays/create"
+                        href="/plays/create?back=%2Fplays"
                         class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:opacity-90"
                     >
                         Registrar partida
