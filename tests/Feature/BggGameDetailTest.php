@@ -72,6 +72,12 @@ test('a BGG ID match takes priority over an owned manual game with the same titl
         'max_players' => 4,
         'game_mode' => 'competitive',
     ]);
+    $foreignCollection = GameCollection::create([
+        'created_by' => User::factory()->create()->id,
+        'name' => 'Colección de otra cuenta',
+    ]);
+    $linkedGame->collections()->attach([$collection->id, $foreignCollection->id]);
+
     $this->mock(BggService::class)->shouldReceive('game')
         ->once()->with(371942)->andReturn($this->bggGame);
 
@@ -79,7 +85,11 @@ test('a BGG ID match takes priority over an owned manual game with the same titl
         ->assertOk()
         ->assertExactJson([
             'game' => $this->bggGame,
-            'existing_game' => ['id' => $linkedGame->id, 'name' => $linkedGame->name],
+            'existing_game' => [
+                'id' => $linkedGame->id,
+                'name' => $linkedGame->name,
+                'collection_ids' => [$collection->id],
+            ],
             'legacy_game' => null,
         ]);
 

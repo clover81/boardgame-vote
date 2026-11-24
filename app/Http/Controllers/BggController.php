@@ -211,6 +211,9 @@ class BggController extends Controller
              */
       $existingGame = Game::query()
         ->where('bgg_id', $bggId)
+        ->with(['collections' => fn ($query) => $query
+          ->select('game_collections.id')
+          ->where('game_collections.created_by', $request->user()->id)])
         ->first([
           'id',
           'name',
@@ -255,6 +258,8 @@ class BggController extends Controller
 
             'name' =>
             $existingGame->name,
+
+            'collection_ids' => $existingGame->collections->modelKeys(),
           ]
           : null,
 

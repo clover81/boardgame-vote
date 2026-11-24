@@ -178,8 +178,19 @@ const bggBusy = computed(
 const bggError = ref('');
 const selectedBggId = ref<number | null>(null);
 const selectedBggGame = ref<BggGameDetail | null>(null);
-const existingBggGame = ref<ExistingGame | null>(null);
+const existingBggGame = ref<(ExistingGame & { collection_ids: number[] }) | null>(null);
 const legacyBggGame = ref<ExistingGame | null>(null);
+
+const collectionsForGame = computed(() => {
+    const linked = existingBggGame.value?.collection_ids ?? [];
+    return props.collections.filter(collection => !linked.includes(collection.id));
+});
+const collectionsToAttach = computed(() =>
+    form.collection_ids.filter(id => collectionsForGame.value.some(collection => collection.id === id)),
+);
+const alreadyInAllCollections = computed(() =>
+    !!existingBggGame.value && props.collections.length > 0 && collectionsForGame.value.length === 0,
+);
 
 const bggPlaytime = (game: BggGameDetail): string => {
     if (game.min_playtime !== null && game.max_playtime !== null) {
@@ -556,11 +567,13 @@ const submit = () => {
 
     // Los juegos existentes solo se asocian a nuestras colecciones.
     const existingGame = existingBggGame.value;
+    if (existingGame && !collectionsToAttach.value.length) return;
+
     const url = existingGame
         ? `/games/${existingGame.id}/collections/attach${gameListReturnQuery.value}`
         : `/games?back=${encodeURIComponent(backToGames.value)}`;
 
-    form.post(url, {
+    form.transform(data => existingGame ? { ...data, collection_ids: collectionsToAttach.value } : data).post(url, {
         preserveScroll: 'errors',
         onError: async () => {
             await nextTick();
@@ -1606,9 +1619,19 @@ const submit = () => {
                     </div>
                 </template>
 
+                <div v-if="alreadyInAllCollections && existingBggGame" class="rounded-xl bg-emerald-50 p-4 text-sm dark:bg-emerald-950/30">
+                    <p>Este juego ya está en todas tus colecciones.</p>
+                    <Link
+                        :href="`/games/${existingBggGame.id}${gameListReturnQuery}`"
+                        class="mt-2 inline-flex min-h-11 items-center font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
+                    >
+                        Ver ficha del juego →
+                    </Link>
+                </div>
                 <GameCollectionsField
+                    v-else
                     v-model="form.collection_ids"
-                    :collections="collections"
+                    :collections="collectionsForGame"
                     :error="form.errors.collection_ids"
                 />
 
@@ -1624,8 +1647,9 @@ const submit = () => {
                 </p>
 
                 <button
+                    v-if="!alreadyInAllCollections"
                     type="submit"
-                    :disabled="bggBusy || form.processing || existingGameForm.processing"
+                    :disabled="bggBusy || (existingBggGame !== null && !collectionsToAttach.length)"
                     class="
                         w-full rounded-xl
                         bg-[#5200FF]
