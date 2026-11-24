@@ -3,6 +3,7 @@
 use App\Http\Controllers\PlayerController;
 use App\Models\Expansion;
 use App\Models\Game;
+use App\Models\GameCollection;
 use App\Models\Play;
 use App\Models\Player;
 use App\Models\User;
@@ -64,10 +65,12 @@ test('a player with no recorded plays has empty statistics and lists', function 
 });
 
 test('player statistics include only that players plays recorded by the current user', function () {
-    $ana = Player::create(['name' => 'Ana', 'is_active' => true]);
+    $ana = Player::create(['created_by' => $this->user->id, 'name' => 'Ana', 'is_active' => true]);
     $bea = Player::create(['name' => 'Bea', 'is_active' => true]);
     $alpha = ($this->createGame)('Alfa');
     $zeta = ($this->createGame)('Zeta');
+    $collection = GameCollection::create(['created_by' => $this->user->id, 'name' => 'Mi colección']);
+    $collection->games()->attach($alpha->id);
     $expansion = $alpha->expansions()->create(['name' => 'Expansión Alfa']);
 
     ($this->createPlay)($zeta, '2026-10-20', [$this->player->id, $ana->id]);
@@ -87,15 +90,18 @@ test('player statistics include only that players plays recorded by the current 
     ]);
     expect(array_column($props['top_games'], 'name'))->toBe(['Alfa', 'Zeta']);
     expect(array_column($props['top_games'], 'plays_count'))->toBe([2, 2]);
+    expect(array_column($props['top_games'], 'can_view'))->toBe([true, false]);
     expect(array_column($props['top_games'], 'last_played_at'))->toBe(['2026-10-23', '2026-10-23']);
     expect($props['frequent_players'])->toBe([
-        ['id' => $ana->id, 'name' => 'Ana', 'plays_together' => 3],
-        ['id' => $bea->id, 'name' => 'Bea', 'plays_together' => 2],
+        ['id' => $ana->id, 'name' => 'Ana', 'can_view' => true, 'plays_together' => 3],
+        ['id' => $bea->id, 'name' => 'Bea', 'can_view' => false, 'plays_together' => 2],
     ]);
     expect($props['recent_plays'])->toHaveCount(4);
     expect($props['recent_plays'][0]['id'])->toBe($latest->id);
     expect($props['recent_plays'][0]['notes'])->toBe('Notas de la partida');
     expect($props['recent_plays'][0]['game']['id'])->toBe($alpha->id);
+    expect($props['recent_plays'][0]['game']['can_view'])->toBeTrue();
+    expect($props['recent_plays'][1]['game']['can_view'])->toBeFalse();
     expect($props['recent_plays'][0]['expansion'])->toBe(['id' => $expansion->id, 'name' => 'Expansión Alfa']);
     expect(array_column($props['recent_plays'][0]['players'], 'id'))
         ->toEqualCanonicalizing([$this->player->id, $bea->id]);

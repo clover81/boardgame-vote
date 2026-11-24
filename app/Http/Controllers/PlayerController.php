@@ -42,88 +42,64 @@ class PlayerController extends Controller
         */
 
         $plays = Play::query()
-            ->where('created_by', $userId)
-            ->whereHas('players', function ($query) use ($player) {
-                $query->where('players.id', $player->id);
-            })
-            ->with(['game', 'expansion', 'players'])
-            ->orderByDesc('played_at')
-            ->orderByDesc('id')
+            ->where('plays.created_by', $userId)
+            ->whereHas('players', fn ($query) => $query->where('players.id', $player->id));
+
+        $gameDetails = fn ($query) => $query
+            ->select(['id', 'name', 'image_url'])
+            ->withExists(['collections as can_view' => fn ($collections) => $collections
+                ->where('game_collections.created_by', $userId)]);
+
+        $gamesPlayed = (clone $plays)
+            ->select('game_id')
+            ->selectRaw('COUNT(*) AS plays_count, MAX(played_at) AS last_played_at')
+            ->groupBy('game_id')
+            ->with(['game' => $gameDetails])
+            ->withCasts(['last_played_at' => 'date'])
             ->get();
 
-        /*
-        |--------------------------------------------------------------------------
-        | ESTADÍSTICAS GENERALES
-        |--------------------------------------------------------------------------
-        */
-
-        $totalPlays = $plays->count();
-        $uniqueGames = $plays->pluck('game_id')->unique()->count();
-        $lastPlayedAt = $plays->first()?->played_at?->format('Y-m-d');
-
-        /*
-        |--------------------------------------------------------------------------
-        | JUEGOS MÁS JUGADOS
-        |--------------------------------------------------------------------------
-        */
-
-        $topGames = $plays
-            ->groupBy('game_id')
-            ->map(function ($gamePlays) {
-                $firstPlay = $gamePlays->first();
-
-                return [
-                    'id' => $firstPlay->game->id,
-                    'name' => $firstPlay->game->name,
-                    'image_url' => $firstPlay->game->image_url,
-                    'plays_count' => $gamePlays->count(),
-                    'last_played_at' => $firstPlay->played_at->format('Y-m-d'),
-                ];
-            })
-            ->sort(function (array $a, array $b) {
-                if ($a['plays_count'] !== $b['plays_count']) {
-                    return $b['plays_count'] <=> $a['plays_count'];
-                }
-
-                return strcmp($a['name'], $b['name']);
-            })
+        $topGames = $gamesPlayed
+            ->map(fn (Play $summary) => [
+                'id' => $summary->game->id,
+                'name' => $summary->game->name,
+                'image_url' => $summary->game->image_url,
+                'can_view' => (bool) $summary->game->can_view,
+                'plays_count' => (int) $summary->plays_count,
+                'last_played_at' => $summary->last_played_at->format('Y-m-d'),
+            ])
+            ->sort(fn (array $a, array $b) =>
+                ($b['plays_count'] <=> $a['plays_count']) ?: strcmp($a['name'], $b['name']))
             ->take(5)
             ->values();
 
-        /*
-        |--------------------------------------------------------------------------
-        | COMPAÑEROS MÁS HABITUALES
-        |--------------------------------------------------------------------------
-        */
+        $frequentPlayers = (clone $plays)
+            ->join('play_player', 'play_player.play_id', '=', 'plays.id')
+            ->join('players', 'players.id', '=', 'play_player.player_id')
+            ->where('players.id', '<>', $player->id)
+            ->select('players.id', 'players.name', 'players.created_by')
+            ->selectRaw('COUNT(*) AS plays_together')
+            ->groupBy('players.id', 'players.name', 'players.created_by')
+            ->orderByDesc('plays_together')
+            ->orderBy('players.name')
+            ->orderBy('players.id')
+            ->limit(5)
+            ->toBase()
+            ->get()
+            ->map(fn ($companion) => [
+                'id' => $companion->id,
+                'name' => $companion->name,
+                'can_view' => (int) $companion->created_by === (int) $userId,
+                'plays_together' => (int) $companion->plays_together,
+            ]);
 
-        $frequentPlayers = $plays
-            ->flatMap(function (Play $play) use ($player) {
-                return $play->players->filter(
-                    fn (Player $otherPlayer) => $otherPlayer->id !== $player->id
-                );
-            })
-            ->groupBy('id')
-            ->map(function ($group) {
-                $otherPlayer = $group->first();
+        $recent = $plays
+            ->with(['game' => $gameDetails, 'expansion:id,name', 'players:id,name'])
+            ->orderByDesc('played_at')
+            ->orderByDesc('id')
+            ->limit(10)
+            ->get(['id', 'game_id', 'expansion_id', 'played_at', 'notes']);
 
-                return [
-                    'id' => $otherPlayer->id,
-                    'name' => $otherPlayer->name,
-                    'plays_together' => $group->count(),
-                ];
-            })
-            ->sortByDesc('plays_together')
-            ->take(5)
-            ->values();
-
-        /*
-        |--------------------------------------------------------------------------
-        | ÚLTIMAS PARTIDAS
-        |--------------------------------------------------------------------------
-        */
-
-        $recentPlays = $plays
-            ->take(10)
+        $recentPlays = $recent
             ->map(function (Play $play) {
                 return [
                     'id' => $play->id,
@@ -133,6 +109,7 @@ class PlayerController extends Controller
                         'id' => $play->game->id,
                         'name' => $play->game->name,
                         'image_url' => $play->game->image_url,
+                        'can_view' => (bool) $play->game->can_view,
                     ],
                     'expansion' => $play->expansion
                         ? [
@@ -158,9 +135,9 @@ class PlayerController extends Controller
                 'color' => $player->color,
             ],
             'stats' => [
-                'total_plays' => $totalPlays,
-                'unique_games' => $uniqueGames,
-                'last_played_at' => $lastPlayedAt,
+                'total_plays' => (int) $gamesPlayed->sum('plays_count'),
+                'unique_games' => $gamesPlayed->count(),
+                'last_played_at' => $recent->first()?->played_at?->format('Y-m-d'),
             ],
             'top_games' => $topGames,
             'frequent_players' => $frequentPlayers,

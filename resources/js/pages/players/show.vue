@@ -29,6 +29,7 @@ interface Stats {
 }
 
 interface TopGame {
+    can_view: boolean;
     id: number;
     name: string;
 
@@ -42,6 +43,7 @@ interface TopGame {
 }
 
 interface FrequentPlayer {
+    can_view: boolean;
     id: number;
     name: string;
 
@@ -63,6 +65,7 @@ interface RecentPlay {
         string | null;
 
     game: {
+        can_view: boolean;
         id: number;
         name: string;
 
@@ -257,11 +260,13 @@ const formatDate = (
                         v-if="top_games.length"
                         class="mt-5 space-y-3"
                     >
-                        <Link
+                        <component
+                            :is="game.can_view ? Link : 'div'"
                             v-for="(game, index) in top_games"
                             :key="game.id"
-                            :href="`/games/${game.id}`"
-                            class="group flex min-w-0 items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-md hover:shadow-violet-500/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-violet-500"
+                            :href="game.can_view ? `/games/${game.id}` : undefined"
+                            class="group flex min-w-0 items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900"
+                            :class="game.can_view && 'transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-md hover:shadow-violet-500/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:hover:border-violet-500'"
                         >
                             <div
                                 class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5200FF] font-black text-white"
@@ -335,7 +340,7 @@ const formatDate = (
                                     partidas
                                 </p>
                             </div>
-                        </Link>
+                        </component>
                     </div>
 
                     <p
@@ -352,11 +357,13 @@ const formatDate = (
                     <p class="text-xs font-extrabold uppercase tracking-wide text-[#FF6B00]">GRUPO</p>
                     <h2 class="mt-1 text-xl font-bold text-zinc-900 dark:text-zinc-100">Suele jugar con</h2>
                     <div v-if="frequent_players.length" class="mt-5 space-y-3">
-                        <Link
+                        <component
+                            :is="otherPlayer.can_view ? Link : 'div'"
                             v-for="otherPlayer in frequent_players"
                             :key="otherPlayer.id"
-                            :href="`/players/${otherPlayer.id}`"
-                            class="group flex min-w-0 items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3.5 transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-md hover:shadow-violet-500/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-violet-500"
+                            :href="otherPlayer.can_view ? `/players/${otherPlayer.id}` : undefined"
+                            class="group flex min-w-0 items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3.5 dark:border-zinc-800 dark:bg-zinc-900"
+                            :class="otherPlayer.can_view && 'transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-md hover:shadow-violet-500/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:hover:border-violet-500'"
                         >
                             <div class="flex min-w-0 items-center gap-3">
                                 <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950" aria-hidden="true">
@@ -368,7 +375,7 @@ const formatDate = (
                                 <p class="text-lg font-black text-zinc-900 dark:text-zinc-100">{{ otherPlayer.plays_together }}</p>
                                 <p class="text-xs text-zinc-500 dark:text-zinc-400">juntos</p>
                             </div>
-                        </Link>
+                        </component>
                     </div>
                     <p v-else class="mt-5 text-sm text-zinc-500 dark:text-zinc-400">Todavía no hay suficientes partidas registradas.</p>
                 </section>
@@ -398,9 +405,11 @@ const formatDate = (
                             </div>
                             <div class="min-w-0 flex-1">
                                 <Link
+                                    v-if="play.game.can_view"
                                     :href="`/games/${play.game.id}`"
                                     class="block break-words text-base font-bold text-zinc-900 hover:text-[#5200FF] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:text-zinc-100 dark:hover:text-violet-300"
                                 >{{ play.game.name }}</Link>
+                                <p v-else class="break-words text-base font-bold text-zinc-900 dark:text-zinc-100">{{ play.game.name }}</p>
                                 <p v-if="play.expansion" class="mt-1 flex items-start gap-1.5 text-xs font-semibold text-[#5200FF] dark:text-violet-300">
                                     <BuildingComplexPlus class="mt-0.5 h-4 w-4 shrink-0 text-[#6D28D9] dark:text-[#CCFF00]" :stroke-width="2" aria-hidden="true" />
                                     <span class="min-w-0 break-words">{{ play.expansion.name }}</span>
