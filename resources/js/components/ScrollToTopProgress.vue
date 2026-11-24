@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
-const props = withDefaults(defineProps<{ rememberPosition?: boolean; hideOnMobile?: boolean; compact?: boolean; compactOnMobile?: boolean; hideNearBottom?: boolean; hideNearBottomDistance?: number; showAfter?: number }>(), {
+const props = withDefaults(defineProps<{ rememberPosition?: boolean; positionContext?: string; hideOnMobile?: boolean; compact?: boolean; compactOnMobile?: boolean; hideNearBottom?: boolean; hideNearBottomDistance?: number; showAfter?: number }>(), {
     rememberPosition: true,
     hideOnMobile: false,
     compact: false,
@@ -38,7 +38,11 @@ const savePosition = (position: number, force = false) => {
     if (!force && now - lastPositionSave < 300) return;
 
     try {
-        sessionStorage.setItem(storageKey, String(position));
+        const stored = props.positionContext === undefined
+            ? String(position)
+            : JSON.stringify({ context: props.positionContext, position });
+
+        sessionStorage.setItem(storageKey, stored);
         lastPositionSave = now;
     } catch {
         // El botón sigue funcionando aunque no se pueda guardar la posición.
@@ -114,17 +118,26 @@ onMounted(async () => {
     // regresar a una posición antigua con su selección vacía.
     storageKey = `catalog-scroll:${window.location.pathname}`;
 
+    // La página padre restaura filtros y orden al montar.
+    await nextTick();
+    if (!mounted) return;
+
     let savedPosition = 0;
     if (props.rememberPosition) {
         try {
-            savedPosition = Number(sessionStorage.getItem(storageKey) ?? 0);
+            const stored = sessionStorage.getItem(storageKey);
+            if (props.positionContext === undefined) {
+                savedPosition = Number(stored ?? 0);
+            } else if (stored !== null) {
+                const saved = JSON.parse(stored);
+                if (saved?.context === props.positionContext && typeof saved.position === 'number') {
+                    savedPosition = saved.position;
+                }
+            }
         } catch {
             // Sin una posición guardada se usa el desplazamiento actual.
         }
     }
-
-    await nextTick();
-    if (!mounted) return;
 
     // Restaurar después de que Vue haya montado la página.
     restoreFrame = requestAnimationFrame(() => {

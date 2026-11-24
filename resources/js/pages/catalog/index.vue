@@ -325,6 +325,15 @@ const filteredCatalogQuery = computed(() => {
     return query.toString();
 });
 
+const catalogViewQuery = computed(() => {
+    if (!hasFilters.value && sortBy.value === 'name' && !showAdvancedFilters.value) {
+        return '';
+    }
+
+    const panel = showAdvancedFilters.value ? 'open' : 'closed';
+    return `?${filteredCatalogQuery.value}&panel=${panel}`;
+});
+
 const copyFilteredCatalog = async () => {
     const request = ++catalogCopyRequest;
     const url = new URL(window.location.pathname, window.location.origin);
@@ -431,13 +440,7 @@ watch(
         if (catalogUrlTimer !== null) clearTimeout(catalogUrlTimer);
 
         catalogUrlTimer = setTimeout(() => {
-            const filtersActive = hasFilters.value || sortBy.value !== 'name';
-
-            const query = filtersActive
-                ? `?${filteredCatalogQuery.value}&panel=${showAdvancedFilters.value ? 'open' : 'closed'}`
-                : '';
-
-            const target = `${window.location.pathname}${query}`;
+            const target = `${window.location.pathname}${catalogViewQuery.value}`;
             const current = `${window.location.pathname}${window.location.search}`;
 
             if (target !== current) {
@@ -580,11 +583,7 @@ const hasFilters = computed(() =>
 
 const gameDetailsUrl = (gameId: number) => {
     const path = `${props.catalogBasePath ?? `/catalog/${props.catalogToken}`}/games/${gameId}`;
-    const hasCustomView = hasFilters.value || sortBy.value !== 'name' || showAdvancedFilters.value;
-    if (!hasCustomView) return path;
-
-    const panel = showAdvancedFilters.value ? 'open' : 'closed';
-    return `${path}?${filteredCatalogQuery.value}&panel=${panel}`;
+    return `${path}${catalogViewQuery.value}`;
 };
 
 const formatDuration = (game: Game) => {
@@ -1158,6 +1157,6 @@ const tutorialUrl = (game: Game): string =>
             <a href="/creditos-iconos.html" class="ml-2 inline-block font-semibold text-[#5200FF] underline-offset-4 hover:underline focus-visible:underline">Créditos de iconos</a>
         </footer>
 
-        <ScrollToTopProgress compact-on-mobile />
+        <ScrollToTopProgress :position-context="catalogViewQuery" compact-on-mobile />
     </div>
 </template>
