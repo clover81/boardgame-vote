@@ -107,17 +107,28 @@ const cancelSearchTimer = () => {
 
 onBeforeUnmount(cancelSearchTimer);
 
+const filterQuery = computed(() => ({
+    collection_id: selectedCollectionId.value ?? undefined,
+    q: search.value.trim() || undefined,
+    players: Number(playerCount.value) || undefined,
+    mode: gameMode.value || undefined,
+    duration: durationLimit.value === '' ? undefined : Number(durationLimit.value),
+    difficulty: difficulty.value || undefined,
+    sort: sortOrder.value === 'name' ? undefined : sortOrder.value,
+}));
+
+const gamesReturnUrl = computed(() => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(filterQuery.value)) {
+        if (value !== undefined) params.set(key, String(value));
+    }
+
+    return params.size ? `/games?${params}` : '/games';
+});
+
 const applyFilters = () => {
     cancelSearchTimer();
-    router.get('/games', {
-        collection_id: selectedCollectionId.value ?? undefined,
-        q: search.value.trim() || undefined,
-        players: Number(playerCount.value) || undefined,
-        mode: gameMode.value || undefined,
-        duration: durationLimit.value === '' ? undefined : Number(durationLimit.value),
-        difficulty: difficulty.value || undefined,
-        sort: sortOrder.value === 'name' ? undefined : sortOrder.value,
-    }, {
+    router.get('/games', filterQuery.value, {
         preserveScroll: true,
         preserveState: true,
         replace: true,
@@ -312,7 +323,8 @@ const formatDate = (date: string | null): string => {
 
                 <div class="flex flex-wrap gap-2">
                     <Link
-                        :href="`/polls/create?back=${encodeURIComponent($page.url)}`"
+                        :href="`/polls/create?back=${encodeURIComponent(gamesReturnUrl)}`"
+                        @start="cancelSearchTimer"
                         class="inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-[#5200FF]/35 bg-[#5200FF]/5 px-4 py-2 font-bold text-[#5200FF] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#5200FF] hover:bg-[#5200FF]/10 hover:shadow-[0_8px_22px_rgba(82,0,255,0.16)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none dark:border-[#CCFF00]/45 dark:bg-[#5200FF]/10 dark:text-[#CCFF00] dark:hover:bg-[#5200FF]/20"
                     >
                         <RollingDicesIcon class="size-7 shrink-0 text-[#5200FF] dark:text-[#CCFF00]" aria-hidden="true" />
@@ -320,7 +332,8 @@ const formatDate = (date: string | null): string => {
                     </Link>
 
                     <Link
-                        :href="`/games/create?back=${encodeURIComponent($page.url)}${selected_collection_id === null ? '' : `&collection_id=${selected_collection_id}`}`"
+                        :href="`/games/create?back=${encodeURIComponent(gamesReturnUrl)}${selectedCollectionId === null ? '' : `&collection_id=${selectedCollectionId}`}`"
+                        @start="cancelSearchTimer"
                         class="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#5200FF] px-5 py-2.5 font-bold text-white transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                     >
                         + Añadir juego
@@ -472,7 +485,8 @@ const formatDate = (date: string | null): string => {
                     <!-- PORTADA -->
 
                     <Link
-                        :href="`/games/${game.id}?back=${encodeURIComponent($page.url)}`"
+                        :href="`/games/${game.id}?back=${encodeURIComponent(gamesReturnUrl)}`"
+                        @start="cancelSearchTimer"
                         :aria-label="`Ver ficha de ${game.name}`"
                         class="block"
                     >
@@ -505,7 +519,8 @@ const formatDate = (date: string | null): string => {
                             class="flex min-h-[3.5rem] items-start justify-between gap-3"
                         >
                             <Link
-                                :href="`/games/${game.id}?back=${encodeURIComponent($page.url)}`"
+                                :href="`/games/${game.id}?back=${encodeURIComponent(gamesReturnUrl)}`"
+                                @start="cancelSearchTimer"
                                 class="min-w-0"
                             >
                                 <h2
@@ -684,14 +699,16 @@ const formatDate = (date: string | null): string => {
                             class="mt-auto grid grid-cols-2 gap-2 pt-5"
                         >
                             <Link
-                                :href="`/games/${game.id}?back=${encodeURIComponent($page.url)}`"
+                                :href="`/games/${game.id}?back=${encodeURIComponent(gamesReturnUrl)}`"
+                                @start="cancelSearchTimer"
                                 class="flex min-h-11 items-center justify-center rounded-xl bg-[#5200FF] px-3 py-2.5 text-center text-sm font-bold text-white transition hover:bg-[#3F00C7] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                             >
                                 Ver ficha
                             </Link>
 
                             <Link
-                                :href="`/games/${game.id}/edit?back=${encodeURIComponent($page.url)}`"
+                                :href="`/games/${game.id}/edit?back=${encodeURIComponent(gamesReturnUrl)}`"
+                                @start="cancelSearchTimer"
                                 class="flex min-h-11 items-center justify-center rounded-xl border border-zinc-300 px-3 py-2.5 text-center text-sm font-bold transition hover:border-[#5200FF] hover:text-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-[#CCFF00] dark:hover:text-[#CCFF00]"
                             >
                                 <span class="inline-flex items-center justify-center gap-1.5"><PencilSparklesIcon class="h-4 w-4 shrink-0 text-violet-500 dark:text-[#CCFF00]" />Editar</span>

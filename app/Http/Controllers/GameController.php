@@ -637,6 +637,7 @@ class GameController extends Controller
         }
 
         $collections = GameCollection::query()
+            ->select(['id', 'name', 'is_default'])
             ->where('created_by', $userId)
             ->withCount([
                 'games' => fn ($query) => $query
@@ -647,6 +648,20 @@ class GameController extends Controller
             ->get();
 
         $games = Game::query()
+            ->select([
+                'id',
+                'name',
+                'image_url',
+                'min_players',
+                'max_players',
+                'min_playtime',
+                'max_playtime',
+                'complexity',
+                'game_mode',
+                'game_modes',
+                'short_description',
+                'bgg_id',
+            ])
             ->where('is_active', true)
             ->whereHas('collections', fn ($query) => $query
                 ->where('game_collections.created_by', $userId))
@@ -753,6 +768,7 @@ class GameController extends Controller
             ->with([
                 'idealPlayerCounts',
                 'collections' => fn ($query) => $query
+                    ->select(['game_collections.id', 'game_collections.name'])
                     ->where('game_collections.created_by', $userId)
                     ->orderBy('name'),
             ])
