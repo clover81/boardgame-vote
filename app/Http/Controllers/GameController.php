@@ -48,9 +48,10 @@ class GameController extends Controller
         $plays = $game
             ->plays()
             ->where('created_by', $userId)
-            ->with(['players', 'expansion'])
+            ->with(['players:id,name', 'expansion:id,name'])
             ->orderByDesc('played_at')
-            ->get();
+            ->orderByDesc('id')
+            ->get(['id', 'played_at', 'notes', 'expansion_id']);
 
         return Inertia::render(
             'games/show',

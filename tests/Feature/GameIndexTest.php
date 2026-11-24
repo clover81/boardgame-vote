@@ -3,6 +3,7 @@
 use App\Models\Game;
 use App\Models\GameCollection;
 use App\Models\Play;
+use App\Models\Player;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -83,6 +84,35 @@ test('game summaries count only the signed in users plays and agree with the gam
             ->where('history.total_plays', 2)
             ->where('history.last_played_at', '2026-10-24')
             ->has('history.plays', 2)
+        );
+});
+
+test('game history shows the most recently added play first on the same date', function () {
+    $expansion = $this->castle->expansions()->create(['name' => 'Matcha']);
+    $player = Player::create(['created_by' => $this->user->id, 'name' => 'Ana']);
+    $details = [
+        'created_by' => $this->user->id,
+        'game_id' => $this->castle->id,
+        'played_at' => '2026-10-24',
+    ];
+    $first = Play::create($details);
+    $second = Play::create([
+        ...$details,
+        'expansion_id' => $expansion->id,
+        'notes' => 'Segunda partida',
+    ]);
+    $second->players()->attach($player->id, ['is_winner' => true]);
+
+    $this->actingAs($this->user)->get(route('games.show', $this->castle))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('history.plays', 2)
+            ->where('history.plays.0.id', $second->id)
+            ->where('history.plays.0.notes', 'Segunda partida')
+            ->where('history.plays.0.expansion.name', 'Matcha')
+            ->where('history.plays.0.players.0.name', 'Ana')
+            ->where('history.plays.0.players.0.is_winner', true)
+            ->where('history.plays.1.id', $first->id)
         );
 });
 

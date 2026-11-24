@@ -57,6 +57,7 @@ interface Play {
 const props = defineProps<{
     play: Play;
     pollReturn: { url: string; back: string | null } | null;
+    gameReturn: string | null;
     games: Game[];
     players: Player[];
 }>();
@@ -236,6 +237,8 @@ const submit = () => {
     if (props.pollReturn) {
         query.set('from', 'poll');
         if (props.pollReturn.back) query.set('back', props.pollReturn.back);
+    } else if (props.gameReturn) {
+        query.set('back', props.gameReturn);
     }
 
     form.put(query.size ? `${url}?${query}` : url, {
@@ -256,10 +259,10 @@ const submit = () => {
             class="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6"
         >
             <Link
-                :href="pollReturn?.url ?? '/plays'"
+                :href="pollReturn?.url ?? gameReturn ?? '/plays'"
                 class="text-sm font-semibold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
             >
-                {{ pollReturn ? '← Volver a la votación' : '← Volver al historial' }}
+                {{ pollReturn ? '← Volver a la votación' : gameReturn ? '← Volver a la ficha' : '← Volver al historial' }}
             </Link>
 
             <!-- CABECERA -->

@@ -853,6 +853,21 @@ class PlayController extends Controller
         ];
     }
 
+    private function editGameReturn(Request $request, Play $play): ?string
+    {
+        $back = $request->query('back');
+        $path = route('games.show', $play->game_id, false);
+
+        if (! is_string($back) || ($back !== $path && ! str_starts_with($back, $path.'?'))) {
+            return null;
+        }
+
+        $isOwned = $play->game()->whereHas('collections', fn ($query) => $query
+            ->where('game_collections.created_by', $request->user()->id))->exists();
+
+        return $isOwned ? $back : null;
+    }
+
     /** @return Builder<Game> */
     private function editableGames(Play $play, int $userId): Builder
     {
@@ -937,6 +952,7 @@ class PlayController extends Controller
             'plays/edit',
             [
                 'pollReturn' => $this->editPollReturn($request, $play),
+                'gameReturn' => $this->editGameReturn($request, $play),
                 'play' => [
                     'id' =>
                     $play->id,
@@ -1101,6 +1117,7 @@ class PlayController extends Controller
         }
 
         $winnerIds = $validWinnerIds;
+        $gameReturn = $this->editGameReturn($request, $play);
 
         DB::transaction(
             function () use (
@@ -1138,7 +1155,7 @@ class PlayController extends Controller
         $pollReturn = $this->editPollReturn($request, $play);
 
         return redirect()
-            ->to($pollReturn['url'] ?? route('plays.index'))
+            ->to($pollReturn['url'] ?? $gameReturn ?? route('plays.index'))
             ->with('success', 'Partida actualizada correctamente.');
     }
 

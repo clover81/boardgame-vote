@@ -292,3 +292,26 @@ test('editing a linked play returns to its entry point', function (?string $back
     'from the history via the poll' => ['/plays', ['from' => 'history']],
     'directly from the history' => [null, []],
 ]);
+
+test('editing a play returns only to its original game in the users collection', function (string $origin) {
+    $this->withoutVite();
+    $path = route('games.show', $this->game, false);
+    $back = match ($origin) {
+        'original' => $path.'?from=statistics',
+        'unowned' => $path,
+        'external' => 'https://example.com'.$path,
+        'different' => '/games/'.($this->game->id + 1),
+    };
+
+    if ($origin === 'unowned') {
+        $this->collection->games()->detach($this->game);
+    }
+
+    $this->actingAs($this->user)->get(route('plays.edit', ['play' => $this->play, 'back' => $back]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('gameReturn', $origin === 'original' ? $back : null));
+
+    $this->put(route('plays.update', ['play' => $this->play, 'back' => $back]), $this->payload)
+        ->assertSessionHasNoErrors()
+        ->assertRedirect($origin === 'original' ? $back : route('plays.index'));
+})->with(['original', 'unowned', 'external', 'different']);

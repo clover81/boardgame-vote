@@ -1207,7 +1207,7 @@ const formatGameMode = (
                                         </span>
 
                                         <Link
-                                            :href="`/plays/${play.id}/edit`"
+                                            :href="`/plays/${play.id}/edit?back=${encodeURIComponent(page.url)}`"
                                             class="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-bold transition hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
                                         >
                                             <span class="inline-flex items-center justify-center gap-1.5"><PencilSparklesIcon class="h-4 w-4 shrink-0 text-violet-500 dark:text-[#CCFF00]" />Editar</span>
