@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,6 +36,32 @@ class Expansion extends Model
         'notes',
         'is_active',
     ];
+
+    /** @param list<int> $collectionIds */
+    public function scopeForCatalog(Builder $query, array $collectionIds): Builder
+    {
+        return $query
+            ->select([
+                'expansions.id',
+                'expansions.game_id',
+                'expansions.name',
+                'expansions.image_url',
+                'expansions.bgg_url',
+                'expansions.youtube_url',
+            ])
+            ->where('expansions.is_active', true)
+            ->where(fn (Builder $query) => $query
+                ->whereNotExists(fn ($association) => $association
+                    ->selectRaw('1')
+                    ->from('game_collection_expansion')
+                    ->whereColumn('expansion_id', 'expansions.id'))
+                ->orWhereExists(fn ($association) => $association
+                    ->selectRaw('1')
+                    ->from('game_collection_expansion')
+                    ->whereColumn('expansion_id', 'expansions.id')
+                    ->whereIn('game_collection_id', $collectionIds)))
+            ->orderBy('expansions.name');
+    }
 
     /** @return array<string, string> */
     protected function casts(): array

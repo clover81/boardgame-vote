@@ -35,6 +35,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  */
 class Game extends Model
 {
+    public const CATALOG_CARD_COLUMNS = [
+        'id',
+        'name',
+        'image_url',
+        'min_players',
+        'max_players',
+        'min_playtime',
+        'max_playtime',
+        'complexity',
+        'game_mode',
+        'game_modes',
+        'short_description',
+        'bgg_url',
+        'youtube_url',
+    ];
+
     protected $fillable = [
         'bgg_id',
         'name',

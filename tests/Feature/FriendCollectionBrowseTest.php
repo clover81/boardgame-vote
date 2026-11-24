@@ -22,11 +22,14 @@ beforeEach(function () {
     ]);
     $this->game = Game::create([
         'name' => 'Terraforming Mars',
+        'short_description' => 'Resumen de la tarjeta',
+        'full_description' => 'Descripción completa de la ficha',
         'min_players' => 1,
         'max_players' => 5,
         'is_active' => true,
     ]);
     $this->game->collections()->attach($this->collection->id);
+    $this->game->idealPlayerCounts()->create(['player_count' => 3]);
     $this->otherGame = Game::create([
         'name' => 'Un juego de otra coleccion',
         'min_players' => 2,
@@ -58,6 +61,9 @@ test('un usuario autenticado puede consultar una coleccion publica ajena', funct
             ->where('catalogOwnerName', 'Miki')
             ->has('games', 1)
             ->where('games.0.name', 'Terraforming Mars')
+            ->where('games.0.short_description', 'Resumen de la tarjeta')
+            ->where('games.0.ideal_player_counts', [3])
+            ->missing('games.0.full_description')
         );
 
     $this->get(route('friends.collections.games.show', [$this->collection, $this->game]))
@@ -65,6 +71,8 @@ test('un usuario autenticado puede consultar una coleccion publica ajena', funct
         ->assertInertia(fn (Assert $page) => $page
             ->component('catalog/show')
             ->where('game.id', $this->game->id)
+            ->where('game.full_description', 'Descripción completa de la ficha')
+            ->where('game.ideal_player_counts', [3])
             ->missing('history')
         );
 });
@@ -176,7 +184,7 @@ test('las colecciones de amigos incluyen expansiones informativas sin revelar la
     ]);
 
     $this->collection->expansions()->attach($public);
-    $this->otherCollection->expansions()->attach($private);
+    $this->otherCollection->expansions()->attach([$private->id, $public->id]);
 
     $foreignCollection = GameCollection::forceCreate([
         'created_by' => User::factory()->create()->id,

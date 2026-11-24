@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Game;
 use App\Models\GameCollection;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -35,9 +34,9 @@ class FriendCollectionController extends Controller
             ->where('is_active', true)
             ->whereHas('collections', fn ($query) => $query
                 ->where('game_collections.id', $collection->id))
-            ->with('idealPlayerCounts')
+            ->with('idealPlayerCounts:id,game_id,player_count')
             ->orderBy('name')
-            ->get()
+            ->get(Game::CATALOG_CARD_COLUMNS)
             ->map(fn (Game $game) => [
                 'id' => $game->id,
                 'name' => $game->name,
@@ -81,18 +80,8 @@ class FriendCollectionController extends Controller
         );
 
         $game->load([
-            'idealPlayerCounts',
-            'expansions' => fn ($query) => $query
-                ->where('is_active', true)
-                ->where(function ($query) use ($collection) {
-                    $query
-                        ->whereNotIn('expansions.id', DB::table('game_collection_expansion')
-                            ->select('expansion_id'))
-                        ->orWhereIn('expansions.id', DB::table('game_collection_expansion')
-                            ->where('game_collection_id', $collection->id)
-                            ->select('expansion_id'));
-                })
-                ->orderBy('name'),
+            'idealPlayerCounts:id,game_id,player_count',
+            'expansions' => fn ($query) => $query->forCatalog([$collection->id]),
         ]);
 
         return Inertia::render('catalog/show', [

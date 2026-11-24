@@ -14,7 +14,7 @@ class PublicCatalogController extends Controller
     {
         $owner = User::query()
             ->where('catalog_share_token', $token)
-            ->firstOrFail();
+            ->firstOrFail(['id']);
 
         // Solo colecciones públicas de esta cuenta.
         $collections = GameCollection::query()
@@ -35,29 +35,16 @@ class PublicCatalogController extends Controller
                 )
             )
             ->with([
-                'idealPlayerCounts',
-                'collections' => fn ($query) =>
-                    $query->whereIn(
+                'idealPlayerCounts:id,game_id,player_count',
+                'collections' => fn ($query) => $query
+                    ->select(['game_collections.id', 'game_collections.name'])
+                    ->whereIn(
                         'game_collections.id',
                         $collectionIds
-                    )->orderBy('name'),
+                    )->orderBy('game_collections.name'),
             ])
             ->orderBy('name')
-            ->get([
-                'id',
-                'name',
-                'image_url',
-                'min_players',
-                'max_players',
-                'min_playtime',
-                'max_playtime',
-                'complexity',
-                'game_mode',
-                'game_modes',
-                'short_description',
-                'bgg_url',
-                'youtube_url',
-            ])
+            ->get(Game::CATALOG_CARD_COLUMNS)
             ->map(fn (Game $game) => [
                 'id' => $game->id,
                 'name' => $game->name,
@@ -92,7 +79,7 @@ class PublicCatalogController extends Controller
     {
         $owner = User::query()
             ->where('catalog_share_token', $token)
-            ->firstOrFail();
+            ->firstOrFail(['id']);
 
         // Solo juegos activos que pertenezcan a
         // una colección pública de este usuario.
@@ -105,9 +92,10 @@ class PublicCatalogController extends Controller
                     ->where('game_collections.is_public', true);
             })
             ->with([
-                'idealPlayerCounts',
+                'idealPlayerCounts:id,game_id,player_count',
 
                 'collections' => fn ($query) => $query
+                    ->select(['game_collections.id', 'game_collections.name'])
                     ->where('game_collections.created_by', $owner->id)
                     ->where('game_collections.is_public', true)
                     ->orderBy('game_collections.name'),
@@ -119,21 +107,7 @@ class PublicCatalogController extends Controller
         $publicCollectionIds = $game->collections->pluck('id')->all();
 
         $game->load([
-            'expansions' => fn ($query) => $query
-                ->where('is_active', true)
-                ->where(function ($query) use ($publicCollectionIds) {
-                    $query
-                        ->whereNotIn('expansions.id', function ($subquery) {
-                            $subquery->select('expansion_id')
-                                ->from('game_collection_expansion');
-                        })
-                        ->orWhereIn('expansions.id', function ($subquery) use ($publicCollectionIds) {
-                            $subquery->select('expansion_id')
-                                ->from('game_collection_expansion')
-                                ->whereIn('game_collection_id', $publicCollectionIds);
-                        });
-                })
-                ->orderBy('name'),
+            'expansions' => fn ($query) => $query->forCatalog($publicCollectionIds),
         ]);
 
         return Inertia::render('catalog/show', [
