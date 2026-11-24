@@ -66,7 +66,7 @@ class PublicCatalogController extends Controller
                 'max_players' => $game->max_players,
                 'min_playtime' => $game->min_playtime,
                 'max_playtime' => $game->max_playtime,
-                'complexity' => $game->complexity,
+                'complexity' => $game->ratedComplexity(),
                 'game_mode' => $game->game_mode,
                 'game_modes' => $game->game_modes
                     ?? ($game->game_mode ? [$game->game_mode] : []),
@@ -152,7 +152,7 @@ class PublicCatalogController extends Controller
                 'max_players' => $game->max_players,
                 'min_playtime' => $game->min_playtime,
                 'max_playtime' => $game->max_playtime,
-                'complexity' => $game->complexity,
+                'complexity' => $game->ratedComplexity(),
                 'game_mode' => $game->game_mode,
                 'game_modes' => $game->game_modes
                     ?? ($game->game_mode ? [$game->game_mode] : []),

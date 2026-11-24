@@ -76,6 +76,15 @@ class Game extends Model
         ];
     }
 
+    public function ratedComplexity(): ?string
+    {
+        $complexity = $this->complexity;
+
+        return $complexity !== null && (float) $complexity >= 1 && (float) $complexity <= 5
+            ? $complexity
+            : null;
+    }
+
     /** @return HasMany<GameIdealPlayerCount, $this> */
     public function idealPlayerCounts(): HasMany
     {

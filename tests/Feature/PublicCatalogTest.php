@@ -27,6 +27,7 @@ test('guests only receive active games and public collections belonging to the c
         ]));
     // Shared membership must neither duplicate games nor expose private memberships.
     $games[0]->update([
+        'complexity' => 0,
         'bgg_url' => 'https://boardgamegeek.com/boardgame/1',
         'youtube_url' => 'https://www.youtube.com/watch?v=tutorial',
     ]);
@@ -49,6 +50,7 @@ test('guests only receive active games and public collections belonging to the c
             ->where('games.0.id', $games[0]->id)
             ->where('games.0.bgg_url', $games[0]->bgg_url)
             ->where('games.0.youtube_url', $games[0]->youtube_url)
+            ->where('games.0.complexity', null)
             ->where('games.0.ideal_player_counts', [2, 3])
             ->has('games.0.collections', 2)
             ->where('games.0.collections.0.id', $collections[0]->id)
@@ -60,6 +62,13 @@ test('guests only receive active games and public collections belonging to the c
             ->missing('polls')
             ->missing('plays')
             ->missing('owner')
+        );
+
+    $this->get(route('catalog.games.show', [$owner->catalog_share_token, $games[0]->id]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('catalog/show')
+            ->where('game.complexity', null)
         );
 });
 
@@ -77,6 +86,7 @@ test('hiding the last public collection removes its games from the catalog', fun
         'min_players' => 1,
         'max_players' => 2,
         'game_mode' => 'cooperative',
+        'complexity' => 2.25,
         'is_active' => true,
     ]);
     $collection->games()->attach($game);
@@ -85,6 +95,7 @@ test('hiding the last public collection removes its games from the catalog', fun
     $this->get($url)->assertOk()->assertInertia(fn (Assert $page) => $page
         ->component('catalog/index')
         ->has('games', 1)
+        ->where('games.0.complexity', '2.25')
     );
 
     $collection->is_public = false;

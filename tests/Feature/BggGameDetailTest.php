@@ -4,6 +4,8 @@ use App\Models\Game;
 use App\Models\GameCollection;
 use App\Models\User;
 use App\Services\BggService;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
     $this->user = User::factory()->create();
@@ -112,3 +114,45 @@ test('BGG detail requires authentication', function () {
 
     $this->getJson(route('games.bgg.show', 371942))->assertUnauthorized();
 });
+
+test('BGG detail omits cached zero complexity without discarding its description', function () {
+    config(['services.bgg.token' => 'test']);
+    Http::preventStrayRequests();
+    Http::fake();
+
+    $cached = $this->bggGame + ['complexity' => 0.0, 'description' => 'Original BGG description'];
+    Cache::put('bgg-game-v2-371942', $cached, now()->addHour());
+
+    $this->actingAs($this->user)->getJson(route('games.bgg.show', 371942))
+        ->assertOk()
+        ->assertJsonPath('game.complexity', null)
+        ->assertJsonPath('game.description', $cached['description']);
+
+    expect(Cache::get('bgg-game-v2-371942'))->toBe($cached);
+    Http::assertNothingSent();
+});
+
+test('BGG detail accepts valid difficulty and discards zero in fresh XML', function ($weight, $expected) {
+    config(['services.bgg.token' => 'test', 'services.bgg.base_url' => 'https://bgg.test/xmlapi2']);
+    Http::preventStrayRequests();
+    Http::fake([
+        'https://bgg.test/xmlapi2/thing*' => Http::response(<<<XML
+            <items>
+                <item id="371942">
+                    <name type="primary" value="The White Castle" />
+                    <statistics><ratings><averageweight value="{$weight}" /></ratings></statistics>
+                </item>
+            </items>
+            XML),
+    ]);
+
+    $this->actingAs($this->user)->getJson(route('games.bgg.show', 371942))
+        ->assertOk()
+        ->assertJsonPath('game.complexity', $expected);
+
+    expect(Cache::get('bgg-game-v2-371942')['complexity'])->toBe($expected);
+    Http::assertSentCount(1);
+})->with([
+    'unrated' => ['0', null],
+    'rated' => ['2.547', 2.55],
+]);

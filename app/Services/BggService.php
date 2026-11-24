@@ -134,7 +134,7 @@ class BggService
    */
   public function game(int $bggId): array
   {
-    return Cache::remember(
+    $game = Cache::remember(
       "bgg-game-v2-{$bggId}",
       now()->addDay(),
       function () use ($bggId) {
@@ -170,25 +170,7 @@ class BggService
           }
         }
 
-        $complexity = null;
-
-        if (
-          isset(
-            $item
-              ->statistics
-              ->ratings
-              ->averageweight['value']
-          )
-        ) {
-          $complexity =
-            round(
-              (float) $item
-                ->statistics
-                ->ratings
-                ->averageweight['value'],
-              2
-            );
-        }
+        $complexity = $this->gameComplexity($item);
 
         $suggestedIdealPlayerCounts =
           $this->suggestedIdealPlayerCounts($item);
@@ -268,6 +250,12 @@ class BggService
         ];
       }
     );
+
+    if (isset($game['complexity'])) {
+      $game['complexity'] = $this->normalizeComplexity((float) $game['complexity']);
+    }
+
+    return $game;
   }
 
   public function expansionsForGame(int $baseBggId): array
@@ -390,6 +378,18 @@ class BggService
         $previousXmlErrorHandling
       );
     }
+  }
+
+  private function gameComplexity(SimpleXMLElement $item): ?float
+  {
+    $value = (float) (string) ($item->statistics->ratings->averageweight['value'] ?? '');
+
+    return $this->normalizeComplexity($value);
+  }
+
+  private function normalizeComplexity(float $value): ?float
+  {
+    return $value >= 1 && $value <= 5 ? round($value, 2) : null;
   }
 
   private function attributeInt(
@@ -670,30 +670,7 @@ class BggService
                   ->yearpublished['value'];
       }
 
-      $complexity = null;
-
-      if (
-          isset(
-              $item
-                  ->statistics
-                  ->ratings
-                  ->averageweight['value']
-          )
-      ) {
-          $rawComplexity =
-              (float) $item
-                  ->statistics
-                  ->ratings
-                  ->averageweight['value'];
-
-          if ($rawComplexity > 0) {
-              $complexity =
-                  round(
-                      $rawComplexity,
-                      2
-                  );
-          }
-      }
+      $complexity = $this->gameComplexity($item);
 
       return [
           'id' =>
