@@ -86,28 +86,29 @@ const normalizeText = (text: string): string =>
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/['‘’]/g, '')
-        .replace(/[-‐‑‒–—−]/g, ' ')
-        .replace(/\s+/g, ' ')
+        .replace(/[^\p{L}\p{N}]+/gu, ' ')
         .toLocaleLowerCase()
         .trim();
 
+const searchTerms = computed(() => normalizeText(search.value).split(' ').filter(Boolean));
+
 // Normalizar cada juego una sola vez, únicamente cuando se busque.
 const normalizedGameSearch = computed(() =>
-    new Map<number, { name: string; text: string }>(
+    new Map<number, { name: string; words: string[] }>(
         props.games.map(game => [
             game.id,
             {
                 name: normalizeText(game.name),
-                text: normalizeText(
+                words: normalizeText(
                     `${game.name} ${game.short_description ?? ''}`
-                ),
+                ).split(' '),
             },
         ]),
     ),
 );
 
 const filteredGames = computed(() => {
-    const terms = normalizeText(search.value).split(/\s+/).filter(Boolean);
+    const terms = searchTerms.value;
     const players = Number(playerCount.value);
     const collection = Number(collectionId.value);
 
@@ -171,12 +172,8 @@ const filteredGames = computed(() => {
 
         // Coincidencia temática por principio de palabra.
         // Evitar que "nova" coincida con "innovador".
-        const words = data.text
-            .split(/[^\p{L}\p{N}]+/u)
-            .filter(Boolean);
-
         return terms.every(term =>
-            words.some(word => word.startsWith(term))
+            data.words.some(word => word.startsWith(term))
         );
     });
 });
@@ -208,7 +205,7 @@ interface FilterChip {
 const activeFilterChips = computed<FilterChip[]>(() => {
     const chips: FilterChip[] = [];
 
-    if (search.value.trim()) {
+    if (searchTerms.value.length) {
         chips.push({
             key: 'search',
             label: `Buscar: ${search.value.trim()}`,
@@ -358,14 +355,16 @@ const copyFilteredCatalog = async () => {
 
 const filtersStorageKey = `catalog-filters:${props.catalogToken}`;
 
-// Recuperar los filtros al regresar al catálogo.
+// El catálogo público restaura los filtros desde la URL.
 onMounted(() => {
     try {
         const params = new URLSearchParams(window.location.search);
         const hasSharedFilters = params.get('view') === 'filtered';
         const filters = hasSharedFilters
             ? Object.fromEntries(params)
-            : JSON.parse(sessionStorage.getItem(filtersStorageKey) ?? 'null');
+            : props.catalogBasePath
+                ? JSON.parse(sessionStorage.getItem(filtersStorageKey) ?? 'null')
+                : null;
 
         if (!filters) return;
 
@@ -392,7 +391,7 @@ onMounted(() => {
     }
 });
 
-// Guardar los cambios automáticamente.
+// Las colecciones de amigos conservan su recuperación por pestaña.
 watch(
     [
         search,
@@ -405,6 +404,8 @@ watch(
         showAdvancedFilters,
     ],
     () => {
+        if (!props.catalogBasePath) return;
+
         try {
             sessionStorage.setItem(
                 filtersStorageKey,
@@ -438,14 +439,7 @@ watch(
         if (catalogUrlTimer !== null) clearTimeout(catalogUrlTimer);
 
         catalogUrlTimer = setTimeout(() => {
-            const filtersActive =
-                search.value.trim() !== '' ||
-                playerCount.value !== '' ||
-                collectionId.value !== '' ||
-                durationLimit.value !== '' ||
-                difficulty.value !== '' ||
-                selectedGameMode.value !== '' ||
-                sortBy.value !== 'name';
+            const filtersActive = hasFilters.value || sortBy.value !== 'name';
 
             const query = filtersActive
                 ? `?${filteredCatalogQuery.value}&panel=${showAdvancedFilters.value ? 'open' : 'closed'}`
@@ -472,14 +466,14 @@ onBeforeUnmount(() => {
 });
 
 const sortedGames = computed(() => {
-    const searchTerms = normalizeText(search.value).split(/\s+/).filter(Boolean);
-    const searchPrefix = searchTerms.join(' ');
+    const terms = searchTerms.value;
+    const searchPrefix = terms.join(' ');
 
     const relevance = (game: Game): number => {
         const name = normalizedGameSearch.value.get(game.id)?.name ?? '';
 
         if (name.startsWith(searchPrefix)) return 0;
-        if (searchTerms.every(term => name.includes(term))) return 1;
+        if (terms.every(term => name.includes(term))) return 1;
 
         return 2;
     };
@@ -510,7 +504,7 @@ const sortedGames = computed(() => {
 
     return [...filteredGames.value].sort((a, b) => {
         // Priorizar coincidencias solo con la ordenación predeterminada.
-        if (sortBy.value === 'name' && searchTerms.length) {
+        if (sortBy.value === 'name' && terms.length) {
             const byRelevance = relevance(a) - relevance(b);
             if (byRelevance !== 0) return byRelevance;
         }
@@ -584,7 +578,7 @@ const clearFilters = async () => {
 };
 
 const hasFilters = computed(() =>
-    search.value.trim() !== '' ||
+    searchTerms.value.length > 0 ||
     playerCount.value !== '' ||
     collectionId.value !== '' ||
     durationLimit.value !== '' ||
@@ -1107,7 +1101,7 @@ const tutorialUrl = (game: Game): string =>
                             <!-- Enlaces externos independientes de la ficha de nuestra aplicación. -->
                             <div
 
-                                class="relative z-20 mb-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-1"
+                                class="pointer-events-none relative z-20 mb-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-1"
                             >
                                 <a
                                     v-if="externalUrl(game.bgg_url)"
@@ -1115,7 +1109,7 @@ const tutorialUrl = (game: Game): string =>
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     :aria-label="`Consultar ${game.name} en BoardGameGeek (nueva pestaña)`"
-                                    class="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-[#5200FF] underline-offset-4 transition-colors hover:text-[#4000cc] hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                                    class="pointer-events-auto inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-[#5200FF] underline-offset-4 transition-colors hover:text-[#4000cc] hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                                 >
                                     BGG <ChainIcon class="size-4 shrink-0" aria-hidden="true" />
                                 </a>
@@ -1126,7 +1120,7 @@ const tutorialUrl = (game: Game): string =>
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     :aria-label="`${externalUrl(game.youtube_url) ? 'Ver tutorial' : 'Buscar tutorial'} de ${game.name} (nueva pestaña)`"
-                                    class="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-[#5200FF] underline-offset-4 transition-colors hover:text-[#4000cc] hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                                    class="pointer-events-auto inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-[#5200FF] underline-offset-4 transition-colors hover:text-[#4000cc] hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                                 >
                                     <YoutubeLogoIcon class="size-4 shrink-0" aria-hidden="true" /> {{ externalUrl(game.youtube_url) ? 'Ver tutorial' : 'Buscar tutorial' }} <ChainIcon class="size-3.5 shrink-0" aria-hidden="true" />
                                 </a>
