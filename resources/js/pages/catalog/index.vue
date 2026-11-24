@@ -7,6 +7,7 @@ import { Trophy, Dices, Layers3 } from '@lucide/vue';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
+import { catalogPlaytime, formatCatalogPlaytime } from '@/lib/catalog-playtime';
 import { normalizeSearchText } from '@/lib/search-text';
 
 interface Collection {
@@ -113,13 +114,10 @@ const filteredGames = computed(() => {
             !collection ||
             game.collections.some(c => c.id === collection);
 
-        const duration =
-            game.max_playtime ?? game.min_playtime;
-
+        const maximumDuration = catalogPlaytime(game).max;
         const matchesDuration =
             durationLimit.value === '' ||
-            (duration !== null &&
-                duration <= Number(durationLimit.value));
+            (maximumDuration !== null && maximumDuration <= durationLimit.value);
 
         const complexity = game.complexity === null
             ? null
@@ -473,8 +471,10 @@ const sortedGames = computed(() => {
         return 2;
     };
 
-    const getDuration = (game: Game): number | null =>
-        game.max_playtime ?? game.min_playtime;
+    const getDuration = (game: Game): number | null => {
+        const { min, max } = catalogPlaytime(game);
+        return max ?? min;
+    };
 
     const getDifficulty = (game: Game): number | null => {
         if (game.complexity === null) return null;
@@ -584,21 +584,6 @@ const hasFilters = computed(() =>
 const gameDetailsUrl = (gameId: number) => {
     const path = `${props.catalogBasePath ?? `/catalog/${props.catalogToken}`}/games/${gameId}`;
     return `${path}${catalogViewQuery.value}`;
-};
-
-const formatDuration = (game: Game) => {
-    if (game.min_playtime === null) {
-        return game.max_playtime === null ? 'Sin datos' : `${game.max_playtime} min`;
-    }
-
-    if (
-        game.max_playtime === null ||
-        game.max_playtime === game.min_playtime
-    ) {
-        return `${game.min_playtime} min`;
-    }
-
-    return `${game.min_playtime}–${game.max_playtime} min`;
 };
 
 // Evitar analizar varias veces las mismas direcciones externas.
@@ -1071,7 +1056,7 @@ const tutorialUrl = (game: Game): string =>
                             <span class="inline-flex items-center gap-1.5 whitespace-nowrap">
                                 <HourglassCog class="size-4 shrink-0 text-[#1D4ED8]" :stroke-width="2.2" aria-hidden="true" />
                                 <span class="sr-only">Duración:</span>
-                                {{ formatDuration(game) }}
+                                {{ formatCatalogPlaytime(game) }}
                             </span>
                             <span v-if="game.complexity !== null" class="inline-flex items-center gap-1.5 whitespace-nowrap" title="Dificultad sobre 5">
                                 <BrainCog class="size-4 shrink-0 text-pink-600" :stroke-width="2" aria-hidden="true" />

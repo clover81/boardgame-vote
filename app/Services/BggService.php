@@ -255,7 +255,7 @@ class BggService
       $game['complexity'] = $this->normalizeComplexity((float) $game['complexity']);
     }
 
-    return $game;
+    return $this->normalizePlaytime($game);
   }
 
   public function expansionsForGame(int $baseBggId): array
@@ -390,6 +390,25 @@ class BggService
   private function normalizeComplexity(float $value): ?float
   {
     return $value >= 1 && $value <= 5 ? round($value, 2) : null;
+  }
+
+  private function normalizePlaytime(array $game): array
+  {
+    foreach (['min_playtime', 'max_playtime', 'playing_time'] as $key) {
+      if (isset($game[$key]) && $game[$key] <= 0) {
+        $game[$key] = null;
+      }
+    }
+
+    if (
+      isset($game['min_playtime'], $game['max_playtime'])
+      && $game['min_playtime'] > $game['max_playtime']
+    ) {
+      $game['min_playtime'] = null;
+      $game['max_playtime'] = null;
+    }
+
+    return $game;
   }
 
   private function attributeInt(
@@ -672,7 +691,7 @@ class BggService
 
       $complexity = $this->gameComplexity($item);
 
-      return [
+      return $this->normalizePlaytime([
           'id' =>
               $bggId,
 
@@ -728,7 +747,7 @@ class BggService
 
           'bgg_url' =>
               "https://boardgamegeek.com/boardgame/{$bggId}",
-      ];
+      ]);
   }
 
 

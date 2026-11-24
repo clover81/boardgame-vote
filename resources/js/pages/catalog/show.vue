@@ -6,6 +6,7 @@ import { computed, nextTick, ref } from 'vue';
 import { useResizeObserver } from '@vueuse/core';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import ScrollToTopProgress from '@/components/ScrollToTopProgress.vue';
+import { formatCatalogPlaytime } from '@/lib/catalog-playtime';
 
 interface Collection {
     id: number;
@@ -126,17 +127,6 @@ const shareGame = async () => {
         manualShareInput.value?.focus();
         manualShareInput.value?.select();
     }
-};
-
-const duration = () => {
-    const min = props.game.min_playtime;
-    const max = props.game.max_playtime;
-
-    if (min === null && max === null) return 'Sin datos';
-    if (min === null) return `${max} min`;
-    if (max === null || min === max) return `${min} min`;
-
-    return `${min}–${max} min`;
 };
 
 const gameMode = (): string => {
@@ -304,7 +294,7 @@ const tutorialUrl = (game: Game): string =>
                         <div class="min-w-0 rounded-2xl bg-white p-2.5 shadow-sm sm:p-4">
                             <p class="text-[11px] text-zinc-500 sm:text-xs">Duración</p>
                             <p class="mt-1 break-words text-sm font-black leading-snug sm:mt-2 sm:text-lg">
-                                {{ duration() }}
+                                {{ formatCatalogPlaytime(game) }}
                             </p>
                         </div>
 

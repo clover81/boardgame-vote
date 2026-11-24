@@ -120,19 +120,28 @@ test('BGG detail omits cached zero complexity without discarding its description
     Http::preventStrayRequests();
     Http::fake();
 
-    $cached = $this->bggGame + ['complexity' => 0.0, 'description' => 'Original BGG description'];
+    $cached = $this->bggGame + [
+        'complexity' => 0.0,
+        'min_playtime' => 45,
+        'max_playtime' => 0,
+        'playing_time' => 0,
+        'description' => 'Original BGG description',
+    ];
     Cache::put('bgg-game-v2-371942', $cached, now()->addHour());
 
     $this->actingAs($this->user)->getJson(route('games.bgg.show', 371942))
         ->assertOk()
         ->assertJsonPath('game.complexity', null)
+        ->assertJsonPath('game.min_playtime', 45)
+        ->assertJsonPath('game.max_playtime', null)
+        ->assertJsonPath('game.playing_time', null)
         ->assertJsonPath('game.description', $cached['description']);
 
     expect(Cache::get('bgg-game-v2-371942'))->toBe($cached);
     Http::assertNothingSent();
 });
 
-test('BGG detail accepts valid difficulty and discards zero in fresh XML', function ($weight, $expected) {
+test('BGG detail normalizes difficulty and playtime from fresh XML', function ($weight, $expected, $min, $max, $expectedMin, $expectedMax) {
     config(['services.bgg.token' => 'test', 'services.bgg.base_url' => 'https://bgg.test/xmlapi2']);
     Http::preventStrayRequests();
     Http::fake([
@@ -140,6 +149,8 @@ test('BGG detail accepts valid difficulty and discards zero in fresh XML', funct
             <items>
                 <item id="371942">
                     <name type="primary" value="The White Castle" />
+                    <minplaytime value="{$min}" />
+                    <maxplaytime value="{$max}" />
                     <statistics><ratings><averageweight value="{$weight}" /></ratings></statistics>
                 </item>
             </items>
@@ -148,11 +159,18 @@ test('BGG detail accepts valid difficulty and discards zero in fresh XML', funct
 
     $this->actingAs($this->user)->getJson(route('games.bgg.show', 371942))
         ->assertOk()
-        ->assertJsonPath('game.complexity', $expected);
+        ->assertJsonPath('game.complexity', $expected)
+        ->assertJsonPath('game.min_playtime', $expectedMin)
+        ->assertJsonPath('game.max_playtime', $expectedMax);
 
     expect(Cache::get('bgg-game-v2-371942')['complexity'])->toBe($expected);
-    Http::assertSentCount(1);
+    $linked = app(BggService::class)->gameForLink(371942);
+    expect($linked['min_playtime'])->toBe($expectedMin)
+        ->and($linked['max_playtime'])->toBe($expectedMax);
+    Http::assertSentCount(2);
 })->with([
-    'unrated' => ['0', null],
-    'rated' => ['2.547', 2.55],
+    'unrated without playtime' => ['0', null, 0, 0, null, null],
+    'rated with a valid range' => ['2.547', 2.55, 45, 60, 45, 60],
+    'maximum only' => ['0', null, 0, 60, null, 60],
+    'reversed range' => ['0', null, 90, 45, null, null],
 ]);
