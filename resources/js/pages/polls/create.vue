@@ -313,7 +313,11 @@ const pollReadinessIssues = computed(() => {
         });
     }
 
-    if (form.candidate_ids.length === 0) {
+    if (
+        form.collection_ids.length > 0 &&
+        form.player_ids.length >= 2 &&
+        form.candidate_ids.length === 0
+    ) {
         issues.push({
             key: 'candidates',
             href: '#poll-candidates',
@@ -812,6 +816,12 @@ const gameModeFilter = ref('all');
 
 const gameFiltersHeading = ref<HTMLElement | null>(null);
 
+const preventSearchSubmit = (event: KeyboardEvent) => {
+    if (!event.isComposing) {
+        event.preventDefault();
+    }
+};
+
 const clearGameFilters = async () => {
     gameSearch.value = '';
     gameDifficultyFilter.value = 'all';
@@ -942,6 +952,16 @@ const visibleIdealGames = computed(() =>
 
 const visibleOtherGames = computed(() =>
     sortedOtherGames.value.filter(matchesGameFilters)
+);
+
+const hasCompatibleGames = computed(() =>
+    idealGames.value.length > 0 || otherGames.value.length > 0
+);
+
+const displayOtherGames = computed(() =>
+    idealGames.value.length === 0 ||
+    hasActiveGameFilters.value ||
+    showOtherGames.value
 );
 
 /*
@@ -1100,6 +1120,7 @@ const submit = () => {
         preserveScroll: 'errors',
         onError: async () => {
             await nextTick();
+            saveError.value?.scrollIntoView({ block: 'center' });
             saveError.value?.focus({ preventScroll: true });
         },
     });
@@ -1154,7 +1175,7 @@ const submit = () => {
                         <span class="sm:hidden">{{ playerCount >= 2 ? '✓' : '2' }} Jug. · {{ playerCount }}</span>
                         <span class="hidden sm:inline">{{ playerCount >= 2 ? '✓' : '2' }} Jugadores · {{ playerCount }}</span>
                     </a>
-                    <a href="#poll-candidates" class="shrink-0 rounded-full px-1.5 py-2 transition hover:opacity-80 sm:px-3"
+                    <a :href="playerCount >= 2 ? '#poll-candidates' : '#poll-players'" class="shrink-0 rounded-full px-1.5 py-2 transition hover:opacity-80 sm:px-3"
                         :class="form.candidate_ids.length ? 'bg-violet-100 text-[#5200FF] dark:bg-violet-950 dark:text-violet-200' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300'">
                         {{ form.candidate_ids.length ? '✓' : '3' }} Juegos · {{ form.candidate_ids.length }}
                     </a>
@@ -1592,6 +1613,7 @@ const submit = () => {
                             <input
                                 id="game-search"
                                 v-model="gameSearch"
+                                @keydown.enter="preventSearchSubmit"
                                 type="search"
                                 placeholder="Buscar por nombre: castillo blanco..."
                                 class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-[#5200FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
@@ -1826,7 +1848,7 @@ const submit = () => {
                     </div>
 
                     <div
-                        v-if="hasActiveGameFilters && !visibleIdealGames.length && !visibleOtherGames.length"
+                        v-if="hasCompatibleGames && hasActiveGameFilters && !visibleIdealGames.length && !visibleOtherGames.length"
                         class="mt-6 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-5 text-center dark:border-zinc-700 dark:bg-zinc-900"
                     >
                         <p class="font-bold text-zinc-800 dark:text-zinc-100">No hay juegos que coincidan con los filtros.</p>
@@ -2136,30 +2158,17 @@ const submit = () => {
                     </div>
 
                     <div
-                        v-if="playerCount >= 2 && idealGames.length === 0 && !hasActiveGameFilters"
-                        class="mt-6 rounded-2xl border border-orange-200 bg-orange-50 p-5 dark:border-orange-900 dark:bg-orange-950/20"
+                        v-if="!hasCompatibleGames"
+                        class="mt-6 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-5 dark:border-zinc-700 dark:bg-zinc-900"
                     >
-                        <p
-                            class="font-bold text-orange-700 dark:text-orange-300"
-                        >
-                            No hay juegos marcados como ideales
-                            para {{ playerCount }} jugadores.
+                        <p class="font-bold text-zinc-800 dark:text-zinc-100">
+                            {{ !form.collection_ids.length
+                                ? 'Selecciona una colección para ver sus juegos.'
+                                : `No hay juegos para ${playerCount} jugadores en las colecciones seleccionadas.` }}
                         </p>
-
-                        <p
-                            class="mt-2 text-sm text-zinc-600 dark:text-zinc-300"
-                        >
-                            Puedes elegir entre los juegos compatibles
-                            que admiten este número de jugadores.
+                        <p v-if="form.collection_ids.length" class="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+                            Cambia los participantes o selecciona otra colección.
                         </p>
-
-                        <button
-                            type="button"
-                            class="mt-3 font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
-                            @click="showOtherGames = true"
-                        >
-                            Ver juegos compatibles →
-                        </button>
                     </div>
 
                     <!-- ============================================== -->
@@ -2173,8 +2182,9 @@ const submit = () => {
                         class="mt-8 border-t border-zinc-200 pt-6 dark:border-zinc-800"
                     >
                         <button
-                            v-if="!hasActiveGameFilters"
+                            v-if="idealGames.length && !hasActiveGameFilters"
                             type="button"
+                            :aria-expanded="showOtherGames"
                             class="font-bold text-[#5200FF] hover:underline dark:text-[#CCFF00]"
                             @click="
                                 showOtherGames =
@@ -2188,18 +2198,19 @@ const submit = () => {
                             }}
                         </button>
 
+                        <h2 v-else class="text-lg font-black text-zinc-900 dark:text-zinc-100">
+                            Juegos compatibles ({{ visibleOtherGames.length }})
+                        </h2>
                         <p
                             class="mt-1 text-sm text-zinc-500 dark:text-zinc-400"
                         >
-                            Otros juegos que admiten
+                            Juegos que admiten
                             {{ playerCount }}
                             jugadores.
                         </p>
 
                         <div
-                            v-if="
-                                showOtherGames || hasActiveGameFilters
-                            "
+                            v-if="displayOtherGames"
                             class="mt-5 grid gap-4 sm:grid-cols-2"
                         >
                             <article
@@ -2418,7 +2429,7 @@ const submit = () => {
                             </article>
                         </div>
                         <div
-                            v-if="(showOtherGames || hasActiveGameFilters) && visibleOtherGames.length > displayedOtherGames.length"
+                            v-if="displayOtherGames && visibleOtherGames.length > displayedOtherGames.length"
                             class="mt-4 text-center"
                         >
                             <button
