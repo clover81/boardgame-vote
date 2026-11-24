@@ -77,6 +77,48 @@ test('new game creation saves the explicit fields and ignores unvalidated input'
     expect($game->collections->modelKeys())->toBe([$collection->id]);
 });
 
+test('game duration accepts either bound but rejects zero and reversed ranges', function (?int $min, ?int $max, bool $valid) {
+    $user = User::factory()->create();
+    $collection = GameCollection::create(['created_by' => $user->id, 'name' => 'Mi colección']);
+    $payload = [
+        'name' => 'Juego de prueba',
+        'min_players' => 1,
+        'max_players' => 4,
+        'min_playtime' => $min,
+        'max_playtime' => $max,
+        'game_modes' => [],
+        'ideal_player_counts' => [],
+        'collection_ids' => [$collection->id],
+    ];
+    $this->actingAs($user);
+
+    $created = $this->post(route('games.store'), $payload);
+    if ($valid) {
+        $created->assertSessionHasNoErrors();
+        $game = Game::sole();
+        expect($game->min_playtime)->toBe($min)->and($game->max_playtime)->toBe($max);
+
+        $game->update(['min_playtime' => null, 'max_playtime' => null]);
+        $this->put(route('games.update', $game), $payload)->assertSessionHasNoErrors();
+        expect($game->fresh()->min_playtime)->toBe($min)
+            ->and($game->fresh()->max_playtime)->toBe($max);
+
+        return;
+    }
+
+    $created->assertSessionHasErrors('max_playtime');
+    $this->assertDatabaseCount('games', 0);
+    $game = Game::create(['name' => 'Juego de prueba', 'min_players' => 1, 'max_players' => 4]);
+    $game->collections()->attach($collection);
+    $this->put(route('games.update', $game), $payload)->assertSessionHasErrors('max_playtime');
+    expect($game->fresh()->max_playtime)->toBeNull();
+})->with([
+    'only minimum' => [30, null, true],
+    'only maximum' => [null, 60, true],
+    'zero maximum' => [null, 0, false],
+    'reversed range' => [90, 60, false],
+]);
+
 test('invalid collection selections are rejected before a game is created', function ($selection) {
     $user = User::factory()->create();
     $owned = GameCollection::create([

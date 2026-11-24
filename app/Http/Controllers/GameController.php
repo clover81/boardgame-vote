@@ -418,7 +418,10 @@ class GameController extends Controller
             'max_players' => ['required', 'integer', 'gte:min_players'],
 
             'min_playtime' => ['nullable', 'integer', 'min:1'],
-            'max_playtime' => ['nullable', 'integer', 'gte:min_playtime'],
+            'max_playtime' => [
+                'nullable', 'integer', 'min:1',
+                ...($request->filled('min_playtime') ? ['gte:min_playtime'] : []),
+            ],
 
             'complexity' => ['nullable', 'numeric', 'between:1,5'],
 
@@ -1051,7 +1054,10 @@ class GameController extends Controller
             'max_players' => ['required', 'integer', 'gte:min_players'],
 
             'min_playtime' => ['nullable', 'integer', 'min:1'],
-            'max_playtime' => ['nullable', 'integer', 'gte:min_playtime'],
+            'max_playtime' => [
+                'nullable', 'integer', 'min:1',
+                ...($request->filled('min_playtime') ? ['gte:min_playtime'] : []),
+            ],
 
             'complexity' => ['nullable', 'numeric', 'between:1,5'],
 

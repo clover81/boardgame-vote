@@ -160,6 +160,26 @@ const form = useForm({
     bgg_expansion_ids: [] as number[],
 });
 
+const fillBggPlayerRange = ({ min_players, max_players }: Pick<BggGameDetail, 'min_players' | 'max_players'>) => {
+    const min = typeof min_players === 'number' && Number.isInteger(min_players) && min_players > 0
+        ? min_players : null;
+    const max = typeof max_players === 'number' && Number.isInteger(max_players) && max_players > 0
+        ? max_players : null;
+    const reversed = min !== null && max !== null && min > max;
+
+    form.min_players = reversed ? null : min;
+    form.max_players = reversed ? null : max;
+};
+
+const fillBggPlaytime = ({ min_playtime, max_playtime }: Pick<BggGameDetail, 'min_playtime' | 'max_playtime'>) => {
+    const min = min_playtime !== null && Number.isInteger(min_playtime) && min_playtime > 0 ? min_playtime : null;
+    const max = max_playtime !== null && Number.isInteger(max_playtime) && max_playtime > 0 ? max_playtime : null;
+    const reversed = min !== null && max !== null && min > max;
+
+    form.min_playtime = reversed ? null : min;
+    form.max_playtime = reversed ? null : max;
+};
+
 const imagePreviewFailed = ref(false);
 watch(() => form.image_url, () => {
     imagePreviewFailed.value = false;
@@ -350,11 +370,9 @@ const loadBggGame = async (result: BggSearchResult) => {
         form.name = game.name;
         form.image_url = game.image_url ?? '';
 
-        form.min_players = game.min_players;
-        form.max_players = game.max_players;
+        fillBggPlayerRange(game);
 
-        form.min_playtime = game.min_playtime;
-        form.max_playtime = game.max_playtime;
+        fillBggPlaytime(game);
         form.complexity = game.complexity;
         form.bgg_url = game.bgg_url;
 
@@ -462,10 +480,8 @@ const importFromBgg = async () => {
 
         form.name = game.name;
         form.image_url = game.image_url ?? '';
-        form.min_players = game.min_players;
-        form.max_players = game.max_players;
-        form.min_playtime = game.min_playtime;
-        form.max_playtime = game.max_playtime;
+        fillBggPlayerRange(game);
+        fillBggPlaytime(game);
         form.complexity = game.complexity;
         form.bgg_url = game.bgg_url;
 
@@ -1322,34 +1338,47 @@ const submit = () => {
                         <div class="grid grid-cols-2 gap-4">
 
                             <div>
-                                <label class="mb-1 block text-sm">
+                                <label for="create-game-min-players" class="mb-1 block text-sm">
                                     Mínimo
                                 </label>
 
                                 <input
+                                    id="create-game-min-players"
                                     v-model.number="form.min_players"
                                     type="number"
                                     min="1"
+                                    required
                                     class="w-full rounded-xl border px-4 py-3"
                                 />
+                                <InputError :message="form.errors.min_players" />
                             </div>
 
                             <div>
-                                <label class="mb-1 block text-sm">
+                                <label for="create-game-max-players" class="mb-1 block text-sm">
                                     Máximo
                                 </label>
 
                                 <input
+                                    id="create-game-max-players"
                                     v-model.number="form.max_players"
                                     type="number"
                                     min="1"
+                                    required
                                     class="w-full rounded-xl border px-4 py-3"
                                 />
+                                <InputError :message="form.errors.max_players" />
                             </div>
 
                         </div>
                     </div>
 
+
+                    <p
+                        v-if="form.bgg_id && (form.min_players === null || form.max_players === null)"
+                        class="text-sm text-amber-700 dark:text-amber-300"
+                    >
+                        BGG no ha indicado un intervalo válido. Completa el número de jugadores antes de guardar.
+                    </p>
 
                     <!-- Jugadores ideales -->
 
