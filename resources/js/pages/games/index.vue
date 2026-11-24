@@ -160,6 +160,7 @@ const revealGames = async () => {
 
 const clearFilters = async () => {
     search.value = '';
+    sortOrder.value = 'name';
     gameMode.value = '';
     durationLimit.value = '';
     difficulty.value = '';
@@ -181,7 +182,8 @@ const advancedFilterCount = computed(() =>
 
 const hasActiveFilters = computed(() =>
     search.value.trim() !== '' ||
-    advancedFilterCount.value > 0
+    advancedFilterCount.value > 0 ||
+    sortOrder.value !== 'name'
 );
 
 const selectedCollectionIsEmpty = computed(() =>
@@ -203,7 +205,14 @@ const visibleGameModes = (game: Game): string[] =>
             ? [game.game_mode]
             : [];
 
-type FilterKey = 'search' | 'players' | 'collection' | 'duration' | 'difficulty' | 'mode';
+const sortLabels: Record<string, string> = {
+    name: 'Nombre (A–Z)',
+    name_desc: 'Nombre (Z–A)',
+    recent: 'Últimos jugados',
+    most_played: 'Más jugados',
+};
+
+type FilterKey = 'search' | 'players' | 'collection' | 'duration' | 'difficulty' | 'mode' | 'sort';
 type FilterChip = { key: FilterKey; label: string };
 
 const activeFilterChips = computed<FilterChip[]>(() => {
@@ -234,6 +243,9 @@ const activeFilterChips = computed<FilterChip[]>(() => {
     if (gameMode.value !== '') {
         chips.push({ key: 'mode', label: gameModeLabels[gameMode.value] ?? gameMode.value });
     }
+    if (sortOrder.value !== 'name') {
+        chips.push({ key: 'sort', label: `Orden: ${sortLabels[sortOrder.value]}` });
+    }
     return chips;
 });
 
@@ -248,6 +260,7 @@ const removeFilter = async (key: FilterKey, event: MouseEvent) => {
         case 'duration': durationLimit.value = ''; break;
         case 'difficulty': difficulty.value = ''; break;
         case 'mode': gameMode.value = ''; break;
+        case 'sort': sortOrder.value = 'name'; break;
     }
     applyFilters();
 
@@ -415,10 +428,7 @@ const formatDate = (date: string | null): string => {
                                 class="min-w-0 max-w-[12rem] rounded-xl border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                                 @change="applyFilters"
                             >
-                                <option value="name">Nombre (A–Z)</option>
-                                <option value="name_desc">Nombre (Z–A)</option>
-                                <option value="recent">Últimos jugados</option>
-                                <option value="most_played">Más jugados</option>
+                                <option v-for="(label, value) in sortLabels" :key="value" :value="value">{{ label }}</option>
                             </select>
                         </div>
                     </div>

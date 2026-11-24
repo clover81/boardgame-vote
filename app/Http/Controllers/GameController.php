@@ -687,9 +687,10 @@ class GameController extends Controller
                     }
                 });
             })
-            ->when($search, function ($query, $search) {
+            ->when($search !== '', function ($query) use ($search) {
                 $replacements = [
                     "'" => '', '‘' => '', '’' => '',
+                    ',' => ' ', ':' => ' ', '.' => ' ', '!' => ' ', '?' => ' ',
                     '-' => ' ', '‐' => ' ', '‑' => ' ', '‒' => ' ',
                     '–' => ' ', '—' => ' ', '−' => ' ',
                 ];

@@ -157,6 +157,22 @@ test('private search ignores straight and curly apostrophes in titles', function
     }
 });
 
+test('private search accepts punctuation and numeric terms', function (string $name, string $query) {
+    $this->castle->update(['name' => $name]);
+
+    $this->actingAs($this->user)->get(route('games.index', ['q' => $query]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('games', 1)
+            ->where('games.0.id', $this->castle->id)
+            ->where('filters.q', $query)
+        );
+})->with([
+    'comma in the search' => ['Star Wars: Outer Rim', 'outer rim, star'],
+    'colon in the title' => ['Star Wars: Outer Rim', 'Star Wars Outer Rim'],
+    'zero as search' => ['Project 0', '0'],
+]);
+
 test('a single letter prioritizes titles beginning with that letter', function () {
     // The White Castle contiene la letra s pero no empieza por ella.
     $this->actingAs($this->user)->get(route('games.index', ['q' => 's']))
