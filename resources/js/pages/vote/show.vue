@@ -628,6 +628,14 @@ const formatDate = (
         )
     );
 };
+const formatPlayerRange = ({ min_players: min, max_players: max }: Pick<Game, 'min_players' | 'max_players'>): string =>
+    min === max ? String(min) : `${min}–${max}`;
+
+const formatPlaytime = ({ min_playtime: min, max_playtime: max }: Pick<Game, 'min_playtime' | 'max_playtime'>): string => {
+    if (min && max && min !== max) return `${min}–${max} min`;
+    return `${min || max} min`;
+};
+
 // Admitir únicamente enlaces web externos válidos.
 const externalUrl = (url: string | null): string | undefined => {
     if (!url) return undefined;
@@ -860,14 +868,14 @@ const myChoiceLabel = (candidateId: number): string | null => {
                                 >
                                     <span class="inline-flex items-center gap-1.5">
                                         <UsersRound class="size-4 text-[#5200FF]" aria-hidden="true" />
-                                        {{ winningGame.min_players }}–{{ winningGame.max_players }} jugadores
+                                        {{ formatPlayerRange(winningGame) }} {{ winningGame.max_players === 1 ? 'jugador' : 'jugadores' }}
                                     </span>
                                     <span
-                                        v-if="winningGame.min_playtime"
+                                        v-if="winningGame.min_playtime || winningGame.max_playtime"
                                         class="inline-flex items-center gap-1.5"
                                     >
                                         <HourglassCog class="size-4 text-blue-700" aria-hidden="true" />
-                                        {{ winningGame.min_playtime }}<template v-if="winningGame.max_playtime && winningGame.max_playtime !== winningGame.min_playtime">–{{ winningGame.max_playtime }}</template> min
+                                        {{ formatPlaytime(winningGame) }}
                                     </span>
                                 </div>
                             </div>
@@ -1308,14 +1316,14 @@ const myChoiceLabel = (candidateId: number): string | null => {
                                 <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-600">
                                     <span class="inline-flex items-center gap-1">
                                         <UsersRound class="size-3.5 text-[#5200FF]" aria-hidden="true" />
-                                        {{ candidate.game.min_players }}–{{ candidate.game.max_players }}
+                                        {{ formatPlayerRange(candidate.game) }}
                                     </span>
                                     <span
-                                        v-if="candidate.game.min_playtime"
+                                        v-if="candidate.game.min_playtime || candidate.game.max_playtime"
                                         class="inline-flex items-center gap-1"
                                     >
                                         <HourglassCog class="size-3.5 text-blue-700" aria-hidden="true" />
-                                        {{ candidate.game.min_playtime }}<template v-if="candidate.game.max_playtime && candidate.game.max_playtime !== candidate.game.min_playtime">–{{ candidate.game.max_playtime }}</template> min
+                                        {{ formatPlaytime(candidate.game) }}
                                     </span>
                                 </div>
 
@@ -1420,14 +1428,14 @@ const myChoiceLabel = (candidateId: number): string | null => {
                                     <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-600">
                                         <span class="inline-flex items-center gap-1">
                                             <UsersRound class="size-3.5 text-[#5200FF]" aria-hidden="true" />
-                                            {{ candidate.game.min_players }}–{{ candidate.game.max_players }}
+                                            {{ formatPlayerRange(candidate.game) }}
                                         </span>
                                         <span
-                                            v-if="candidate.game.min_playtime"
+                                            v-if="candidate.game.min_playtime || candidate.game.max_playtime"
                                             class="inline-flex items-center gap-1"
                                         >
                                             <HourglassCog class="size-3.5 text-blue-700" aria-hidden="true" />
-                                            {{ candidate.game.min_playtime }}<template v-if="candidate.game.max_playtime && candidate.game.max_playtime !== candidate.game.min_playtime">–{{ candidate.game.max_playtime }}</template> min
+                                            {{ formatPlaytime(candidate.game) }}
                                         </span>
                                     </div>
                                     <p
@@ -1677,9 +1685,9 @@ const myChoiceLabel = (candidateId: number): string | null => {
                                 </h2>
 
                                 <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-600 sm:text-sm">
-                                    <span><UsersRound class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9]" :stroke-width="2.2" role="img" aria-label="Jugadores" /> {{ candidate.game.min_players }}–{{ candidate.game.max_players }}</span>
-                                    <span v-if="candidate.game.min_playtime">
-                                        <HourglassCog class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#1D4ED8]" :stroke-width="2.2" role="img" aria-label="Duración" /> {{ candidate.game.min_playtime }}<template v-if="candidate.game.max_playtime && candidate.game.max_playtime !== candidate.game.min_playtime">–{{ candidate.game.max_playtime }}</template> min
+                                    <span><UsersRound class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9]" :stroke-width="2.2" role="img" aria-label="Jugadores" /> {{ formatPlayerRange(candidate.game) }}</span>
+                                    <span v-if="candidate.game.min_playtime || candidate.game.max_playtime">
+                                        <HourglassCog class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#1D4ED8]" :stroke-width="2.2" role="img" aria-label="Duración" /> {{ formatPlaytime(candidate.game) }}
                                     </span>
                                     <span
                                         v-if="candidate.game.complexity !== null"
