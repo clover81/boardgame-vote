@@ -79,6 +79,7 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
 
         $preview = $collections->preview(trim((string) $collection->bgg_username));
 
+        $gamesPreview = $preview;
         $totalGames = 0;
         $completed = false;
 
@@ -87,7 +88,7 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
             $result = $gamesImporter->importGames(
                 $collection,
                 20,
-                $preview
+                $gamesPreview
             );
 
             $imported = count($result['imported']);
@@ -110,19 +111,32 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
                 ])->save();
             }
 
-            if (!empty($result['errors'])) {
+            $invalidIds = array_column(array_filter(
+                $result['errors'],
+                fn (array $error) => $error['invalid_player_range'] ?? false
+            ), 'bgg_id');
+
+            if (count($invalidIds) !== count($result['errors'])) {
                 throw new RuntimeException(
                     'Error importando juegos BGG: '
                         . json_encode($result['errors'])
                 );
             }
 
-            if ($result['remaining_before_import'] <= $imported) {
+            $processed = $imported + count($invalidIds);
+            if ($result['remaining_before_import'] <= $processed) {
                 $completed = true;
                 break;
             }
 
-            if ($imported === 0) {
+            if ($invalidIds !== []) {
+                $gamesPreview['games'] = array_values(array_filter(
+                    $gamesPreview['games'],
+                    fn (array $game) => !in_array((int) $game['bgg_id'], $invalidIds, true)
+                ));
+            }
+
+            if ($processed === 0) {
                 throw new RuntimeException(
                     'La importación no ha avanzado.'
                 );
@@ -160,6 +174,12 @@ class SyncBggCollection implements ShouldQueue, ShouldBeUnique
             throw new RuntimeException(
                 'Error importando expansiones BGG: '
                     . json_encode($expansions['errors'])
+            );
+        }
+
+        if ($report['games_errors'] !== []) {
+            throw new RuntimeException(
+                'Se procesaron los juegos y las expansiones disponibles. Algunos juegos quedaron pendientes por un rango de jugadores inválido en BGG.'
             );
         }
 

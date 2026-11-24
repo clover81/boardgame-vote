@@ -122,9 +122,14 @@ class BggCollectionImporter
         $maxPlayers = filter_var($details['max_players'] ?? null, FILTER_VALIDATE_INT);
 
         if ($minPlayers === false || $maxPlayers === false || $minPlayers < 1 || $maxPlayers < $minPlayers) {
-          throw new RuntimeException(
-            'BGG no ha devuelto un rango válido de jugadores.'
-          );
+          $result['errors'][] = [
+            'bgg_id' => $bggId,
+            'name' => $item['name'],
+            'error' => 'BGG no ha devuelto un rango válido de jugadores.',
+            'invalid_player_range' => true,
+          ];
+
+          continue;
         }
 
         $game = DB::transaction(function () use (

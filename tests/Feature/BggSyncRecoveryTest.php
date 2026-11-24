@@ -3,6 +3,9 @@
 use App\Jobs\SyncBggCollection;
 use App\Models\GameCollection;
 use App\Models\User;
+use App\Services\BggCollectionImporter;
+use App\Services\BggCollectionService;
+use App\Services\BggExpansionImporter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -179,4 +182,46 @@ test('envia el informe detallado BGG a la coleccion propietaria', function () {
                 'El juego base no pertenece a esta colección.'
             )
         );
+});
+
+test('la sincronizacion procesa los lotes restantes aunque BGG devuelva rangos invalidos', function () {
+    $invalid = array_map(fn ($id) => [
+        'bgg_id' => $id,
+        'name' => "Juego {$id}",
+        'error' => 'BGG no ha devuelto un rango válido de jugadores.',
+        'invalid_player_range' => true,
+    ], range(100, 119));
+    $game = ['bgg_id' => 120, 'name' => 'Juego válido'];
+    $preview = ['games' => [...$invalid, $game], 'expansions' => []];
+
+    $collections = $this->mock(BggCollectionService::class);
+    $collections->shouldReceive('preview')->once()->with('clover81')->andReturn($preview);
+    $importer = $this->mock(BggCollectionImporter::class);
+    $importer->shouldReceive('importGames')->once()->ordered()
+        ->withArgs(fn ($collection, $limit, $items) => $collection->is($this->collection) && $limit === 20 && $items === $preview)
+        ->andReturn(['imported' => [], 'errors' => $invalid, 'remaining_before_import' => 21]);
+    $importer->shouldReceive('importGames')->once()->ordered()
+        ->withArgs(fn ($collection, $limit, $items) => $collection->is($this->collection) && $limit === 20 && $items['games'] === [$game])
+        ->andReturn(['imported' => [$game], 'errors' => [], 'remaining_before_import' => 1]);
+
+    $expansions = $this->mock(BggExpansionImporter::class);
+    $expansions->shouldReceive('run')->once()
+        ->withArgs(fn ($collection, $force, $items) => $collection->is($this->collection) && $force === false && $items === $preview)
+        ->andReturn(['imported' => [], 'pending' => [], 'errors' => []]);
+
+    $job = new SyncBggCollection($this->collection->id);
+    try {
+        $job->handle($importer, $expansions, $collections);
+        $this->fail('La sincronización parcial debe indicar los juegos pendientes.');
+    } catch (RuntimeException $error) {
+        expect($error->getMessage())->toContain('juegos quedaron pendientes');
+        $job->failed($error);
+    }
+
+    $collection = $this->collection->fresh();
+    expect($collection->bgg_sync_status)->toBe('failed')
+        ->and($collection->bgg_last_synced_at)->toBe('2026-11-02 18:53:03')
+        ->and($collection->bgg_sync_games_added)->toBe(1)
+        ->and($collection->bgg_sync_report['games_added'])->toBe([$game])
+        ->and($collection->bgg_sync_report['games_errors'])->toBe($invalid);
 });

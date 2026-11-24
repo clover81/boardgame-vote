@@ -60,6 +60,7 @@ test('games with invalid BGG player ranges are reported without creating a game'
             'bgg_id' => 100,
             'name' => 'Juego',
             'error' => 'BGG no ha devuelto un rango válido de jugadores.',
+            'invalid_player_range' => true,
         ]])
         ->and($this->collection->games()->count())->toBe(0);
     $this->assertDatabaseCount('games', 0);

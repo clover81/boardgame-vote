@@ -501,7 +501,7 @@ const explainBggItemError = (message?: string): string => {
         return 'BGG ha rechazado la autorización. Hay que revisar la configuración de acceso.';
     }
 
-    if (/datos esperados|XML válido|no tiene nombre/i.test(message)) {
+    if (/datos esperados|XML válido|no tiene nombre|rango válido de jugadores/i.test(message)) {
         return message;
     }
 
