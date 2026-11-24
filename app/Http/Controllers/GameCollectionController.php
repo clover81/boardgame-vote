@@ -590,11 +590,7 @@ class GameCollectionController extends Controller
                 ->lockForUpdate()
                 ->findOrFail($collection->id);
 
-            if (in_array(
-                $current->bgg_sync_status,
-                ['pending', 'running'],
-                true
-            )) {
+            if ($this->bggSyncChangedDuringRemoval($collection, $current)) {
                 return false;
             }
 
@@ -607,7 +603,7 @@ class GameCollectionController extends Controller
 
         if (!$removed) {
             return back()->withErrors([
-                'bgg' => 'Se ha iniciado otra sincronización. No se ha aplicado la baja.',
+                'bgg' => 'La sincronización cambió durante la comprobación. Actualiza la vista previa de BGG y vuelve a intentarlo.',
             ]);
         }
 
@@ -732,11 +728,7 @@ class GameCollectionController extends Controller
                     ->lockForUpdate()
                     ->findOrFail($collection->id);
 
-                if (in_array(
-                    $current->bgg_sync_status,
-                    ['pending', 'running'],
-                    true
-                )) {
+                if ($this->bggSyncChangedDuringRemoval($collection, $current)) {
                     return false;
                 }
 
@@ -749,7 +741,7 @@ class GameCollectionController extends Controller
 
         if (!$removed) {
             return back()->withErrors([
-                'bgg' => 'Se ha iniciado otra sincronización. No se ha aplicado la baja.',
+                'bgg' => 'La sincronización cambió durante la comprobación. Actualiza la vista previa de BGG y vuelve a intentarlo.',
             ]);
         }
 
@@ -759,5 +751,12 @@ class GameCollectionController extends Controller
             'success',
             "La expansión {$expansion->name} se ha retirado de tu colección en esta aplicación. Su ficha se conserva."
         );
+    }
+
+    private function bggSyncChangedDuringRemoval(GameCollection $before, GameCollection $current): bool
+    {
+        $fields = ['bgg_username', 'bgg_sync_status', 'bgg_sync_started_at', 'bgg_last_synced_at'];
+
+        return $before->only($fields) !== $current->only($fields);
     }
 }

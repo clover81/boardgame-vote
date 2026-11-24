@@ -120,9 +120,15 @@ test('la baja BGG de un juego conserva su ficha y solo quita la asociacion', fun
     ]);
 });
 
-test('no retira el juego si comienza otra sincronizacion durante la comprobacion', function (string $status) {
+test('no aplica la baja si cambia la sincronización durante la comprobación', function (string $status, bool $isExpansion) {
+    $this->collection->forceFill([
+        'bgg_sync_status' => 'completed',
+        'bgg_sync_started_at' => now()->subDay(),
+        'bgg_last_synced_at' => now()->subDay(),
+    ])->save();
+
     $preview = [
-        'games' => [['bgg_id' => 987]],
+        'games' => [['bgg_id' => $isExpansion ? 123 : 987]],
         'expansions' => [],
     ];
 
@@ -139,13 +145,18 @@ test('no retira el juego si comienza otra sincronizacion durante la comprobacion
         ->andReturnUsing(function () use ($preview, $status) {
             $this->collection->forceFill([
                 'bgg_sync_status' => $status,
+                'bgg_sync_started_at' => now(),
+                'bgg_last_synced_at' => $status === 'completed' ? now() : $this->collection->bgg_last_synced_at,
             ])->save();
 
             return $preview;
         });
 
+    $url = $isExpansion
+        ? route('collections.bgg.remove-expansion', [$this->collection, $this->expansion])
+        : route('collections.bgg.remove', [$this->collection, $this->game]);
     $this->actingAs($this->user)
-        ->post(route('collections.bgg.remove', [$this->collection, $this->game]))
+        ->post($url)
         ->assertRedirect()
         ->assertSessionHasErrors('bgg');
 
@@ -154,7 +165,17 @@ test('no retira el juego si comienza otra sincronizacion durante la comprobacion
         'game_id' => $this->game->id,
     ]);
 
+    $this->assertDatabaseHas('game_collection_expansion', [
+        'game_collection_id' => $this->collection->id,
+        'expansion_id' => $this->expansion->id,
+    ]);
+
     $this->assertDatabaseHas('games', [
         'id' => $this->game->id,
     ]);
-})->with(['pending', 'running']);
+})->with([
+    'juego con sincronización pendiente' => ['pending', false],
+    'juego con sincronización en curso' => ['running', false],
+    'juego con nueva sincronización completada' => ['completed', false],
+    'expansión con nueva sincronización completada' => ['completed', true],
+]);

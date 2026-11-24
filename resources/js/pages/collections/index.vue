@@ -563,11 +563,12 @@ onUnmounted(() => {
 
 const syncBggCollection = () => {
     const collectionId = bggCollectionId.value;
-    if (collectionId === '' || bggLoading.value || bggChangesBlocked.value) return;
+    if (collectionId === '' || bggChangesBlocked.value) return;
 
     bggSyncing.value = true;
     bggSyncMessage.value = '';
     bggSyncError.value = '';
+    bggRemovalError.value = null;
 
     router.post(
         `/collections/${collectionId}/bgg/sync`,
@@ -696,13 +697,16 @@ const executeBggRemoval = (game: {
 };
 
 const bggRemovingExpansionId = ref<number | null>(null);
+const bggRemoving = computed(() =>
+    bggRemovingId.value !== null || bggRemovingExpansionId.value !== null
+);
 
 const bggChangesBlocked = computed(() =>
     bggRetryMinutes.value > 0 ||
     bggCollectionId.value === '' ||
+    bggLoading.value ||
     bggSyncing.value ||
-    bggRemovingId.value !== null ||
-    bggRemovingExpansionId.value !== null ||
+    bggRemoving.value ||
     ['pending', 'running'].includes(selectedBggCollection.value?.bgg_sync_status ?? '')
 );
 
@@ -793,7 +797,7 @@ const executeBggExpansionRemoval = (expansion: {
 };
 
 const loadBggPreview = async () => {
-    if (bggCollectionId.value === '' || bggRetryMinutes.value > 0) return;
+    if (bggCollectionId.value === '' || bggRetryMinutes.value > 0 || bggRemoving.value) return;
 
     bggPreviewRequest?.abort();
     const request = new AbortController();
@@ -843,6 +847,10 @@ const loadBggPreview = async () => {
         }
 
         bggPreview.value = result as BggPreview;
+        if (bggRemovalError.value) {
+            bggRemovalError.value = null;
+            bggSyncError.value = '';
+        }
 
         const hour = new Date().toLocaleTimeString('es-ES', {
             hour: '2-digit',
@@ -1293,7 +1301,7 @@ watch(
 
                     <button
                         type="button"
-                        :disabled="bggLoading || bggCollectionId === '' || bggRetryMinutes > 0"
+                        :disabled="bggLoading || bggRemoving || bggCollectionId === '' || bggRetryMinutes > 0"
                         class="w-full min-w-0 rounded-xl bg-[#5200FF] px-5 py-3 text-center font-bold whitespace-nowrap text-white disabled:opacity-50 sm:w-52 sm:shrink-0"
                         @click="loadBggPreview"
                     >
@@ -1317,7 +1325,7 @@ watch(
 
                     <button
                         type="button"
-                        :disabled="bggLoading || bggChangesBlocked"
+                        :disabled="bggChangesBlocked"
                         class="rounded-xl bg-emerald-600 px-5 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                         @click="syncBggCollection"
                     >
