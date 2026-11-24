@@ -34,12 +34,15 @@ test('adding collections preserves all memberships and can be repeated without d
     $this->actingAs($this->user);
 
     $back = route('games.index', ['collection_id' => $this->ownedCollections[1]->id, 'sort' => 'name_desc'], false);
-    foreach ([[], ['back' => $back]] as $query) {
+    foreach ([
+        [[], 'Juego añadido a las colecciones seleccionadas.'],
+        [['back' => $back], 'El juego ya estaba en las colecciones seleccionadas.'],
+    ] as [$query, $message]) {
         $this->post(route('games.collections.attach', ['game' => $this->game, ...$query]), [
             'collection_ids' => [$this->ownedCollections[1]->id],
         ])->assertSessionHasNoErrors()
             ->assertRedirect(route('games.show', ['game' => $this->game, ...$query]))
-            ->assertSessionHas('success', 'Juego añadido a las colecciones seleccionadas.');
+            ->assertSessionHas('success', $message);
     }
 
     expect($this->game->collections->modelKeys())->toEqualCanonicalizing([

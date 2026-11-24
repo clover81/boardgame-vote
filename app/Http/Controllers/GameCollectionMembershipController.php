@@ -42,7 +42,10 @@ class GameCollectionMembershipController extends Controller
         /*
          * Solo añadimos. Nunca quitamos colecciones existentes.
          */
-        $game->collections()->syncWithoutDetaching($collectionIds);
+        $changes = $game->collections()->syncWithoutDetaching($collectionIds);
+        $message = $changes['attached'] === []
+            ? 'El juego ya estaba en las colecciones seleccionadas.'
+            : 'Juego añadido a las colecciones seleccionadas.';
 
         $back = $request->query('back');
         $parameters = ['game' => $game];
@@ -52,7 +55,7 @@ class GameCollectionMembershipController extends Controller
 
         return redirect()
             ->route('games.show', $parameters)
-            ->with('success', 'Juego añadido a las colecciones seleccionadas.');
+            ->with('success', $message);
     }
 
     public function update(

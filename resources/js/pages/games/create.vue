@@ -427,23 +427,13 @@ const importFromBgg = async () => {
         selectedBggGame.value = null;
 
         if (data.existing_game) {
-            existingImportedBggGame.value = data.existing_game;
+            const existingGame: ExistingBggGame = data.existing_game;
+            existingImportedBggGame.value = existingGame;
 
-            /*
-             * Este formulario solo añade colecciones nuevas.
-             */
             existingGameForm.clearErrors();
-            existingGameForm.collection_ids = [];
-
-            /*
-             * Si no está en ninguna colección del usuario,
-             * preseleccionamos la principal.
-             */
-            if (data.existing_game.collection_ids.length === 0) {
-                existingGameForm.collection_ids = [
-                    ...props.default_collection_ids,
-                ];
-            }
+            existingGameForm.collection_ids = props.default_collection_ids.filter(
+                (id) => !existingGame.collection_ids.includes(id),
+            );
 
             /*
              * Limpiamos los datos de una importación anterior.
@@ -906,9 +896,8 @@ const submit = () => {
 
                 <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
                     {{ existingBggGame.name }} ya existe.
-                    Al guardar no se creará otro juego:
-                    lo añadiremos a las colecciones seleccionadas
-                    conservando sus datos y su historial.
+                    Puedes añadirlo a otras colecciones conservando
+                    sus datos, su historial y las asociaciones que ya tiene.
                 </p>
             </div>
 
