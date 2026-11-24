@@ -42,8 +42,7 @@ class FriendCollectionController extends Controller
                 'id' => $game->id,
                 'name' => $game->name,
                 'image_url' => $game->image_url,
-                'min_players' => $game->min_players,
-                'max_players' => $game->max_players,
+                ...$game->catalogPlayerRange(),
                 'min_playtime' => $game->min_playtime,
                 'max_playtime' => $game->max_playtime,
                 'complexity' => $game->ratedComplexity(),
@@ -53,8 +52,6 @@ class FriendCollectionController extends Controller
                 'short_description' => $game->short_description,
                 'bgg_url' => $game->bgg_url,
                 'youtube_url' => $game->youtube_url,
-                'ideal_player_counts' => $game->idealPlayerCounts
-                    ->pluck('player_count')->values(),
                 'collections' => collect([[
                     'id' => $collection->id,
                     'name' => $collection->name,
@@ -105,8 +102,7 @@ class FriendCollectionController extends Controller
                 'id' => $game->id,
                 'name' => $game->name,
                 'image_url' => $game->image_url,
-                'min_players' => $game->min_players,
-                'max_players' => $game->max_players,
+                ...$game->catalogPlayerRange(),
                 'min_playtime' => $game->min_playtime,
                 'max_playtime' => $game->max_playtime,
                 'complexity' => $game->ratedComplexity(),
@@ -118,8 +114,6 @@ class FriendCollectionController extends Controller
                 'additional_information' => $game->additional_information,
                 'bgg_url' => $game->bgg_url,
                 'youtube_url' => $game->youtube_url,
-                'ideal_player_counts' => $game->idealPlayerCounts
-                    ->pluck('player_count')->values(),
                 'collections' => [[
                     'id' => $collection->id,
                     'name' => $collection->name,

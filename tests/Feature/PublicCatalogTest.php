@@ -32,7 +32,7 @@ test('guests only receive active games and public collections belonging to the c
         'youtube_url' => 'https://www.youtube.com/watch?v=tutorial',
     ]);
     $games[0]->collections()->attach($collections->pluck('id')->all());
-    $games[0]->idealPlayerCounts()->createMany([['player_count' => 2], ['player_count' => 3]]);
+    $games[0]->idealPlayerCounts()->createMany([['player_count' => 3], ['player_count' => 2], ['player_count' => 5]]);
     $games[1]->collections()->attach($collections[0]);
     $games[2]->collections()->attach($collections[2]);
     $games[3]->collections()->attach($collections[3]);
@@ -69,6 +69,7 @@ test('guests only receive active games and public collections belonging to the c
         ->assertInertia(fn (Assert $page) => $page
             ->component('catalog/show')
             ->where('game.complexity', null)
+            ->where('game.ideal_player_counts', [2, 3])
         );
 });
 
@@ -107,6 +108,37 @@ test('hiding the last public collection removes its games from the catalog', fun
         ->where('games', [])
     );
 });
+
+test('public catalog keeps games with invalid player ranges but omits their player data', function ($min, $max) {
+    $this->withoutVite();
+    $owner = User::factory()->create();
+    $owner->forceFill(['catalog_share_token' => (string) Str::uuid()])->save();
+    $collection = GameCollection::forceCreate([
+        'created_by' => $owner->id,
+        'name' => 'Colección pública',
+        'is_public' => true,
+    ]);
+    $game = Game::create(['name' => 'Juego', 'min_players' => $min, 'max_players' => $max, 'is_active' => true]);
+    $game->idealPlayerCounts()->create(['player_count' => 2]);
+    $collection->games()->attach($game);
+
+    $this->get(route('catalog.public', $owner->catalog_share_token))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('games', 1)
+            ->where('games.0.min_players', null)
+            ->where('games.0.max_players', null)
+            ->where('games.0.ideal_player_counts', [])
+        );
+
+    $this->get(route('catalog.games.show', [$owner->catalog_share_token, $game->id]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('game.min_players', null)
+            ->where('game.max_players', null)
+            ->where('game.ideal_player_counts', [])
+        );
+})->with(['zero' => [0, 1], 'reversed' => [4, 2]]);
 
 test('an unknown catalog token returns not found', function () {
     $this->get(route('catalog.public', (string) Str::uuid()))

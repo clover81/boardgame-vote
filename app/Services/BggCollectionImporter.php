@@ -118,10 +118,21 @@ class BggCollectionImporter
           );
         }
 
+        $minPlayers = filter_var($details['min_players'] ?? null, FILTER_VALIDATE_INT);
+        $maxPlayers = filter_var($details['max_players'] ?? null, FILTER_VALIDATE_INT);
+
+        if ($minPlayers === false || $maxPlayers === false || $minPlayers < 1 || $maxPlayers < $minPlayers) {
+          throw new RuntimeException(
+            'BGG no ha devuelto un rango válido de jugadores.'
+          );
+        }
+
         $game = DB::transaction(function () use (
           $collection,
           $bggId,
           $details,
+          $minPlayers,
+          $maxPlayers,
           $name,
           $description
         ) {
@@ -131,8 +142,8 @@ class BggCollectionImporter
             [
               'name' => $name,
               'image_url' => $details['image_url'] ?? null,
-              'min_players' => $details['min_players'] ?? null,
-              'max_players' => $details['max_players'] ?? null,
+              'min_players' => $minPlayers,
+              'max_players' => $maxPlayers,
               'min_playtime' => $details['min_playtime'] ?? null,
               'max_playtime' => $details['max_playtime'] ?? null,
               'complexity' => $details['complexity'] ?? null,
@@ -170,9 +181,6 @@ class BggCollectionImporter
           // las preferencias configuradas manualmente.
           if ($game->wasRecentlyCreated) {
             $idealCounts = $details['suggested_ideal_player_counts'] ?? [];
-
-            $minPlayers = max(1, (int) ($details['min_players'] ?? 1));
-            $maxPlayers = (int) ($details['max_players'] ?? 99);
 
             foreach (array_unique(array_map('intval', $idealCounts)) as $count) {
               if ($count >= $minPlayers && $count <= $maxPlayers) {

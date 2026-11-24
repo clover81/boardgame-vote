@@ -76,6 +76,29 @@ class Game extends Model
         ];
     }
 
+    /** @return array{min_players: int|null, max_players: int|null, ideal_player_counts: list<int>} */
+    public function catalogPlayerRange(): array
+    {
+        $min = (int) $this->min_players;
+        $max = (int) $this->max_players;
+
+        if ($min < 1 || $max < $min) {
+            return ['min_players' => null, 'max_players' => null, 'ideal_player_counts' => []];
+        }
+
+        return [
+            'min_players' => $min,
+            'max_players' => $max,
+            'ideal_player_counts' => $this->idealPlayerCounts
+                ->pluck('player_count')
+                ->map(fn ($count) => (int) $count)
+                ->filter(fn (int $count) => $count >= $min && $count <= $max)
+                ->sort()
+                ->values()
+                ->all(),
+        ];
+    }
+
     public function ratedComplexity(): ?string
     {
         $complexity = $this->complexity;

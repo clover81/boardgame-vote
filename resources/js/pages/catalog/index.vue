@@ -19,8 +19,8 @@ interface Game {
     id: number;
     name: string;
     image_url: string | null;
-    min_players: number;
-    max_players: number;
+    min_players: number | null;
+    max_players: number | null;
     min_playtime: number | null;
     max_playtime: number | null;
     complexity: string | number | null;
@@ -1051,7 +1051,11 @@ const tutorialUrl = (game: Game): string =>
                             <span class="inline-flex items-center gap-1.5 whitespace-nowrap">
                                 <UsersRound class="size-4 shrink-0 text-[#6D28D9]" :stroke-width="2.2" aria-hidden="true" />
                                 <span class="sr-only">Jugadores:</span>
-                                {{ game.min_players === game.max_players ? game.min_players : `${game.min_players}–${game.max_players}` }}
+                                {{ game.min_players === null || game.max_players === null
+                                    ? 'Sin datos'
+                                    : game.min_players === game.max_players
+                                        ? game.min_players
+                                        : `${game.min_players}–${game.max_players}` }}
                             </span>
                             <span class="inline-flex items-center gap-1.5 whitespace-nowrap">
                                 <HourglassCog class="size-4 shrink-0 text-[#1D4ED8]" :stroke-width="2.2" aria-hidden="true" />

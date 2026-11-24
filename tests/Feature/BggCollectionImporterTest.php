@@ -42,6 +42,34 @@ test('newly imported games save unique ideal player counts within their supporte
         ->and($this->collection->games()->pluck('games.id')->all())->toBe([$game->id]);
 });
 
+test('games with invalid BGG player ranges are reported without creating a game', function ($min, $max) {
+    $this->mock(BggCollectionService::class)->shouldNotReceive('preview');
+    $this->mock(BggService::class)->shouldReceive('game')
+        ->once()->with(100)->andReturn([
+            ...$this->details,
+            'min_players' => $min,
+            'max_players' => $max,
+        ]);
+
+    $result = app(BggCollectionImporter::class)->importGames($this->collection, 1, [
+        'games' => [['bgg_id' => 100, 'name' => 'Juego']],
+    ]);
+
+    expect($result['imported'])->toBe([])
+        ->and($result['errors'])->toBe([[
+            'bgg_id' => 100,
+            'name' => 'Juego',
+            'error' => 'BGG no ha devuelto un rango válido de jugadores.',
+        ]])
+        ->and($this->collection->games()->count())->toBe(0);
+    $this->assertDatabaseCount('games', 0);
+})->with([
+    'missing minimum' => [null, 4],
+    'missing maximum' => [2, null],
+    'zero players' => [0, 0],
+    'reversed range' => [4, 2],
+]);
+
 test('games without BGG suggestions import without ideal player counts', function ($suggestions) {
     $this->mock(BggCollectionService::class)->shouldReceive('preview')
         ->once()->with('mi-usuario')->andReturn([
