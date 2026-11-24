@@ -233,18 +233,24 @@ const filteredPlays = computed(() => {
     |
     */
 
-    const text = normalizeHistorySearch(search.value);
+    // Permitir varias palabras en cualquier orden,
+    // incluso si pertenecen a campos distintos.
+    const terms = normalizeHistorySearch(search.value)
+        .split(/\s+/)
+        .filter(Boolean);
 
-    if (text) {
-        result = result.filter((play) =>
-            [
+    if (terms.length) {
+        result = result.filter((play) => {
+            const searchableText = normalizeHistorySearch([
                 play.game.name,
                 play.expansion?.name ?? '',
                 play.notes ?? '',
                 play.poll?.name ?? '',
-                play.players.map((player) => player.name).join(' '),
-            ].some((value) => normalizeHistorySearch(value).includes(text))
-        );
+                ...play.players.map(player => player.name),
+            ].join(' '));
+
+            return terms.every(term => searchableText.includes(term));
+        });
     }
 
     /*

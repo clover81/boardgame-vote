@@ -137,10 +137,14 @@ const normalizeGameSearch = (value: string) =>
         .trim();
 
 const matchingGames = computed(() => {
-    const query = normalizeGameSearch(gameSearch.value);
-    const matches = props.games.filter((game) =>
-        normalizeGameSearch(game.name).includes(query)
-    );
+    const terms = normalizeGameSearch(gameSearch.value)
+        .split(/\s+/)
+        .filter(Boolean);
+
+    const matches = props.games.filter(game => {
+        const name = normalizeGameSearch(game.name);
+        return terms.every(term => name.includes(term));
+    });
     // El juego de la partida permanece visible al abrir el selector.
     return matches.sort((a, b) =>
         Number(b.id === form.game_id) - Number(a.id === form.game_id)
@@ -221,7 +225,11 @@ watch(
 const saveError = ref<HTMLDivElement | null>(null);
 
 const submit = () => {
-    if (form.processing) return;
+    if (
+        form.processing ||
+        !selectedGame.value ||
+        form.player_ids.length === 0
+    ) return;
 
     const url = `/plays/${props.play.id}`;
     const query = new URLSearchParams();
@@ -563,11 +571,12 @@ const submit = () => {
                 <section
                     class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5 dark:border-zinc-800 dark:bg-zinc-950"
                 >
-                    <label class="font-bold">
+                    <label for="edit-play-notes" class="font-bold">
                         Notas
                     </label>
 
                     <textarea
+                        id="edit-play-notes"
                         v-model="form.notes"
                         rows="4"
                         class="mt-3 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
@@ -590,10 +599,25 @@ const submit = () => {
                     {{ form.processing ? 'Guardando la partida…' : '' }}
                 </p>
 
+                <p
+                    v-if="!form.processing && (!selectedGame || form.player_ids.length === 0)"
+                    aria-live="polite"
+                    class="text-sm text-zinc-600 dark:text-zinc-400"
+                >
+                    <span v-if="!selectedGame" class="block">
+                        Selecciona un juego disponible en tus colecciones.
+                    </span>
+                    <span v-if="form.player_ids.length === 0" class="block">
+                        Selecciona al menos un participante.
+                    </span>
+                </p>
+
                 <button
                     type="submit"
                     :disabled="
-                        form.processing
+                        form.processing ||
+                        !selectedGame ||
+                        form.player_ids.length === 0
                     "
                     class="w-full rounded-xl bg-[#5200FF] px-6 py-4 text-lg font-bold text-white transition hover:opacity-90 disabled:opacity-50"
                 >

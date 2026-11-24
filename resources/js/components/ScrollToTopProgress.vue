@@ -28,12 +28,18 @@ let storageKey = '';
 let mounted = false;
 let restoreFrame = 0;
 let resizeObserver: ResizeObserver | null = null;
+let lastPositionSave = 0;
 
-const savePosition = (position: number) => {
-    if (!props.rememberPosition) return;
+const savePosition = (position: number, force = false) => {
+    if (!props.rememberPosition || !storageKey) return;
+
+    // Evitar escrituras síncronas en cada evento de scroll.
+    const now = Date.now();
+    if (!force && now - lastPositionSave < 300) return;
 
     try {
         sessionStorage.setItem(storageKey, String(position));
+        lastPositionSave = now;
     } catch {
         // El botón sigue funcionando aunque no se pueda guardar la posición.
     }
@@ -77,6 +83,11 @@ const updateScroll = () => {
         : 0;
 
     savePosition(scrollY.value);
+};
+
+// Guardar siempre la posición más reciente al salir.
+const saveCurrentPosition = () => {
+    savePosition(getScrollHost()?.scrollTop ?? window.scrollY, true);
 };
 
 const scrollToTop = (event: MouseEvent) => {
@@ -130,6 +141,7 @@ onMounted(async () => {
     // Captura también el desplazamiento de un contenedor interno, si existe.
     document.addEventListener('scroll', updateScroll, true);
     window.addEventListener('resize', updateScroll);
+    window.addEventListener('pagehide', saveCurrentPosition);
 
     // La altura puede cambiar al abrir Gestión BGG, filtros y resultados sin
     // que se produzca un resize de ventana.
@@ -143,8 +155,9 @@ onBeforeUnmount(() => {
     mounted = false;
     cancelAnimationFrame(restoreFrame);
 
-    savePosition(getScrollHost()?.scrollTop ?? window.scrollY);
+    saveCurrentPosition();
 
+    window.removeEventListener('pagehide', saveCurrentPosition);
     window.removeEventListener('scroll', updateScroll);
     document.removeEventListener('scroll', updateScroll, true);
     window.removeEventListener('resize', updateScroll);

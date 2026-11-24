@@ -525,29 +525,37 @@ const bggRetryMinutes = computed(() => {
 let bggPollTimer: ReturnType<typeof setInterval> | undefined;
 let bggPollInFlight = false;
 
+// Consultar el estado de BGG únicamente cuando la pestaña esté visible.
+const refreshBggSyncStatus = () => {
+    bggNow.value = Date.now();
+
+    if (document.hidden || bggPollInFlight) return;
+
+    const status = selectedBggCollection.value?.bgg_sync_status;
+
+    if (status !== 'pending' && status !== 'running') return;
+
+    bggPollInFlight = true;
+
+    router.reload({
+        only: ['collections'],
+        onFinish: () => {
+            bggPollInFlight = false;
+        },
+    });
+};
+
 onMounted(() => {
-    bggPollTimer = setInterval(() => {
-        bggNow.value = Date.now();
-        const status = selectedBggCollection.value?.bgg_sync_status;
+    bggPollTimer = setInterval(refreshBggSyncStatus, 5000);
 
-        if (
-            !bggPollInFlight &&
-            (status === 'pending' || status === 'running')
-        ) {
-            bggPollInFlight = true;
-
-            router.reload({
-                only: ['collections'],
-                onFinish: () => {
-                    bggPollInFlight = false;
-                },
-            });
-        }
-    }, 5000);
+    // Al volver a la pestaña, comprobar inmediatamente el estado.
+    document.addEventListener('visibilitychange', refreshBggSyncStatus);
 });
 
 onUnmounted(() => {
     bggPreviewRequest?.abort();
+    document.removeEventListener('visibilitychange', refreshBggSyncStatus);
+
     if (bggPollTimer !== undefined) {
         clearInterval(bggPollTimer);
     }
