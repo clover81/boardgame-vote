@@ -87,45 +87,53 @@ const catalogUrl = computed(() => {
     return query.get('view') === 'filtered' ? `${path}?${query}` : path;
 });
 
+const sharePending = ref(false);
 const shareMessage = ref('');
 const manualShareUrl = ref('');
 const manualShareInput = ref<HTMLInputElement | null>(null);
 
 const shareGame = async () => {
-    shareMessage.value = '';
-    manualShareUrl.value = '';
+    if (sharePending.value) return;
 
-    const url = window.location.origin + window.location.pathname;
+    sharePending.value = true;
+    try {
+        shareMessage.value = '';
+        manualShareUrl.value = '';
 
-    // Compartir con las aplicaciones del dispositivo.
-    if (navigator.share) {
-        try {
-            await navigator.share({
-                title: props.game.name,
-                url,
-            });
-            return;
-        } catch (error) {
-            // Si el usuario cancela, no hacemos nada.
-            if (
-                error instanceof DOMException &&
-                error.name === 'AbortError'
-            ) {
+        const url = window.location.origin + window.location.pathname;
+
+        // Compartir con las aplicaciones del dispositivo.
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: props.game.name,
+                    url,
+                });
                 return;
+            } catch (error) {
+                // Si el usuario cancela, no hacemos nada.
+                if (
+                    error instanceof DOMException &&
+                    error.name === 'AbortError'
+                ) {
+                    return;
+                }
             }
         }
-    }
 
-    // Alternativa: copiar el enlace.
-    try {
-        await navigator.clipboard.writeText(url);
-        shareMessage.value = '¡Enlace copiado!';
-    } catch {
-        manualShareUrl.value = url;
-        shareMessage.value = 'Puedes copiar el enlace manualmente.';
-        await nextTick();
-        manualShareInput.value?.focus();
-        manualShareInput.value?.select();
+        // Alternativa: copiar el enlace.
+        try {
+            await navigator.clipboard.writeText(url);
+            shareMessage.value = '¡Enlace copiado!';
+        } catch {
+            manualShareUrl.value = url;
+            shareMessage.value = 'Puedes copiar el enlace manualmente.';
+            await nextTick();
+            manualShareInput.value?.focus();
+            manualShareInput.value?.select();
+        }
+    } finally {
+        sharePending.value = false;
     }
 };
 
@@ -343,7 +351,8 @@ const tutorialUrl = (game: Game): string =>
                         <button
                             v-if="!catalogBasePath"
                             type="button"
-                            class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#181424] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] sm:w-auto"
+                            class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#181424] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] aria-disabled:cursor-wait aria-disabled:opacity-60 sm:w-auto"
+                            :aria-disabled="sharePending"
                             @click="shareGame"
                         >
                             <span aria-hidden="true"><ChainIcon class="inline-block h-4 w-4 shrink-0 align-[-0.15em]" aria-hidden="true" /></span>
@@ -351,9 +360,8 @@ const tutorialUrl = (game: Game): string =>
                         </button>
 
                         <span
-                            v-if="shareMessage"
                             role="status"
-                            class="self-center text-sm font-semibold text-[#5200FF]"
+                            :class="shareMessage ? 'self-center text-sm font-semibold text-[#5200FF]' : 'sr-only'"
                         >
                             {{ shareMessage }}
                         </span>

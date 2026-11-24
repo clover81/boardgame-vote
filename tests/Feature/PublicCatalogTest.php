@@ -207,3 +207,33 @@ test('los enlaces filtrados conservan sus parametros en Open Graph', function ()
         $normalResponse->getContent()
     );
 });
+
+test('la vista previa de la ficha utiliza el resumen y la portada', function ($summary, $expected) {
+    $this->withoutVite();
+    $owner = User::factory()->create();
+    $owner->forceFill(['catalog_share_token' => (string) Str::uuid()])->save();
+    $collection = GameCollection::forceCreate([
+        'created_by' => $owner->id,
+        'name' => 'Colección pública',
+        'is_public' => true,
+    ]);
+    $game = Game::create([
+        'name' => 'Juego de prueba',
+        'min_players' => 2,
+        'max_players' => 4,
+        'short_description' => $summary,
+        'image_url' => 'https://example.test/portada.jpg',
+        'is_active' => true,
+    ]);
+    $collection->games()->attach($game);
+
+    $this->get(route('catalog.games.show', [$owner->catalog_share_token, $game->id]))
+        ->assertOk()
+        ->assertSee('property="og:title" content="🎲 Juego de prueba · Clover"', false)
+        ->assertSee('property="og:description" content="'.e($expected).'"', false)
+        ->assertSee('property="og:image" content="https://example.test/portada.jpg"', false);
+})->with([
+    'resumen limpio' => ["  Tu equipo   coopera\n &amp; explora.  ", 'Tu equipo coopera & explora.'],
+    'resumen recortado' => [str_repeat('a', 180), str_repeat('a', 160).'...'],
+    'sin resumen' => [null, 'Consulta la ficha de Juego de prueba y accede a sus tutoriales.'],
+]);

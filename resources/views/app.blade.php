@@ -87,7 +87,14 @@
                 );
 
                 $previewTitle = "🎲 {$gameName} · Clover";
-                $previewDescription = "Consulta la ficha de {$gameName} y accede a sus tutoriales.";
+                $gameSummary = \Illuminate\Support\Str::squish(strip_tags(html_entity_decode(
+                    (string) ($publicCatalogGame['short_description'] ?? ''),
+                    ENT_QUOTES | ENT_HTML5,
+                    'UTF-8'
+                )));
+                $previewDescription = $gameSummary !== ''
+                    ? \Illuminate\Support\Str::limit($gameSummary, 160)
+                    : "Consulta la ficha de {$gameName} y accede a sus tutoriales.";
 
                 $candidateImage = $publicCatalogGame['image_url'] ?? null;
 
