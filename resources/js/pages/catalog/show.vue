@@ -71,6 +71,17 @@ useResizeObserver(descriptionParagraph, () => {
     }
 });
 
+const toggleDescription = async (event: MouseEvent) => {
+    showFullDescription.value = !showFullDescription.value;
+
+    if (event.detail !== 0) return;
+
+    await nextTick();
+    const paragraph = descriptionParagraph.value;
+    paragraph?.focus({ preventScroll: true });
+    paragraph?.scrollIntoView({ block: 'start', behavior: 'instant' });
+};
+
 const openImage = () => {
     enlargedCoverHasError.value = false;
     imageDialog.value?.showModal();
@@ -78,6 +89,17 @@ const openImage = () => {
 
 const closeImage = () => {
     imageDialog.value?.close();
+};
+
+const closeImageFromBackdrop = (event: MouseEvent) => {
+    const dialog = imageDialog.value;
+    if (!dialog || event.detail === 0) return;
+
+    const { left, top, right, bottom } = dialog.getBoundingClientRect();
+    const outside = event.clientX < left || event.clientX >= right ||
+        event.clientY < top || event.clientY >= bottom;
+
+    if (outside) closeImage();
 };
 
 const page = usePage();
@@ -244,7 +266,7 @@ const tutorialUrl = (game: Game): string =>
                     ref="imageDialog"
                     :aria-label="`Portada ampliada de ${game.name}`"
                     class="fixed inset-0 m-auto max-h-[95dvh] overflow-y-auto w-[94vw] max-w-[900px] rounded-3xl border-0 bg-white p-5 shadow-2xl backdrop:bg-black/85"
-                    @click.self="closeImage"
+                    @click.self="closeImageFromBackdrop"
                 >
                     <div class="flex flex-col gap-4 max-h-[calc(95dvh-2.5rem)]">
                         <div class="flex items-center justify-between gap-4 shrink-0">
@@ -415,7 +437,8 @@ const tutorialUrl = (game: Game): string =>
                     <p
                         id="catalog-game-description"
                         ref="descriptionParagraph"
-                        class="whitespace-pre-line text-base leading-7 text-zinc-700 sm:leading-8"
+                        tabindex="-1"
+                        class="scroll-mt-4 wrap-anywhere whitespace-pre-line text-base leading-7 text-zinc-700 sm:leading-8"
                         :class="{ 'line-clamp-6': !showFullDescription }"
                     >
                         {{ game.full_description || game.short_description }}
@@ -427,7 +450,7 @@ const tutorialUrl = (game: Game): string =>
                         class="mt-4 inline-flex min-h-11 items-center rounded-xl bg-violet-50 px-4 py-2 text-sm font-bold text-[#5200FF] transition hover:bg-violet-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                         :aria-expanded="showFullDescription"
                         aria-controls="catalog-game-description"
-                        @click="showFullDescription = !showFullDescription"
+                        @click="toggleDescription"
                     >
                         {{
                             showFullDescription
@@ -445,7 +468,7 @@ const tutorialUrl = (game: Game): string =>
                         Información adicional
                     </h3>
 
-                    <p class="mt-3 whitespace-pre-line leading-7 text-zinc-600">
+                    <p class="mt-3 wrap-anywhere whitespace-pre-line leading-7 text-zinc-600">
                         {{ game.additional_information }}
                     </p>
                 </div>
