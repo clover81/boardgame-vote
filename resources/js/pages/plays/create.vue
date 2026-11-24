@@ -242,7 +242,11 @@ watch(
 const saveError = ref<HTMLDivElement | null>(null);
 
 const submit = () => {
-    if (form.processing) return;
+    if (
+        form.processing ||
+        form.game_ids.length === 0 ||
+        form.player_ids.length === 0
+    ) return;
 
     form.transform((data) => ({
         ...data,
@@ -509,6 +513,7 @@ const submit = () => {
                     class="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950"
                 >
                     <label
+                        for="play-date"
                         class="font-bold"
                     >
                         Fecha de la partida
@@ -518,6 +523,7 @@ const submit = () => {
                         v-model="
                             form.played_at
                         "
+                        id="play-date"
                         type="date"
                         class="mt-3 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                     />
@@ -602,12 +608,14 @@ const submit = () => {
                     class="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950"
                 >
                     <label
+                        for="play-notes"
                         class="font-bold"
                     >
                         Notas
                     </label>
 
                     <textarea
+                        id="play-notes"
                         v-model="form.notes"
                         rows="4"
                         class="mt-3 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 placeholder:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
@@ -644,6 +652,18 @@ const submit = () => {
 
                 <p role="status" class="sr-only">
                     {{ form.processing ? 'Guardando la partida…' : '' }}
+                </p>
+
+                <p
+                    v-if="!form.processing && (form.game_ids.length === 0 || form.player_ids.length === 0)"
+                    aria-live="polite"
+                    class="mb-3 text-sm text-zinc-600 dark:text-zinc-400"
+                >
+                    {{ form.game_ids.length === 0 && form.player_ids.length === 0
+                        ? 'Selecciona al menos un juego y un jugador.'
+                        : form.game_ids.length === 0
+                          ? 'Selecciona al menos un juego.'
+                          : 'Selecciona al menos un jugador.' }}
                 </p>
 
                 <button

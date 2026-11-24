@@ -678,7 +678,7 @@ const tutorialUrl = (game: Game): string =>
                 <div aria-hidden="true" class="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#170927]/90 via-[#250940]/35 to-[#19072b]/10"></div>
                 <div aria-hidden="true" class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#24083e]/70 via-[#210d3b]/10 to-transparent"></div>
 
-                <div class="relative z-10 flex min-h-[260px] flex-col justify-between gap-6 px-5 py-5 sm:min-h-[360px] sm:gap-10 sm:px-8 sm:py-8 lg:min-h-[390px] lg:px-10 lg:py-9">
+                <div class="relative z-10 flex min-h-[220px] flex-col justify-between gap-4 px-5 py-4 sm:min-h-[360px] sm:gap-10 sm:px-8 sm:py-8 lg:min-h-[390px] lg:px-10 lg:py-9">
                     <div>
                         <Link
                             v-if="catalogBasePath"
@@ -995,7 +995,7 @@ const tutorialUrl = (game: Game): string =>
 
                     <!-- PORTADA DEL JUEGO -->
                     <div
-                        class="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br from-[#f0ebff] via-white to-[#eef2fa] p-4 sm:aspect-square sm:h-auto sm:p-6"
+                        class="relative flex h-40 items-center justify-center overflow-hidden bg-gradient-to-br from-[#f0ebff] via-white to-[#eef2fa] p-4 sm:aspect-square sm:h-auto sm:p-6"
                     >
                         <img
                             v-if="game.image_url && !brokenCoverIds.includes(game.id)"

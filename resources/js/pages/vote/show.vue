@@ -58,7 +58,8 @@ interface Game {
 
     complexity: string | number | null;
 
-    game_mode: string;
+    game_mode: string | null;
+    game_modes: string[];
 
     short_description: string | null;
 
@@ -497,12 +498,8 @@ const selectPreference = (position: 1 | 2 | 3, candidateId: number) => {
     const field = preferenceFields[position - 1];
 
     if (form[field] === candidateId) {
+        // Desmarcar una preferencia no borra las demás.
         form[field] = null;
-
-        if (position === 1) {
-            form.second_candidate_id = null;
-            form.third_candidate_id = null;
-        }
     } else {
         for (const otherField of preferenceFields) {
             if (otherField !== field && form[otherField] === candidateId) {
@@ -586,29 +583,25 @@ const submit = () => {
 |--------------------------------------------------------------------------
 */
 
-const modeLabel = (
-    mode: string
-): string => {
-    if (
-        mode === 'competitive'
-    ) {
-        return 'Competitivo';
-    }
+const gameModesFor = (game: Game): string[] =>
+    game.game_modes.length
+        ? game.game_modes
+        : game.game_mode
+            ? [game.game_mode]
+            : [game.max_players === 1 ? 'solo' : 'unclassified'];
 
-    if (
-        mode === 'cooperative'
-    ) {
-        return 'Cooperativo';
-    }
+const gameModeLabel = (game: Game): string => {
+    const labels: Record<string, string> = {
+        competitive: 'Competitivo',
+        cooperative: 'Cooperativo',
+        semi_cooperative: 'Semicooperativo',
+        solo: 'Solitario',
+        unclassified: 'Sin clasificar',
+    };
 
-    if (
-        mode ===
-        'semi_cooperative'
-    ) {
-        return 'Semicooperativo';
-    }
-
-    return mode;
+    return gameModesFor(game)
+        .map(mode => labels[mode] ?? mode)
+        .join(' · ');
 };
 
 /*
@@ -1703,7 +1696,7 @@ const myChoiceLabel = (candidateId: number): string | null => {
                                         <span class="sr-only">Complejidad: </span>
                                         <span>{{ candidate.game.complexity }}/5</span>
                                     </span>
-                                    <span v-if="candidate.game.game_mode"><Swords v-if="candidate.game.game_mode === 'competitive'" class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-orange-700" :stroke-width="2.2" aria-hidden="true" /> {{ modeLabel(candidate.game.game_mode) }}</span>
+                                    <span><Swords v-if="gameModesFor(candidate.game).includes('competitive')" class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-orange-700" :stroke-width="2.2" aria-hidden="true" /> {{ gameModeLabel(candidate.game) }}</span>
                                 </div>
 
                                 <div

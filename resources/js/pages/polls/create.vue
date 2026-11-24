@@ -281,6 +281,61 @@ const canCreatePoll = computed(() => {
     );
 });
 
+// Explicar qué impide crear la votación.
+const pollReadinessIssues = computed(() => {
+    const issues: Array<{
+        key: string;
+        href: string;
+        message: string;
+    }> = [];
+
+    if (!form.name.trim()) {
+        issues.push({
+            key: 'name',
+            href: '#poll-name',
+            message: 'Escribe el nombre de la partida.',
+        });
+    }
+
+    if (form.collection_ids.length === 0) {
+        issues.push({
+            key: 'collections',
+            href: '#poll-collections',
+            message: 'Selecciona al menos una colección.',
+        });
+    }
+
+    if (form.player_ids.length < 2) {
+        issues.push({
+            key: 'players',
+            href: '#poll-players',
+            message: 'Selecciona al menos 2 jugadores.',
+        });
+    }
+
+    if (form.candidate_ids.length === 0) {
+        issues.push({
+            key: 'candidates',
+            href: '#poll-candidates',
+            message: 'Añade al menos un juego candidato.',
+        });
+    }
+
+    if (
+        form.collection_ids.length > 0 &&
+        form.player_ids.length >= 2 &&
+        unavailableCandidateGames.value.length > 0
+    ) {
+        issues.push({
+            key: 'incompatible',
+            href: '#poll-candidates',
+            message: 'Revisa los juegos candidatos que ya no son compatibles con los jugadores o colecciones seleccionados.',
+        });
+    }
+
+    return issues;
+});
+
 const selectedExpansionName = (game: Game): string | null => {
     const expansionId = form.candidate_expansion_ids?.[game.id];
 
@@ -1180,12 +1235,14 @@ const submit = () => {
                     </fieldset>
 
                     <label
+                        for="poll-name"
                         class="mb-2 block font-semibold"
                     >
                         Nombre de la partida
                     </label>
 
                     <input
+                        id="poll-name"
                         v-model="form.name"
                         type="text"
                         class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
@@ -2609,10 +2666,26 @@ const submit = () => {
                             </template>
 
                             <template v-else>
-                                Completa los pasos anteriores
-                                para continuar.
+                                Revisa estos puntos para continuar:
                             </template>
                         </p>
+
+                        <ul
+                            v-if="!canCreatePoll"
+                            class="mt-3 space-y-2 text-sm"
+                        >
+                            <li
+                                v-for="issue in pollReadinessIssues"
+                                :key="issue.key"
+                            >
+                                <a
+                                    :href="issue.href"
+                                    class="font-medium underline underline-offset-4 hover:text-[#5200FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:hover:text-[#CCFF00]"
+                                >
+                                    {{ issue.message }}
+                                </a>
+                            </li>
+                        </ul>
                     </div>
                 </section>
 

@@ -541,6 +541,12 @@ class PublicPollController extends Controller
                                             ->game
                                             ->game_mode,
 
+                                        'game_modes' =>
+                                        $candidate->game->game_modes
+                                            ?? ($candidate->game->game_mode
+                                                ? [$candidate->game->game_mode]
+                                                : []),
+
                                         'short_description' =>
                                         $candidate
                                             ->game
