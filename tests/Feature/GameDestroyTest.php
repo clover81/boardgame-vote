@@ -7,6 +7,7 @@ use App\Models\Player;
 use App\Models\Poll;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 
 beforeEach(function () {
     $this->user = User::factory()->create();
@@ -372,3 +373,39 @@ test('a foreign collection expansion prevents game deletion', function () {
         'game_id' => $this->game->id,
     ]);
 });
+
+test('deletion rechecks collection links after locking the game', function (bool $linkExpansion) {
+    $foreign = GameCollection::create([
+        'created_by' => User::factory()->create()->id,
+        'name' => 'Colección añadida durante el borrado',
+    ]);
+    Route::bind('game', fn () => $this->game);
+
+    $originalDispatcher = Game::getEventDispatcher();
+    $dispatcher = clone $originalDispatcher;
+    $dispatcher->listen('eloquent.retrieved: '.Game::class, function () use ($linkExpansion, $foreign) {
+        if ($linkExpansion) {
+            $foreign->expansions()->attach($this->expansion->id);
+        } else {
+            $foreign->games()->attach($this->game->id);
+        }
+    });
+    Game::setEventDispatcher($dispatcher);
+
+    try {
+        $this->actingAs($this->user)->from($this->editUrl)
+            ->delete($this->deleteUrl)
+            ->assertRedirect($this->editUrl)
+            ->assertSessionHasErrors('game');
+    } finally {
+        Game::setEventDispatcher($originalDispatcher);
+    }
+
+    $table = $linkExpansion ? 'game_collection_expansion' : 'game_collection_game';
+    $key = $linkExpansion ? 'expansion_id' : 'game_id';
+    $itemId = $linkExpansion ? $this->expansion->id : $this->game->id;
+
+    $this->assertDatabaseHas('games', ['id' => $this->game->id]);
+    $this->assertDatabaseHas('expansions', ['id' => $this->expansion->id]);
+    $this->assertDatabaseHas($table, ['game_collection_id' => $foreign->id, $key => $itemId]);
+})->with(['game collection' => [false], 'expansion collection' => [true]]);

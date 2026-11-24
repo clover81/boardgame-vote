@@ -113,7 +113,9 @@ class ExpansionController extends Controller
         // Las expansiones son globales. No podemos borrar referencias de otras cuentas.
         // La comprobación y la eliminación se hacen dentro de una sola transacción.
         $blockedReason = DB::transaction(function () use ($request, $game, $expansion): ?string {
+            $game = Game::query()->lockForUpdate()->findOrFail($game->id);
             $current = Expansion::query()->lockForUpdate()->findOrFail($expansion->id);
+            $this->authorizeGame($request, $game);
             $userId = (int) $request->user()->id;
 
             $sharedGame = DB::table('game_collection_game as gcg')

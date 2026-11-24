@@ -1306,7 +1306,7 @@ const formatGameMode = (
 
                     <p class="mt-2">
                         Se eliminará de las fichas del juego en tus colecciones.
-                        Las partidas se conservarán, pero dejarán de indicar esta expansión.
+                        Las partidas y votaciones se conservarán. La expansión dejará de figurar en ambas.
                         Si otra cuenta la utiliza, el borrado se bloqueará.
                     </p>
                 </div>

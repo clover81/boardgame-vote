@@ -1304,7 +1304,7 @@ const confirmDeleteGame = () => {
                     </p>
 
                     <p class="mt-2">
-                        Las partidas se conservarán, pero dejarán de indicar esta expansión.
+                        Las partidas y votaciones se conservarán. La expansión dejará de figurar en ambas.
                         Si otra cuenta la utiliza, el borrado se bloqueará.
                     </p>
                 </div>

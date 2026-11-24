@@ -922,77 +922,70 @@ class GameController extends Controller
 
         $this->authorizeGame($request, $game);
 
-        /*
-         * El juego es global: solo podemos borrarlo si ninguna otra
-         * cuenta lo tiene en sus colecciones.
-         */
-        $usedByAnotherUser = DB::table('game_collection_game as gcg')
-            ->join('game_collections as gc', 'gc.id', '=', 'gcg.game_collection_id')
-            ->where('gcg.game_id', $game->id)
-            ->where('gc.created_by', '<>', $userId)
-            ->exists();
-
-        if ($usedByAnotherUser) {
-            return back()->withErrors([
-                'game' => 'Este juego también está siendo utilizado por otra colección. Puedes quitarlo de tus colecciones, pero no eliminarlo globalmente.',
-            ]);
-        }
-
-        // Las expansiones también pueden pertenecer a colecciones
-        // ajenas aunque el juego base ya no figure en ellas.
-        $hasForeignExpansionCollections = DB::table('expansions as e')
-            ->join('game_collection_expansion as gce', 'gce.expansion_id', '=', 'e.id')
-            ->join('game_collections as gc', 'gc.id', '=', 'gce.game_collection_id')
-            ->where('e.game_id', $game->id)
-            ->where('gc.created_by', '<>', $userId)
-            ->exists();
-
-        if ($hasForeignExpansionCollections) {
-            return back()->withErrors([
-                'game' => 'Este juego tiene expansiones vinculadas a colecciones de otra cuenta. Puedes quitarlo de tus colecciones, pero no eliminarlo globalmente.',
-            ]);
-        }
-
-        /*
-         * No permitir eliminar un juego que tenga
-         * partidas de otras cuentas o sin propietario.
-         */
-        $hasForeignPlays = DB::table('plays')
-            ->where('game_id', $game->id)
-            ->where(function ($query) use ($userId) {
-                $query->where('created_by', '<>', $userId)
-                    ->orWhereNull('created_by');
-            })
-            ->exists();
-
-        if ($hasForeignPlays) {
-            return back()->withErrors([
-                'game' => 'No puedes eliminar este juego porque tiene partidas históricas de otras cuentas. Puedes quitarlo de tus colecciones.',
-            ]);
-        }
-
-        /*
-         * Impedir eliminar juegos que aparecen
-         * en votaciones de otras cuentas.
-         */
-        $hasForeignPolls = DB::table('poll_candidates as pc')
-            ->join('polls as p', 'p.id', '=', 'pc.poll_id')
-            ->where('pc.game_id', $game->id)
-            ->where('p.created_by', '<>', $userId)
-            ->exists();
-
-        if ($hasForeignPolls) {
-            return back()->withErrors([
-                'game' => 'No puedes eliminar este juego porque forma parte de votaciones de otras cuentas. Puedes quitarlo de tus colecciones.',
-            ]);
-        }
-
-        // Bloquear el juego durante la comprobación y el borrado.
-        // Ningún historial propio se elimina de forma indirecta.
-        $blockedReason = DB::transaction(function () use ($game): ?string {
+        $blockedReason = DB::transaction(function () use ($request, $game, $userId): ?string {
             $current = Game::query()
                 ->lockForUpdate()
                 ->findOrFail($game->id);
+            // Los vínculos de expansiones tienen su propia clave foránea.
+            $current->expansions()->lockForUpdate()->get(['id']);
+            $this->authorizeGame($request, $current);
+
+            /*
+             * El juego es global: solo podemos borrarlo si ninguna otra
+             * cuenta lo tiene en sus colecciones.
+             */
+            $usedByAnotherUser = DB::table('game_collection_game as gcg')
+                ->join('game_collections as gc', 'gc.id', '=', 'gcg.game_collection_id')
+                ->where('gcg.game_id', $current->id)
+                ->where('gc.created_by', '<>', $userId)
+                ->exists();
+
+            if ($usedByAnotherUser) {
+                return 'Este juego también está siendo utilizado por otra colección. Puedes quitarlo de tus colecciones, pero no eliminarlo globalmente.';
+            }
+
+            // Las expansiones también pueden pertenecer a colecciones
+            // ajenas aunque el juego base ya no figure en ellas.
+            $hasForeignExpansionCollections = DB::table('expansions as e')
+                ->join('game_collection_expansion as gce', 'gce.expansion_id', '=', 'e.id')
+                ->join('game_collections as gc', 'gc.id', '=', 'gce.game_collection_id')
+                ->where('e.game_id', $current->id)
+                ->where('gc.created_by', '<>', $userId)
+                ->exists();
+
+            if ($hasForeignExpansionCollections) {
+                return 'Este juego tiene expansiones vinculadas a colecciones de otra cuenta. Puedes quitarlo de tus colecciones, pero no eliminarlo globalmente.';
+            }
+
+            /*
+             * No permitir eliminar un juego que tenga
+             * partidas de otras cuentas o sin propietario.
+             */
+            $hasForeignPlays = DB::table('plays')
+                ->where('game_id', $current->id)
+                ->where(function ($query) use ($userId) {
+                    $query->where('created_by', '<>', $userId)
+                        ->orWhereNull('created_by');
+                })
+                ->exists();
+
+            if ($hasForeignPlays) {
+                return 'No puedes eliminar este juego porque tiene partidas históricas de otras cuentas. Puedes quitarlo de tus colecciones.';
+            }
+
+            /*
+             * Impedir eliminar juegos que aparecen
+             * en votaciones de otras cuentas.
+             */
+            $hasForeignPolls = DB::table('poll_candidates as pc')
+                ->join('polls as p', 'p.id', '=', 'pc.poll_id')
+                ->where('pc.game_id', $current->id)
+                ->where('p.created_by', '<>', $userId)
+                ->exists();
+
+            if ($hasForeignPolls) {
+                return 'No puedes eliminar este juego porque forma parte de votaciones de otras cuentas. Puedes quitarlo de tus colecciones.';
+            }
 
             if (DB::table('plays')
                 ->where('game_id', $current->id)

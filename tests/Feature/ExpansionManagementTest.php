@@ -7,6 +7,7 @@ use App\Models\Play;
 use App\Models\Player;
 use App\Models\Poll;
 use App\Models\User;
+use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -325,6 +326,26 @@ test('a BGG expansion linked to another users collection cannot be deleted globa
         'game_collection_id' => $otherCollection->id,
         'expansion_id' => $this->expansion->id,
     ]);
+});
+
+test('expansion deletion rechecks access after locking the game and expansion', function () {
+    Route::bind('game', fn () => $this->game);
+    Route::bind('expansion', fn () => $this->expansion);
+
+    $originalDispatcher = Expansion::getEventDispatcher();
+    $dispatcher = clone $originalDispatcher;
+    $dispatcher->listen('eloquent.retrieved: '.Expansion::class, function () {
+        $this->collection->games()->detach($this->game->id);
+    });
+    Expansion::setEventDispatcher($dispatcher);
+
+    try {
+        $this->actingAs($this->user)->delete($this->deleteUrl)->assertForbidden();
+    } finally {
+        Expansion::setEventDispatcher($originalDispatcher);
+    }
+
+    $this->assertDatabaseHas('expansions', ['id' => $this->expansion->id]);
 });
 
 test('a historical play from another account prevents expansion deletion even if the game is no longer shared', function () {
