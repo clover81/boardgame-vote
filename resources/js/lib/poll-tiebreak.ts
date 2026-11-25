@@ -37,3 +37,18 @@ export function getSecondPreferenceTieBreak(
         nextBestSecondVotes,
     };
 }
+
+export function pendingTieBreakMessage(round: {
+    status: 'draft' | 'open' | 'closed';
+    has_counted_votes: boolean;
+}): string {
+    if (round.status === 'closed') {
+        return round.has_counted_votes
+            ? 'La ronda de desempate también terminó empatada.'
+            : 'La ronda de desempate se cerró sin votos. El empate original sigue sin resolverse.';
+    }
+
+    return round.status === 'open'
+        ? 'Hay una votación de desempate en marcha.'
+        : 'Se está preparando una votación de desempate.';
+}

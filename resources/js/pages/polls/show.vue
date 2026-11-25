@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
 import { playerNameColor, playerMeepleColor } from '@/lib/player-colors';
-import { getSecondPreferenceTieBreak } from '@/lib/poll-tiebreak';
+import { getSecondPreferenceTieBreak, pendingTieBreakMessage } from '@/lib/poll-tiebreak';
 import MeepleIcon from '@/components/icons/MeepleIcon.vue';
 import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, CalendarHeart, UsersRound, HourglassCog, Swords, BrainCog, NotebookPen, Share2, Trophy } from '@lucide/vue';
 
@@ -162,6 +162,7 @@ interface Poll {
     tie_break_outcome: {
         poll_id: number;
         status: 'draft' | 'open' | 'closed';
+        has_counted_votes: boolean;
         winner: {
             game_id: number;
             game_name: string;
@@ -382,6 +383,9 @@ const resultText = computed(() => {
     } else if (tied.length > 1) {
         const names = tied.map(result => result.game.name).join(' y ');
         lines.push(`🤝 *Empate con ${score(tied[0].points)}:* ${names}`);
+        if (props.poll.tie_break_outcome) {
+            lines.push(pendingTieBreakMessage(props.poll.tie_break_outcome));
+        }
     }
 
     for (const result of results) {
@@ -1687,6 +1691,10 @@ const modeLabel = (
                                 : 'Hay varios juegos con los mismos puntos y el mismo número de primeras y segundas opciones.' }}
                         </p>
 
+                        <p v-if="poll.tie_break_outcome" class="mt-3 text-sm font-semibold">
+                            {{ pendingTieBreakMessage(poll.tie_break_outcome) }}
+                        </p>
+
                         <div v-if="poll.can_create_tie_break" class="mt-4">
                             <button
                                 type="button"
@@ -1719,7 +1727,6 @@ const modeLabel = (
                                 Sortear ganador definitivo
                             </button>
                             <p class="mt-2 text-xs">
-                                La ronda adicional también terminó empatada.
                                 El sorteo será entre los juegos empatados en primer lugar.
                             </p>
                         </div>

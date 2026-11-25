@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { playerMeepleColor, playerNameColor } from '@/lib/player-colors';
-import { getSecondPreferenceTieBreak } from '@/lib/poll-tiebreak';
+import { getSecondPreferenceTieBreak, pendingTieBreakMessage } from '@/lib/poll-tiebreak';
 import MeepleIcon from '@/components/icons/MeepleIcon.vue';
 import YoutubeLogoIcon from '@/components/icons/YoutubeLogoIcon.vue';
 import { BuildingComplexPlus, LibraryBig, Link as ChainIcon, UsersRound, HourglassCog, Swords, BrainCog, NotebookPen , Trophy, Medal, CircleStar, SquareStar} from '@lucide/vue';
@@ -136,6 +136,7 @@ interface Poll {
     tie_break_outcome: {
         poll_id: number;
         status: 'draft' | 'open' | 'closed';
+        has_counted_votes: boolean;
         winner: {
             game_id: number;
             game_name: string;
@@ -1028,13 +1029,7 @@ const myChoiceLabel = (candidateId: number): string | null => {
                             v-if="poll.tie_break_outcome"
                             class="mt-3 text-sm font-semibold"
                         >
-                            {{
-                                poll.tie_break_outcome.status === 'closed'
-                                    ? 'La ronda de desempate también terminó empatada.'
-                                    : poll.tie_break_outcome.status === 'open'
-                                        ? 'Hay una votación de desempate en marcha.'
-                                        : 'Se está preparando una votación de desempate.'
-                            }}
+                            {{ pendingTieBreakMessage(poll.tie_break_outcome) }}
                         </p>
                     </div>
                 </div>

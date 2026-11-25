@@ -1208,8 +1208,7 @@ class PollController extends Controller
             && $tieBreakOutcome !== null
             && $tieBreakOutcome['status'] === 'closed'
             && $tieBreakOutcome['winner'] === null
-            && $tieBreakPoll !== null
-            && $tieBreakPoll->votes()->exists();
+            && $tieBreakOutcome['has_counted_votes'];
 
         $originalPoll = $poll->tie_break_for_poll_id !== null
             ? Poll::query()

@@ -18,6 +18,7 @@ final class PollTieBreakOutcome
             'poll_id' => (int) $round->id,
             'status' => $round->status,
             'winner' => null,
+            'has_counted_votes' => false,
         ];
 
         if ($round->status !== 'closed') {
@@ -47,6 +48,8 @@ final class PollTieBreakOutcome
         if ($leader === null || $leader['votes'] <= 0) {
             return $outcome;
         }
+
+        $outcome['has_counted_votes'] = true;
 
         if ($second === null || $leader['votes'] > $second['votes']) {
             $outcome['winner'] = [...$leader, 'method' => 'votes'];

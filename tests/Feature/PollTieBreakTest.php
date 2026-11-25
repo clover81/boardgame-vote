@@ -249,7 +249,8 @@ test('el resultado definitivo distingue victoria y nuevo empate', function () {
 
     $tied = \App\Support\PollTieBreakOutcome::forOriginal($this->poll);
 
-    expect($tied['winner'])->toBeNull();
+    expect($tied['winner'])->toBeNull()
+        ->and($tied['has_counted_votes'])->toBeTrue();
 
     // Los cuatro votos de la votación original permanecen intactos.
     expect($this->poll->votes()->count())->toBe(4);
@@ -552,6 +553,22 @@ test('el sorteo rechaza estados invalidos y usuarios ajenos', function () {
 
     // Tampoco una ronda sin votos.
     $this->post($url)->assertSessionHasErrors('poll');
+
+    $this->get(route('polls.show', $this->poll))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('poll.tie_break_outcome.has_counted_votes', false)
+            ->where('poll.can_draw_tie_break', false)
+        );
+
+    $participant = $this->poll->participants()->firstOrFail();
+    $this->get(route('vote.participant.show', [$this->poll->token, $participant->vote_token]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('poll.tie_break_outcome.status', 'closed')
+            ->where('poll.tie_break_outcome.has_counted_votes', false)
+            ->where('poll.tie_break_outcome.winner', null)
+        );
 
     $candidates = $round->candidates()->orderBy('id')->get();
 
