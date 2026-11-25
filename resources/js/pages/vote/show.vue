@@ -1197,7 +1197,7 @@ const myChoiceLabel = (candidateId: number): string | null => {
                     ¡Voto guardado!
                 </h2>
 
-                <p class="mt-2 text-zinc-500">
+                <p class="mt-2 wrap-anywhere text-zinc-500">
                     Gracias,
                     <strong>
                         {{ selectedParticipant.display_name }}
@@ -1554,16 +1554,16 @@ const myChoiceLabel = (candidateId: number): string | null => {
                     tabindex="-1"
                     class="mb-4 flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm"
                 >
-                    <div>
+                    <div class="min-w-0">
                         <p
                             class="text-sm text-zinc-500"
                         >
                             Estás votando como
                         </p>
 
-                        <p :class="['mt-1 inline-flex items-center gap-2 font-bold', publicPlayerNameColor(selectedParticipant?.display_name ?? '', selectedParticipant?.color)]">
+                        <p :class="['mt-1 flex min-w-0 items-center gap-2 font-bold', publicPlayerNameColor(selectedParticipant?.display_name ?? '', selectedParticipant?.color)]">
                             <MeepleIcon :class="['size-4 shrink-0', playerMeepleColor(selectedParticipant?.display_name, selectedParticipant?.color)]" aria-hidden="true" />
-                            {{ selectedParticipant?.display_name }}
+                            <span class="min-w-0 wrap-anywhere">{{ selectedParticipant?.display_name }}</span>
                         </p>
 
                         <p
@@ -1604,7 +1604,7 @@ const myChoiceLabel = (candidateId: number): string | null => {
                         >
                             <span
                                 :class="[
-                                    'inline-flex items-center gap-1.5',
+                                    'inline-flex max-w-full min-w-0 items-center gap-1.5',
                                     publicPlayerNameColor(
                                         participant.display_name,
                                         participant.color
@@ -1621,7 +1621,7 @@ const myChoiceLabel = (candidateId: number): string | null => {
                                     ]"
                                     aria-hidden="true"
                                 />
-                                {{ participant.display_name }}
+                                <span class="min-w-0 wrap-anywhere">{{ participant.display_name }}</span>
                             </span>
                             <span v-if="participant.id === currentParticipantId">
                                 (tú)
@@ -1817,6 +1817,7 @@ const myChoiceLabel = (candidateId: number): string | null => {
                             >
                                 <span class="block text-xs font-bold leading-tight sm:text-sm">
                                     {{ needsSecondChoice ? '1.ª opción' : 'Mi voto' }}
+                                    <span class="sr-only">para {{ candidate.game.name }}</span>
                                 </span>
                                 <span class="mt-1 block text-[11px] font-semibold leading-tight opacity-80 sm:text-xs">
                                     {{ preferencePointsLabel(1) }}
@@ -1835,6 +1836,7 @@ const myChoiceLabel = (candidateId: number): string | null => {
                             >
                                 <span class="block text-xs font-bold leading-tight sm:text-sm">
                                     2.ª opción
+                                    <span class="sr-only">para {{ candidate.game.name }}</span>
                                 </span>
                                 <span class="mt-1 block text-[11px] font-semibold leading-tight opacity-80 sm:text-xs">
                                     {{ preferencePointsLabel(2) }}
@@ -1853,6 +1855,7 @@ const myChoiceLabel = (candidateId: number): string | null => {
                             >
                                 <span class="block text-xs font-bold leading-tight sm:text-sm">
                                     3.ª opción
+                                    <span class="sr-only">para {{ candidate.game.name }}</span>
                                 </span>
                                 <span class="mt-1 block text-[11px] font-semibold leading-tight opacity-80 sm:text-xs">
                                     {{ preferencePointsLabel(3) }}
@@ -1879,6 +1882,7 @@ const myChoiceLabel = (candidateId: number): string | null => {
                         <details class="group border-t border-zinc-200 bg-zinc-50/70">
                             <summary class="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-semibold text-[#5200FF] [&::-webkit-details-marker]:hidden">
                                 Ver descripción e historial
+                                <span class="sr-only">de {{ candidate.game.name }}</span>
                                 <span aria-hidden="true" class="ml-2 transition-transform group-open:rotate-180">⌄</span>
                             </summary>
                             <div class="space-y-3 border-t border-zinc-200 px-4 py-4 text-sm">
@@ -1902,7 +1906,13 @@ const myChoiceLabel = (candidateId: number): string | null => {
                                             :key="participant.participant_id"
                                             class="flex items-start justify-between gap-2"
                                         >
-                                            <span class="min-w-0 break-words text-zinc-700"><span :class="['inline-flex items-center gap-1.5', publicPlayerNameColor(participant.display_name, colorForParticipant(participant.participant_id))]"><MeepleIcon :class="['h-3.5 w-3.5 shrink-0', playerMeepleColor(participant.display_name, colorForParticipant(participant.participant_id))]" />{{ participant.display_name }}</span></span>
+                                            <span :class="['flex min-w-0 items-center gap-1.5', publicPlayerNameColor(participant.display_name, colorForParticipant(participant.participant_id))]">
+                                                <MeepleIcon
+                                                    :class="['h-3.5 w-3.5 shrink-0', playerMeepleColor(participant.display_name, colorForParticipant(participant.participant_id))]"
+                                                    aria-hidden="true"
+                                                />
+                                                <span class="min-w-0 wrap-anywhere">{{ participant.display_name }}</span>
+                                            </span>
                                             <span class="shrink-0 text-zinc-500">
                                                 {{ !participant.tracked ? 'Sin historial' : participant.play_count === 0 ? 'Nunca' : `${participant.play_count} ${participant.play_count === 1 ? 'partida' : 'partidas'}` }}
                                             </span>
