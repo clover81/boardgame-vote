@@ -263,6 +263,7 @@ const submit = () => {
         preserveScroll: 'errors',
         onError: async () => {
             await nextTick();
+            saveError.value?.scrollIntoView({ block: 'center' });
             saveError.value?.focus({ preventScroll: true });
         },
     });

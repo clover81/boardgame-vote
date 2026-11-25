@@ -152,23 +152,7 @@ class PlayController extends Controller
     |--------------------------------------------------------------------------
     */
 
-        $games = Game::query()
-            ->where('is_active', true)
-            ->whereHas('collections', function ($query) use ($request) {
-                $query->where('game_collections.created_by', $request->user()->id);
-            })
-            ->with([
-                'expansions' =>
-                function ($query) {
-                    $query
-                        ->where(
-                            'is_active',
-                            true
-                        )
-                        ->orderBy('name');
-                },
-            ])
-            ->orderBy('name')
+        $games = $this->registrationGames((int) $request->user()->id)
             ->get()
             ->map(
                 function ($game) {
@@ -311,13 +295,10 @@ class PlayController extends Controller
     */
 
         $poll->load([
-            'participants.player',
-
-            'candidates.expansion',
-
-            'candidates.votes',
-
-            'candidates.game',
+            'participants:id,poll_id,player_id,display_name',
+            'candidates.expansion:id,is_active',
+            'candidates.votes:id,poll_candidate_id,position',
+            'candidates.game:id,name',
         ]);
 
         $ranking = $poll->candidates
@@ -438,14 +419,7 @@ class PlayController extends Controller
 
         $candidatesByGame = $poll->candidates->keyBy('game_id');
 
-        $games = Game::query()
-            ->where('is_active', true)
-            ->whereHas('collections', fn ($query) => $query
-                ->where('game_collections.created_by', $userId))
-            ->with(['expansions' => function ($query) {
-                $query->where('is_active', true)->orderBy('name');
-            }])
-            ->orderBy('name')
+        $games = $this->registrationGames($userId)
             ->get()
             ->map(function ($game) use ($candidatesByGame) {
                 $candidate = $candidatesByGame->get($game->id);
@@ -866,6 +840,21 @@ class PlayController extends Controller
             ->where('game_collections.created_by', $request->user()->id))->exists();
 
         return $isOwned ? $back : null;
+    }
+
+    /** @return Builder<Game> */
+    private function registrationGames(int $userId): Builder
+    {
+        return Game::query()
+            ->select(['id', 'name', 'image_url'])
+            ->where('is_active', true)
+            ->whereHas('collections', fn ($query) => $query
+                ->where('game_collections.created_by', $userId))
+            ->with(['expansions' => fn ($query) => $query
+                ->select(['id', 'game_id', 'name'])
+                ->where('is_active', true)
+                ->orderBy('name')])
+            ->orderBy('name');
     }
 
     /** @return Builder<Game> */

@@ -251,6 +251,12 @@ watch(
     }
 );
 
+const preventSearchSubmit = (event: KeyboardEvent) => {
+    if (!event.isComposing) {
+        event.preventDefault();
+    }
+};
+
 const saveError = ref<HTMLDivElement | null>(null);
 
 const submit = () => {
@@ -285,6 +291,7 @@ const submit = () => {
             }
 
             await nextTick();
+            saveError.value?.scrollIntoView({ block: 'center' });
             saveError.value?.focus({ preventScroll: true });
         },
     });
@@ -351,6 +358,7 @@ const submit = () => {
                         <input
                             id="manual-game-search"
                             v-model="gameSearch"
+                            @keydown.enter="preventSearchSubmit"
                             type="search"
                             autocomplete="off"
                             placeholder="Ej.: castillo blanco, agrícola..."
