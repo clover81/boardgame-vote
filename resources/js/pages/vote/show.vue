@@ -723,56 +723,111 @@ const myChoiceLabel = (candidateId: number): string | null => {
         <!-- CABECERA                                              -->
         <!-- ===================================================== -->
 
-        <header
-            class="bg-[#5200FF] px-4 py-6 text-white sm:px-5 sm:py-8"
-        >
-            <div
-                class="mx-auto max-w-5xl"
-            >
+        <!-- CABECERA FOTOGRÁFICA CLOVER -->
+        <div class="mx-auto max-w-7xl px-4 pt-5 sm:px-8 sm:pt-8">
+            <header class="relative isolate overflow-hidden rounded-[28px] bg-[#190c30] text-white shadow-xl shadow-[#181424]/15 sm:rounded-[32px]">
+
+                <!-- Fotografía real con efecto violeta y lima integrado -->
+                <img
+                    src="/images/vote-shelf-comic.webp"
+                    alt=""
+                    aria-hidden="true"
+                    width="2000"
+                    height="924"
+                    loading="eager"
+                    decoding="async"
+                    class="pointer-events-none absolute inset-0 h-full w-full object-cover object-[55%_50%] sm:object-[50%_45%]"
+                />
+
+                <!-- Sombras suaves para asegurar la legibilidad -->
                 <div
-                    v-if="poll.session_position !== null"
-                    class="mb-3 flex flex-wrap items-center gap-2"
-                >
-                    <span
-                        class="inline-flex rounded-full border border-white/40 bg-white/15 px-3 py-1 text-xs font-bold text-white"
-                    >
-                        Juego {{ poll.session_position }} de 2
-                    </span>
-                    <span class="text-xs font-medium text-violet-100 sm:text-sm">
-                        Cada juego se vota por separado
-                    </span>
+                    aria-hidden="true"
+                    class="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#170927]/60 via-[#250940]/15 to-transparent"
+                ></div>
+
+                <div
+                    aria-hidden="true"
+                    class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#24083e]/35 via-transparent to-transparent"
+                ></div>
+
+                <!-- Misma composición que la cabecera del catálogo -->
+                <div class="relative z-10 mx-auto flex min-h-[240px] w-full max-w-5xl flex-col justify-between gap-5 px-4 py-5 sm:min-h-[300px] sm:gap-8 sm:py-8 lg:min-h-[345px] lg:gap-10 lg:py-9">
+
+                    <!-- Identidad Clover -->
+                    <div class="flex items-center gap-3 sm:gap-4">
+                        <span
+                            class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[#CCFF00] text-[#5200FF] shadow-lg shadow-[#18072b]/30 sm:size-14"
+                            aria-hidden="true"
+                        >
+                            <Trophy class="size-6 sm:size-7" :stroke-width="2.2" />
+                        </span>
+
+                        <div class="min-w-0 drop-shadow-sm">
+                            <p class="text-base font-black leading-tight tracking-tight sm:text-xl">
+                                Juegos de mesa
+                            </p>
+                            <p class="mt-1 text-xs font-medium text-zinc-200 sm:text-sm">
+                                Clover
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Información de la votación -->
+                    <div class="min-w-0 lg:max-w-[75%]">
+
+                        <div
+                            v-if="poll.session_position !== null"
+                            class="mb-3 flex flex-wrap items-center gap-2"
+                        >
+                            <span class="inline-flex rounded-full border border-white/40 bg-[#321b50]/80 px-3 py-1 text-xs font-bold text-white">
+                                Juego {{ poll.session_position }} de 2
+                            </span>
+
+                            <span class="text-xs font-medium text-zinc-100 sm:text-sm">
+                                Cada juego se vota por separado
+                            </span>
+                        </div>
+
+                        <!-- Línea lima -->
+                        <div
+                            aria-hidden="true"
+                            class="mb-4 h-1.5 w-20 rounded-full bg-[#CCFF00] shadow-[0_0_18px_rgba(204,255,0,0.45)]"
+                        ></div>
+
+                        <h1 class="max-w-full break-words text-[1.9rem] font-black leading-[1.08] tracking-tight text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.65)] sm:text-[3rem] lg:text-[3.35rem]">
+                            {{ poll.name }}
+                        </h1>
+
+                        <p class="mt-3 text-sm font-medium text-zinc-100 drop-shadow-[0_1px_5px_rgba(0,0,0,0.85)] sm:text-base">
+                            <template v-if="poll.status === 'open' && voteSaved">
+                                {{
+                                    needsSecondChoice
+                                        ? 'Tus preferencias ya están guardadas.'
+                                        : 'Tu voto ya está guardado.'
+                                }}
+                            </template>
+
+                            <template v-else-if="poll.status === 'open'">
+                                {{
+                                    needsThirdChoice
+                                        ? 'Elige tres juegos distintos: 3, 2 y 1 puntos.'
+                                        : needsSecondChoice
+                                            ? 'Elige tu primera y segunda opción.'
+                                            : poll.candidates.length > 1
+                                                ? 'Elige un juego y confirma tu voto.'
+                                                : 'Confirma tu voto para este juego.'
+                                }}
+                            </template>
+
+                            <template v-else>
+                                La votación ha terminado.
+                            </template>
+                        </p>
+                    </div>
+
                 </div>
-
-                <h1 class="break-words text-2xl font-bold sm:text-3xl">
-                    {{ poll.name }}
-                </h1>
-
-                <p
-                    class="mt-2 text-violet-100"
-                >
-                    <template v-if="poll.status === 'open' && voteSaved">
-                        {{
-                            needsSecondChoice
-                                ? 'Tus preferencias ya están guardadas.'
-                                : 'Tu voto ya está guardado.'
-                        }}
-                    </template>
-                    <template v-else-if="poll.status === 'open'">
-                        {{
-                            needsThirdChoice
-                                ? 'Elige tres juegos distintos: 3, 2 y 1 puntos.'
-                                : needsSecondChoice
-                                    ? 'Elige tu primera y segunda opción.'
-                                    : poll.candidates.length > 1 ? 'Elige un juego y confirma tu voto.' : 'Confirma tu voto para este juego.'
-                        }}
-                    </template>
-
-                    <template v-else>
-                        La votación ha terminado.
-                    </template>
-                </p>
-            </div>
-        </header>
+            </header>
+        </div>
 
         <div
             class="mx-auto max-w-5xl px-4 pt-6 pb-24 sm:pt-8"
