@@ -601,6 +601,10 @@ const confirmTieBreakDraw = () => {
     });
 };
 
+const canClosePoll = computed(() =>
+    props.poll.status === 'open' && props.poll.voted_participants_count > 0
+);
+
 const closePollDialogOpen = ref(false);
 const closingPoll = ref(false);
 const closePollError = ref('');
@@ -616,7 +620,7 @@ const restoreClosePollFocus = (event: Event) => {
 };
 
 const closePoll = () => {
-    if (closingPoll.value || props.poll.status !== 'open') {
+    if (closingPoll.value || !canClosePoll.value) {
         return;
     }
 
@@ -625,7 +629,7 @@ const closePoll = () => {
 };
 
 const confirmClosePoll = () => {
-    if (closingPoll.value || props.poll.status !== 'open') {
+    if (closingPoll.value || !canClosePoll.value) {
         return;
     }
 
@@ -1161,13 +1165,25 @@ const modeLabel = (
                         <!-- CERRAR -->
 
                         <button
-                            type="button"
-                            class="mt-4 w-full rounded-xl border border-red-200 px-5 py-3 font-bold text-red-600 transition hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950/30"
                             ref="closePollButton"
+                            type="button"
+                            :disabled="!canClosePoll || closingPoll"
+                            class="mt-4 w-full rounded-xl border border-red-200 px-5 py-3 font-bold text-red-600 transition enabled:hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-900 dark:enabled:hover:bg-red-950/30"
                             @click="closePoll"
                         >
                             Cerrar votación
                         </button>
+                        <div v-if="!canClosePoll" class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                            <p>Podrás cerrarla cuando haya al menos un voto completo.</p>
+                            <button
+                                type="button"
+                                :disabled="refreshingVotes"
+                                class="min-h-11 font-semibold text-[#5200FF] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-[#5200FF] disabled:opacity-50 dark:text-violet-200"
+                                @click="refreshVotes"
+                            >
+                                {{ refreshingVotes ? 'Actualizando…' : 'Actualizar votos' }}
+                            </button>
+                        </div>
                     </div>
 
                     <!-- CERRADA -->
@@ -2062,7 +2078,7 @@ const modeLabel = (
 
                     <button
                         type="button"
-                        :disabled="closingPoll"
+                        :disabled="!canClosePoll || closingPoll"
                         class="rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:bg-[#4000cc] disabled:cursor-not-allowed disabled:opacity-50"
                         @click="confirmClosePoll"
                     >

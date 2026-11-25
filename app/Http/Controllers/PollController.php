@@ -1038,7 +1038,7 @@ class PollController extends Controller
     */
 
         $poll->load([
-            'participants.votes',
+            'participants.votes:id,poll_participant_id,position',
             'participants.player:id,color',
 
             'gameCollections',
@@ -1049,8 +1049,6 @@ class PollController extends Controller
          * Expansión prevista para el candidato.
          */
             'candidates.expansion',
-
-            'candidates.votes',
 
             'play.game',
             'play.expansion',
@@ -1102,9 +1100,11 @@ class PollController extends Controller
         $results = collect();
         $hasClearWinner = false;
 
-        $hasRecordedVotes = $poll->candidates->contains(fn ($candidate) => $candidate->votes->isNotEmpty());
+        if ($poll->status === 'closed') {
+            $poll->load('candidates.votes:id,poll_candidate_id,position');
+        }
 
-        if ($poll->status === 'closed' && $hasRecordedVotes) {
+        if ($poll->status === 'closed' && $poll->candidates->contains(fn ($candidate) => $candidate->votes->isNotEmpty())) {
             $results = $poll->candidates
                 ->map(function ($candidate) use ($poll) {
                     $firstVotes = $candidate->votes->where('position', 1)->count();
