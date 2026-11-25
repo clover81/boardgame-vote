@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Play;
 use App\Models\Poll;
+use App\Models\Vote;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -89,9 +91,7 @@ class PublicPollController extends Controller
             ->groupBy('game_id')
             ->map(fn ($counts) => $counts->keyBy('player_id'));
 
-        if ($poll->status === 'closed') {
-            $poll->loadMissing('candidates.votes');
-        }
+        $voteCounts = $poll->status === 'closed' ? $this->voteCountsByCandidate($poll) : collect();
 
         /*
         |--------------------------------------------------------------------------
@@ -102,24 +102,14 @@ class PublicPollController extends Controller
         $results = collect();
         $hasClearWinner = false;
 
-        if ($poll->status === 'closed' && $poll->candidates->contains(fn ($candidate) => $candidate->votes->isNotEmpty())) {
+        if ($voteCounts->isNotEmpty()) {
             $sortedResults =
                 $poll->candidates
-                    ->map(function ($candidate) use ($poll) {
-                        $firstVotes =
-                            $candidate->votes
-                                ->where('position', 1)
-                                ->count();
-
-                        $secondVotes =
-                            $candidate->votes
-                                ->where('position', 2)
-                                ->count();
-
-                        $thirdVotes =
-                            $candidate->votes
-                                ->where('position', 3)
-                                ->count();
+                    ->map(function ($candidate) use ($poll, $voteCounts) {
+                        $counts = $voteCounts->get($candidate->id);
+                        $firstVotes = (int) ($counts?->first_votes ?? 0);
+                        $secondVotes = (int) ($counts?->second_votes ?? 0);
+                        $thirdVotes = (int) ($counts?->third_votes ?? 0);
 
                         return [
                             'candidate_id' =>
@@ -595,6 +585,19 @@ class PublicPollController extends Controller
     */
 
 
+    private function voteCountsByCandidate(Poll $poll): Collection
+    {
+        return Vote::query()
+            ->whereIn('poll_candidate_id', $poll->candidates->modelKeys())
+            ->select('poll_candidate_id')
+            ->selectRaw('SUM(CASE WHEN position = 1 THEN 1 ELSE 0 END) AS first_votes')
+            ->selectRaw('SUM(CASE WHEN position = 2 THEN 1 ELSE 0 END) AS second_votes')
+            ->selectRaw('SUM(CASE WHEN position = 3 THEN 1 ELSE 0 END) AS third_votes')
+            ->groupBy('poll_candidate_id')
+            ->get()
+            ->keyBy('poll_candidate_id');
+    }
+
     /**
      * Juegos consultables de la otra votación de la sesión.
      * No incluye enlaces personales ni votos individuales.
@@ -621,12 +624,13 @@ class PublicPollController extends Controller
         $winnerId = null;
 
         if ($linked->status === 'closed') {
-            $linked->loadMissing('candidates.votes');
+            $voteCounts = $this->voteCountsByCandidate($linked);
 
-            $scores = $linked->candidates->map(function ($candidate) use ($linked) {
-                $first = $candidate->votes->where('position', 1)->count();
-                $second = $candidate->votes->where('position', 2)->count();
-                $third = $candidate->votes->where('position', 3)->count();
+            $scores = $linked->candidates->map(function ($candidate) use ($linked, $voteCounts) {
+                $counts = $voteCounts->get($candidate->id);
+                $first = (int) ($counts?->first_votes ?? 0);
+                $second = (int) ($counts?->second_votes ?? 0);
+                $third = (int) ($counts?->third_votes ?? 0);
 
                 return [
                     'id' => $candidate->id,
