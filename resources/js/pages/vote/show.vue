@@ -385,6 +385,12 @@ const canSubmit = computed(() =>
     new Set(selectedIds.value).size === selectedIds.value.length
 );
 
+const showSearchConfirmation = computed(() =>
+    canSubmit.value &&
+    candidateSearch.value.trim() !== '' &&
+    !visibleCandidates.value.some(candidate => candidate.id === lastSelectedCandidateId.value)
+);
+
 const voteButtonLabel = computed(() => {
     if (form.processing) return 'Guardando...';
     if (canSubmit.value) {
@@ -499,10 +505,9 @@ const selectPreference = (position: 1 | 2 | 3, candidateId: number) => {
         // Desmarcar una preferencia no borra las demás.
         form[field] = null;
     } else {
-        for (const otherField of preferenceFields) {
-            if (otherField !== field && form[otherField] === candidateId) {
-                form[otherField] = null;
-            }
+        const previousField = preferenceFields.find(otherField => form[otherField] === candidateId);
+        if (previousField !== undefined) {
+            form[previousField] = form[field];
         }
 
         form[field] = candidateId;
@@ -1649,6 +1654,16 @@ const myChoiceLabel = (candidateId: number): string | null => {
                         @click="clearCandidateSearch"
                     >
                         Mostrar todos los juegos
+                    </button>
+                    <button
+                        v-if="showSearchConfirmation"
+                        type="button"
+                        aria-controls="vote-confirmation"
+                        class="mt-2 inline-flex min-h-11 items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-sm font-bold text-[#5200FF] hover:bg-violet-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                        @click="goToConfirmation"
+                    >
+                        Ver resumen y confirmar
+                        <span aria-hidden="true">↓</span>
                     </button>
                 </div>
 
