@@ -724,10 +724,10 @@ const myChoiceLabel = (candidateId: number): string | null => {
         <!-- ===================================================== -->
 
         <!-- CABECERA FOTOGRÁFICA CLOVER -->
-        <div class="mx-auto max-w-7xl px-4 pt-5 sm:px-8 sm:pt-8">
-            <header class="relative isolate overflow-hidden rounded-[28px] bg-[#190c30] text-white shadow-xl shadow-[#181424]/15 sm:rounded-[32px]">
+        <div class="mx-auto max-w-5xl px-4 pt-4 sm:pt-6">
+            <header class="relative isolate overflow-hidden rounded-3xl bg-[#190c30] text-white shadow-lg shadow-[#181424]/15 ring-1 ring-violet-950/10 sm:rounded-[28px]">
 
-                <!-- Fotografía real con efecto violeta y lima integrado -->
+                <!-- Fotografía de la estantería de votaciones. -->
                 <img
                     src="/images/vote-shelf-comic.webp"
                     alt=""
@@ -736,48 +736,45 @@ const myChoiceLabel = (candidateId: number): string | null => {
                     height="924"
                     loading="eager"
                     decoding="async"
-                    class="pointer-events-none absolute inset-0 h-full w-full object-cover object-[55%_50%] sm:object-[50%_45%]"
+                    class="pointer-events-none absolute inset-0 h-full w-full object-cover object-[center_40%] brightness-[1.12] saturate-[1.34] sm:object-[center_41%]"
                 />
 
-                <!-- Sombras suaves para asegurar la legibilidad -->
                 <div
                     aria-hidden="true"
-                    class="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#170927]/60 via-[#250940]/15 to-transparent"
+                    class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#170927]/95 via-[#210d3b]/65 to-[#170927]/10 sm:from-[#24083e]/75 sm:via-[#210d3b]/10 sm:to-transparent"
                 ></div>
-
                 <div
                     aria-hidden="true"
-                    class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#24083e]/35 via-transparent to-transparent"
+                    class="pointer-events-none absolute inset-0 hidden bg-gradient-to-r from-[#170927]/90 via-[#250940]/35 to-[#19072b]/5 sm:block"
                 ></div>
 
-                <!-- Misma composición que la cabecera del catálogo -->
-                <div class="relative z-10 mx-auto flex min-h-[240px] w-full max-w-5xl flex-col justify-between gap-5 px-4 py-5 sm:min-h-[300px] sm:gap-8 sm:py-8 lg:min-h-[345px] lg:gap-10 lg:py-9">
+                <div class="relative z-10 px-4 pt-4 pb-5 sm:flex sm:min-h-[230px] sm:flex-col sm:justify-between sm:gap-5 sm:px-7 sm:py-6 lg:min-h-[250px] lg:px-9 lg:py-7">
 
                     <!-- Identidad Clover -->
-                    <div class="flex items-center gap-3 sm:gap-4">
+                    <div class="inline-flex w-fit max-w-full items-center gap-2.5 rounded-xl bg-[#190c30]/85 pr-3 sm:bg-transparent sm:pr-0">
                         <span
-                            class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[#CCFF00] text-[#5200FF] shadow-lg shadow-[#18072b]/30 sm:size-14"
+                            class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#CCFF00] text-[#5200FF] sm:size-11"
                             aria-hidden="true"
                         >
-                            <Trophy class="size-6 sm:size-7" :stroke-width="2.2" />
+                            <Trophy class="size-5 sm:size-6" :stroke-width="2.2" />
                         </span>
 
                         <div class="min-w-0 drop-shadow-sm">
-                            <p class="text-base font-black leading-tight tracking-tight sm:text-xl">
+                            <p class="text-sm font-black leading-tight tracking-tight sm:text-base">
                                 Juegos de mesa
                             </p>
-                            <p class="mt-1 text-xs font-medium text-zinc-200 sm:text-sm">
+                            <p class="text-xs font-medium text-zinc-200">
                                 Clover
                             </p>
                         </div>
                     </div>
 
                     <!-- Información de la votación -->
-                    <div class="min-w-0 lg:max-w-[75%]">
+                    <div class="mt-9 min-w-0 sm:mt-0 sm:max-w-[66%]">
 
                         <div
                             v-if="poll.session_position !== null"
-                            class="mb-3 flex flex-wrap items-center gap-2"
+                            class="mb-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5"
                         >
                             <span class="inline-flex rounded-full border border-white/40 bg-[#321b50]/80 px-3 py-1 text-xs font-bold text-white">
                                 Juego {{ poll.session_position }} de 2
@@ -788,17 +785,11 @@ const myChoiceLabel = (candidateId: number): string | null => {
                             </span>
                         </div>
 
-                        <!-- Línea lima -->
-                        <div
-                            aria-hidden="true"
-                            class="mb-4 h-1.5 w-20 rounded-full bg-[#CCFF00] shadow-[0_0_18px_rgba(204,255,0,0.45)]"
-                        ></div>
-
-                        <h1 class="max-w-full break-words text-[1.9rem] font-black leading-[1.08] tracking-tight text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.65)] sm:text-[3rem] lg:text-[3.35rem]">
+                        <h1 class="border-l-[3px] border-[#CCFF00] pl-3 wrap-anywhere text-[clamp(1.65rem,4.8vw,2.75rem)] font-black leading-[1.06] tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)] sm:pl-4">
                             {{ poll.name }}
                         </h1>
 
-                        <p class="mt-3 text-sm font-medium text-zinc-100 drop-shadow-[0_1px_5px_rgba(0,0,0,0.85)] sm:text-base">
+                        <p class="mt-2 pl-[15px] text-sm/5 font-medium text-zinc-100 sm:pl-[19px] sm:text-base/6">
                             <template v-if="poll.status === 'open' && voteSaved">
                                 {{
                                     needsSecondChoice
