@@ -658,6 +658,19 @@ const externalUrl = (url: string | null): string | undefined => {
 
 const hasRecordedVotes = computed(() => props.results.some(result => result.points > 0));
 
+const finalTieBreakWinner = computed(
+    () => props.poll.tie_break_outcome?.winner ?? null
+);
+
+const sessionWinnerCandidateId = computed(() => {
+    if (props.poll.status !== 'closed') return null;
+
+    const winningGameId = finalTieBreakWinner.value?.game_id;
+    const tieBreakCandidate = props.poll.candidates.find(candidate => candidate.game.id === winningGameId);
+
+    return tieBreakCandidate?.id ?? props.results.find(result => result.is_winner)?.candidate_id ?? null;
+});
+
 // Los juegos siguen accesibles después de votar y al cerrar la sesión.
 const sessionCandidates = computed(() => {
     const ranks = new Map(
@@ -666,6 +679,10 @@ const sessionCandidates = computed(() => {
 
     return [...props.poll.candidates].sort((a, b) => {
         if (props.poll.status === 'closed') {
+            const winner = sessionWinnerCandidateId.value;
+            const winnerOrder = Number(b.id === winner) - Number(a.id === winner);
+            if (winnerOrder !== 0) return winnerOrder;
+
             const aRank = ranks.get(a.id) ?? Number.MAX_SAFE_INTEGER;
             const bRank = ranks.get(b.id) ?? Number.MAX_SAFE_INTEGER;
             if (aRank !== bRank) return aRank - bRank;
@@ -682,10 +699,6 @@ const sessionResult = (candidateId: number): Result | undefined =>
 
 const secondPreferenceTieBreak = computed(() =>
     getSecondPreferenceTieBreak(props.results)
-);
-
-const finalTieBreakWinner = computed(
-    () => props.poll.tie_break_outcome?.winner ?? null
 );
 
 const winningGame = computed(() => {
@@ -1305,10 +1318,20 @@ const myChoiceLabel = (candidateId: number): string | null => {
                     <p class="mt-2 text-sm text-zinc-600">
                         {{
                             poll.status === 'closed'
-                                ? 'Consulta el juego ganador y todos los propuestos. Puedes volver a este enlace cuando quieras.'
+                                ? sessionWinnerCandidateId !== null
+                                    ? 'Consulta el juego ganador y todos los propuestos. Puedes volver a este enlace cuando quieras.'
+                                    : 'Consulta todos los juegos propuestos y sus tutoriales. Puedes volver a este enlace cuando quieras.'
                                 : 'Tu voto está guardado. Puedes consultar los juegos y aprender sus reglas sin cambiar tu elección.'
                         }}
                     </p>
+                    <a
+                        v-if="linkedSession?.candidates.length"
+                        href="#linked-session-games"
+                        class="mt-3 inline-flex min-h-11 max-w-full items-center gap-2 rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm font-bold text-[#5200FF] hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                    >
+                        Ver juegos y tutoriales del juego {{ linkedSession.session_position }}
+                        <span aria-hidden="true">↓</span>
+                    </a>
                 </div>
 
                 <div class="grid items-stretch gap-4 sm:grid-cols-2">
@@ -1317,7 +1340,7 @@ const myChoiceLabel = (candidateId: number): string | null => {
                         :key="candidate.id"
                         class="flex min-w-0 flex-col rounded-2xl border-2 bg-white p-4 shadow-sm"
                         :class="
-                            sessionResult(candidate.id)?.is_winner
+                            candidate.id === sessionWinnerCandidateId
                                 ? 'border-[#9BCB00] ring-1 ring-[#CCFF00]'
                                 : 'border-zinc-200'
                         "
@@ -1341,7 +1364,7 @@ const myChoiceLabel = (candidateId: number): string | null => {
 
                             <div class="min-w-0 flex-1">
                                 <p
-                                    v-if="sessionResult(candidate.id)?.is_winner"
+                                    v-if="candidate.id === sessionWinnerCandidateId"
                                     class="mb-1 text-xs font-black uppercase text-green-800"
                                 >
                                     <Trophy class="mr-1 inline-block size-4 shrink-0 align-[-0.15em]" :stroke-width="2.2" aria-hidden="true" /> Juego ganador
@@ -1429,10 +1452,15 @@ const myChoiceLabel = (candidateId: number): string | null => {
                     v-if="linkedSession && linkedSession.candidates.length"
                     class="mt-9 border-t border-zinc-200 pt-7"
                 >
-                    <p class="text-xs font-bold uppercase tracking-wide text-[#5200FF]">
-                        Juego {{ linkedSession.session_position }} de 2
-                    </p>
-                    <h3 class="mt-1 text-xl font-black">
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <p class="text-xs font-bold uppercase tracking-wide text-[#5200FF]">
+                            Juego {{ linkedSession.session_position }} de 2
+                        </p>
+                        <span class="text-xs font-semibold text-zinc-600">
+                            {{ linkedSession.status === 'open' ? 'Votación abierta' : 'Votación cerrada' }}
+                        </span>
+                    </div>
+                    <h3 id="linked-session-games" tabindex="-1" class="mt-1 scroll-mt-6 wrap-anywhere text-xl font-black">
                         {{ linkedSession.name }}
                     </h3>
                     <p class="mt-2 mb-4 text-sm text-zinc-600">
