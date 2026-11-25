@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Play;
 use App\Models\Poll;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -67,27 +68,26 @@ class PublicPollController extends Controller
              * Expansión prevista.
              */
             'candidates.expansion',
-
-            /*
-             * Historial personal del propietario
-             * de la votación.
-             */
-            'candidates.game.plays' =>
-            function ($query) use (
-                $poll
-            ) {
-                $query
-                    ->where(
-                        'created_by',
-                        $poll->created_by
-                    )
-                    ->select(['id', 'game_id', 'played_at'])
-                    ->with('players:id')
-                    ->orderByDesc(
-                        'played_at'
-                    );
-            },
         ]);
+
+        $history = Play::query()
+            ->where('plays.created_by', $poll->created_by)
+            ->whereIn('plays.game_id', $poll->candidates->pluck('game_id')->unique());
+
+        $historyByGame = (clone $history)
+            ->selectRaw('plays.game_id, COUNT(*) AS total_plays, MAX(plays.played_at) AS played_at')
+            ->groupBy('plays.game_id')
+            ->get()
+            ->keyBy('game_id');
+
+        $historyByPlayer = $history
+            ->join('play_player', 'play_player.play_id', '=', 'plays.id')
+            ->whereIn('play_player.player_id', $poll->participants->pluck('player_id')->filter()->unique())
+            ->selectRaw('plays.game_id, play_player.player_id, COUNT(DISTINCT plays.id) AS play_count')
+            ->groupBy('plays.game_id', 'play_player.player_id')
+            ->get()
+            ->groupBy('game_id')
+            ->map(fn ($counts) => $counts->keyBy('player_id'));
 
         if ($poll->status === 'closed') {
             $poll->loadMissing('candidates.votes');
@@ -384,12 +384,12 @@ class PublicPollController extends Controller
                             function (
                                 $candidate
                             ) use (
-                                $poll
+                                $poll,
+                                $historyByGame,
+                                $historyByPlayer
                             ) {
-                                $gamePlays =
-                                    $candidate
-                                    ->game
-                                    ->plays;
+                                $gameHistory = $historyByGame->get($candidate->game_id);
+                                $playerCounts = $historyByPlayer->get($candidate->game_id);
 
                                 /*
                                     |--------------------------------------------------------------------------
@@ -404,7 +404,7 @@ class PublicPollController extends Controller
                                         function (
                                             $participant
                                         ) use (
-                                            $gamePlays
+                                            $playerCounts
                                         ) {
                                             /*
                                                      * Participantes públicos
@@ -432,21 +432,8 @@ class PublicPollController extends Controller
                                                 ];
                                             }
 
-                                            $playCount =
-                                                $gamePlays
-                                                ->filter(
-                                                    fn(
-                                                        $play
-                                                    ) =>
-                                                    $play
-                                                        ->players
-                                                        ->contains(
-                                                            'id',
-                                                            $participant
-                                                                ->player_id
-                                                        )
-                                                )
-                                                ->count();
+                                            $playCount = (int) ($playerCounts
+                                                ?->get($participant->player_id)?->play_count ?? 0);
 
                                             return [
                                                 'participant_id' =>
@@ -580,17 +567,9 @@ class PublicPollController extends Controller
                                         */
 
                                     'history' => [
-                                        'total_plays' =>
-                                        $gamePlays
-                                            ->count(),
+                                        'total_plays' => (int) ($gameHistory?->total_plays ?? 0),
 
-                                        'last_played_at' =>
-                                        $gamePlays
-                                            ->first()
-                                            ?->played_at
-                                            ?->format(
-                                                'Y-m-d'
-                                            ),
+                                        'last_played_at' => $gameHistory?->played_at?->format('Y-m-d'),
 
                                         'participants' =>
                                         $participantHistory,

@@ -2,6 +2,7 @@
 
 use App\Models\Game;
 use App\Models\GameCollection;
+use App\Models\Play;
 use App\Models\Player;
 use App\Models\Poll;
 use App\Models\User;
@@ -251,3 +252,34 @@ test('public polls without closed results have no winner', function ($status, $h
     'an open poll' => ['open', true],
     'a closed poll without candidates' => ['closed', false],
 ]);
+
+test('public candidate history counts only games played by the owner and matching players', function () {
+    $this->withoutVite();
+    $owner = User::factory()->create();
+    $other = User::factory()->create();
+    $game = Game::create(['name' => 'Heat', 'min_players' => 1, 'max_players' => 4]);
+    $player = Player::create(['name' => 'Ana', 'created_by' => $owner->id]);
+    $poll = Poll::create([
+        'created_by' => $owner->id, 'name' => 'Partida', 'token' => 'PUBLICHISTORYTEST', 'status' => 'open',
+    ]);
+    $poll->candidates()->create(['game_id' => $game->id]);
+    $participant = $poll->participants()->create(['display_name' => 'Ana', 'player_id' => $player->id]);
+    $guest = $poll->participants()->create(['display_name' => 'Invitado']);
+
+    $played = Play::create(['created_by' => $owner->id, 'game_id' => $game->id, 'played_at' => '2026-10-02']);
+    $played->players()->attach($player);
+    Play::create(['created_by' => $owner->id, 'game_id' => $game->id, 'played_at' => '2026-10-05']);
+    $foreign = Play::create(['created_by' => $other->id, 'game_id' => $game->id, 'played_at' => '2026-10-07']);
+    $foreign->players()->attach($player);
+
+    $this->get(route('vote.participant.show', [$poll->token, $participant->vote_token]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('poll.candidates.0.history.total_plays', 2)
+            ->where('poll.candidates.0.history.last_played_at', '2026-10-05')
+            ->where('poll.candidates.0.history.participants', [
+                ['participant_id' => $participant->id, 'display_name' => 'Ana', 'play_count' => 1, 'tracked' => true],
+                ['participant_id' => $guest->id, 'display_name' => 'Invitado', 'play_count' => 0, 'tracked' => false],
+            ])
+        );
+});
