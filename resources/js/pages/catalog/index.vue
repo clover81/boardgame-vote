@@ -98,13 +98,17 @@ const normalizedGameSearch = computed(() =>
     ),
 );
 
-const filteredGames = computed(() => {
-    const terms = searchTerms.value;
+// La búsqueda reutiliza esta selección mientras no cambien los otros filtros.
+const catalogCandidates = computed(() => {
     const players = Number(playerCount.value);
     const collection = Number(collectionId.value);
 
-    // Filtrar primero por las opciones elegidas; después buscar entre esos juegos.
-    const candidates = props.games.filter(game => {
+    if (!players && !collection && durationLimit.value === '' &&
+        difficulty.value === '' && selectedGameMode.value === '') {
+        return props.games;
+    }
+
+    return props.games.filter(game => {
         const matchesPlayers =
             !players || game.ideal_player_counts.includes(players);
 
@@ -141,7 +145,11 @@ const filteredGames = computed(() => {
             matchesDifficulty &&
             matchesGameMode;
     });
+});
 
+const filteredGames = computed(() => {
+    const terms = searchTerms.value;
+    const candidates = catalogCandidates.value;
     if (!terms.length) return candidates;
 
     const normalizedData = normalizedGameSearch.value;
@@ -717,7 +725,7 @@ const tutorialUrl = (game: Game): string =>
                     <button
                         v-if="hasFilters"
                         type="button"
-                        class="text-sm font-bold text-[#5200FF] hover:underline"
+                        class="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-bold text-[#5200FF] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                         @click="clearFilters"
                     >
                         Limpiar filtros
