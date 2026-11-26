@@ -1137,7 +1137,7 @@ const tutorialUrl = (game: Game): string =>
             </div>
         </main>
 
-        <footer class="relative z-50 mt-12 border-t border-zinc-200 bg-[#f7f7f5] py-8 text-center text-sm text-zinc-500">
+        <footer class="relative mt-12 border-t border-zinc-200 bg-[#f7f7f5] py-8 text-center text-sm text-zinc-500">
             <span class="block sm:inline">Juegos de mesa · Catálogo de juegos compartidos</span>
 
             <!-- CRÉDITOS DE ICONOS - CLOVER -->

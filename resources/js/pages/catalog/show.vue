@@ -50,6 +50,7 @@ const props = defineProps<{
 
 const imageDialog = ref<HTMLDialogElement | null>(null);
 const coverHasError = ref(false);
+const hasOpenedImage = ref(false);
 const enlargedCoverHasError = ref(false);
 
 const brokenExpansionIds = ref<number[]>([]);
@@ -83,8 +84,12 @@ const toggleDescription = async (event: MouseEvent) => {
 };
 
 const openImage = () => {
+    const dialog = imageDialog.value;
+    if (!dialog || dialog.open) return;
+
+    dialog.showModal();
+    hasOpenedImage.value = true;
     enlargedCoverHasError.value = false;
-    imageDialog.value?.showModal();
 };
 
 const closeImage = () => {
@@ -284,13 +289,13 @@ const tutorialUrl = (game: Game): string =>
                         </div>
 
                         <img
-                            v-if="game.image_url && !enlargedCoverHasError"
+                            v-if="hasOpenedImage && game.image_url && !enlargedCoverHasError"
                             :src="game.image_url"
                             :alt="`Portada ampliada de ${game.name}`"
                             @error="enlargedCoverHasError = true"
                             class="min-h-0 w-full object-contain"
                         />
-                        <p v-else role="status" class="py-8 text-center text-sm text-zinc-600">
+                        <p v-else-if="hasOpenedImage" role="status" class="py-8 text-center text-sm text-zinc-600">
                             No se ha podido cargar la portada ampliada.
                         </p>
                     </div>
@@ -560,7 +565,7 @@ const tutorialUrl = (game: Game): string =>
             </div>
         </main>
 
-        <footer class="relative z-50 mt-12 border-t border-zinc-200 bg-[#f7f7f5] py-8 text-center text-sm text-zinc-500">
+        <footer class="relative mt-12 border-t border-zinc-200 bg-[#f7f7f5] py-8 text-center text-sm text-zinc-500">
             <span class="block sm:inline">Juegos de mesa · Biblioteca compartida</span>
 
             <!-- CRÉDITOS DE ICONOS - CLOVER -->
