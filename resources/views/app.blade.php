@@ -117,6 +117,10 @@
                 $previewTitle = '🎲 Catálogo de juegos · Clover';
                 $previewDescription = 'Explora los juegos de mesa de Clover, consulta sus fichas, filtra por jugadores y encuentra tutoriales.';
             }
+
+            if (request()->routeIs('catalog.public', 'catalog.games.show')) {
+                $previewImage ??= asset('images/catalog-shelf-comic.webp');
+            }
         @endphp
 
         @if (is_array($publicPoll) || is_array($publicCatalogGame) || $publicCatalogIndex)

@@ -135,7 +135,7 @@ test('la ficha publica tiene metadatos personalizados para WhatsApp', function (
         );
 });
 
-test('la ficha publica sin portada no genera imagen Open Graph', function () {
+test('la ficha publica sin portada usa la imagen de reserva en Open Graph', function () {
     $this->get(route('catalog.games.show', [
         $this->token, $this->game->id,
     ]))
@@ -144,7 +144,7 @@ test('la ficha publica sin portada no genera imagen Open Graph', function () {
             'property="og:title" content="🎲 The White Castle · Clover"',
             false
         )
-        ->assertDontSee('property="og:image"', false);
+        ->assertSee('property="og:image" content="'.e(asset('images/catalog-shelf-comic.webp')).'"', false);
 });
 
 

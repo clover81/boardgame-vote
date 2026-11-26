@@ -168,6 +168,7 @@ test('el catalogo publico tiene su vista previa de WhatsApp', function () {
             'property="og:description" content="Explora los juegos de mesa de Clover, consulta sus fichas, filtra por jugadores y encuentra tutoriales."',
             false
         )
+        ->assertSee('property="og:image" content="'.e(asset('images/catalog-shelf-comic.webp')).'"', false)
         ->assertDontSee(
             'name="robots" content="noindex, nofollow"',
             false
