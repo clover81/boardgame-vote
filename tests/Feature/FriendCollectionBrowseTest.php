@@ -116,6 +116,17 @@ test('no se puede leer un juego que no pertenece a la coleccion seleccionada', f
         ->assertNotFound();
 });
 
+test('la ficha de amigos devuelve 404 para juegos inactivos e identificadores no numericos', function () {
+    $this->game->update(['is_active' => false]);
+
+    $this->actingAs($this->friend)
+        ->get(route('friends.collections.games.show', [$this->collection, $this->game]))
+        ->assertNotFound();
+
+    $this->get(route('friends.collections.games.show', [$this->collection, 'no-es-un-id']))
+        ->assertNotFound();
+});
+
 test('los visitantes sin sesion no pueden consultar colecciones de amigos', function () {
     $this->get(route('friends.collections.index', $this->collection))
         ->assertRedirect(route('login'));

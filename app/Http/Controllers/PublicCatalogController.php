@@ -100,7 +100,7 @@ class PublicCatalogController extends Controller
                     ->where('game_collections.is_public', true)
                     ->orderBy('game_collections.name'),
             ])
-            ->firstOrFail();
+            ->firstOrFail(Game::CATALOG_DETAIL_COLUMNS);
 
         // Mostrar expansiones de colecciones publicas del propietario.
         // Mantener tambien las expansiones informativas sin coleccion.

@@ -28,6 +28,8 @@ test('guests only receive active games and public collections belonging to the c
     // Shared membership must neither duplicate games nor expose private memberships.
     $games[0]->update([
         'complexity' => 0,
+        'full_description' => 'Descripción completa',
+        'additional_information' => 'Información adicional',
         'bgg_url' => 'https://boardgamegeek.com/boardgame/1',
         'youtube_url' => 'https://www.youtube.com/watch?v=tutorial',
     ]);
@@ -68,6 +70,8 @@ test('guests only receive active games and public collections belonging to the c
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('catalog/show')
+            ->where('game.full_description', 'Descripción completa')
+            ->where('game.additional_information', 'Información adicional')
             ->where('game.complexity', null)
             ->where('game.ideal_player_counts', [2, 3])
         );

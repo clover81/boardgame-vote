@@ -393,7 +393,7 @@ Route::middleware(Authenticate::class)->group(function () {
     Route::get(
         '/friends/collections/{collection}/games/{game}',
         [\App\Http\Controllers\FriendCollectionController::class, 'show']
-    )->name('friends.collections.games.show');
+    )->whereNumber('game')->name('friends.collections.games.show');
 
     Route::post(
         '/collections',

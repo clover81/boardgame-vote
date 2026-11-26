@@ -70,19 +70,20 @@ class FriendCollectionController extends Controller
         ]);
     }
 
-    public function show(Request $request, GameCollection $collection, Game $game): Response
+    public function show(Request $request, GameCollection $collection, string $game): Response
     {
         $this->authorizeFriend($request, $collection);
 
-        abort_unless(
-            $game->is_active && $collection->games()->whereKey($game->id)->exists(),
-            404
-        );
-
-        $game->load([
-            'idealPlayerCounts:id,game_id,player_count',
-            'expansions' => fn ($query) => $query->forCatalog([$collection->id]),
-        ]);
+        $game = $collection->games()
+            ->where('games.is_active', true)
+            ->with([
+                'idealPlayerCounts:id,game_id,player_count',
+                'expansions' => fn ($query) => $query->forCatalog([$collection->id]),
+            ])
+            ->findOrFail($game, array_map(
+                fn (string $column) => 'games.'.$column,
+                Game::CATALOG_DETAIL_COLUMNS,
+            ));
 
         return Inertia::render('catalog/show', [
             'catalogToken' => 'friends-'.$collection->id,

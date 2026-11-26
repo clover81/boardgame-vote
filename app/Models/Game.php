@@ -51,6 +51,12 @@ class Game extends Model
         'youtube_url',
     ];
 
+    public const CATALOG_DETAIL_COLUMNS = [
+        ...self::CATALOG_CARD_COLUMNS,
+        'full_description',
+        'additional_information',
+    ];
+
     protected $fillable = [
         'bgg_id',
         'name',
