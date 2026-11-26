@@ -150,9 +150,21 @@ test('changing a vote replaces both choices without changing another participant
 test('closed and draft polls reject votes without removing earlier choices', function ($status) {
     $this->poll->update(['status' => $status]);
 
-    $this->from($this->publicUrl)->post($this->voteUrl, $this->payload)
+    $response = $this->from(route('login'))->post($this->voteUrl, $this->payload)
         ->assertRedirect($this->publicUrl)
-        ->assertSessionHasErrors(['vote' => 'La votación ya no está abierta.']);
+        ->assertSessionHasErrors(['vote' => 'La votación ya no está abierta.'])
+        ->assertCookie(config('session.cookie'));
+
+    $sessionCookie = $response->getCookie(config('session.cookie'), false);
+    $this->withoutVite();
+    $this->withUnencryptedCookie($sessionCookie->getName(), $sessionCookie->getValue())
+        ->get($this->publicUrl)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('vote/show')
+            ->where('poll.status', $status)
+            ->where('errors.vote', 'La votación ya no está abierta.')
+        );
 
     expect($this->participant->votes()->orderBy('position')->get()->toArray())->toBe($this->originalVotes);
 })->with(['closed', 'draft']);
@@ -235,7 +247,7 @@ test('a poll without candidates rejects voting before validating choices and pre
     ]);
     $this->poll->candidates()->delete();
 
-    $this->from($this->publicUrl)->post($this->voteUrl, [])
+    $this->from(route('login'))->post($this->voteUrl, [])
         ->assertRedirect($this->publicUrl)
         ->assertSessionHasErrors(['vote' => 'La votación no tiene juegos candidatos.']);
 
@@ -384,7 +396,7 @@ test('the owner can change the voting mode before the first vote without replaci
     expect($this->poll->candidates()->count())->toBe(3);
 
     $this->poll->update(['status' => 'open']);
-    $this->from($this->publicUrl)->post($this->voteUrl, $this->payload + ['single_choice' => false])
+    $this->from(route('login'))->post($this->voteUrl, $this->payload + ['single_choice' => false])
         ->assertRedirect($this->publicUrl)
         ->assertSessionHasErrors('vote');
     $this->assertDatabaseCount('votes', 0);

@@ -711,8 +711,13 @@ class PublicPollController extends Controller
                 ->where('vote_token', $voteToken)
                 ->firstOrFail();
 
+            $participantUrl = route('vote.participant.show', [
+                'token' => $token,
+                'voteToken' => $voteToken,
+            ]);
+
             if ($poll->status !== 'open') {
-                return back()->withErrors([
+                return redirect($participantUrl)->withErrors([
                     'vote' => 'La votación ya no está abierta.',
                 ]);
             }
@@ -720,7 +725,7 @@ class PublicPollController extends Controller
             $candidateIds = $poll->candidates()->pluck('id');
 
             if ($candidateIds->isEmpty()) {
-                return back()->withErrors([
+                return redirect($participantUrl)->withErrors([
                     'vote' => 'La votación no tiene juegos candidatos.',
                 ]);
             }
@@ -737,7 +742,7 @@ class PublicPollController extends Controller
                 isset($validated['single_choice']) &&
                 (bool) $validated['single_choice'] !== $poll->single_choice
             ) {
-                return back()->withErrors([
+                return redirect($participantUrl)->withErrors([
                     'vote' => 'Ha cambiado el modo de votación. Revisa y confirma de nuevo.',
                 ]);
             }
@@ -748,7 +753,7 @@ class PublicPollController extends Controller
                 isset($validated['ranking_slots']) &&
                 (int) $validated['ranking_slots'] !== $requiredCount
             ) {
-                return back()->withErrors([
+                return redirect($participantUrl)->withErrors([
                     'vote' => 'Ha cambiado el número de preferencias. Revisa tu voto.',
                 ]);
             }
@@ -765,7 +770,7 @@ class PublicPollController extends Controller
                 $field = $fields[$position];
 
                 if (empty($validated[$field])) {
-                    return back()->withErrors([
+                    return redirect($participantUrl)->withErrors([
                         $field => 'Debes seleccionar esta preferencia.',
                     ]);
                 }
@@ -775,7 +780,7 @@ class PublicPollController extends Controller
                 abort_unless($candidateIds->contains($candidateId), 422);
 
                 if (in_array($candidateId, $selected, true)) {
-                    return back()->withErrors([
+                    return redirect($participantUrl)->withErrors([
                         $field => $position === 2
                             ? 'La primera y segunda opción deben ser distintas.'
                             : 'No puedes elegir dos veces el mismo juego.',
@@ -796,10 +801,7 @@ class PublicPollController extends Controller
                 ]);
             }
 
-            return redirect()->route('vote.participant.show', [
-                'token' => $token,
-                'voteToken' => $voteToken,
-            ])->with('success', 'Voto guardado correctamente.');
+            return redirect($participantUrl)->with('success', 'Voto guardado correctamente.');
         });
     }
 }
