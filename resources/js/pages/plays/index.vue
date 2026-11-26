@@ -185,7 +185,19 @@ watch([games, players], ([availableGames, availablePlayers]) => {
 const normalizeHistorySearch = (value: string): string =>
     value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
+const historySearchTerms = computed(() =>
+    normalizeHistorySearch(search.value).split(/\s+/).filter(Boolean)
+);
+
 const historyFiltersKey = `play-history-filters:${usePage().props.auth.user?.id}`;
+const historyPositionContext = computed(() => JSON.stringify([
+    historyFiltersKey,
+    [...historySearchTerms.value].sort().join(' '),
+    selectedGameId.value,
+    selectedPlayerId.value,
+    sortBy.value,
+    showAdvancedFilters.value,
+]));
 
 onMounted(() => {
     try {
@@ -238,7 +250,7 @@ const searchablePlayText = computed(() => new Map(props.plays.map(play => [
 ])));
 
 const filteredPlays = computed(() => {
-    const terms = normalizeHistorySearch(search.value).split(/\s+/).filter(Boolean);
+    const terms = historySearchTerms.value;
     const gameId = selectedGameId.value;
     const playerId = selectedPlayerId.value;
     const plays = sortedPlays.value;
@@ -832,7 +844,7 @@ const confirmDeletePlay = () => {
                     </Link>
                 </div>
             </div>
-            <ScrollToTopProgress compact-on-mobile />
+            <ScrollToTopProgress :position-context="historyPositionContext" compact-on-mobile />
         </div>
         <Dialog v-model:open="deletePlayDialogOpen">
             <DialogContent class="sm:max-w-md" @close-auto-focus="restoreDeleteFocus">

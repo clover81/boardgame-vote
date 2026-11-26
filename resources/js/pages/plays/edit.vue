@@ -223,6 +223,12 @@ watch(
     }
 );
 
+const preventSearchSubmit = (event: KeyboardEvent) => {
+    if (!event.isComposing) {
+        event.preventDefault();
+    }
+};
+
 const saveError = ref<HTMLDivElement | null>(null);
 
 const submit = () => {
@@ -245,6 +251,7 @@ const submit = () => {
         preserveScroll: 'errors',
         onError: async () => {
             await nextTick();
+            saveError.value?.scrollIntoView({ block: 'center' });
             saveError.value?.focus({ preventScroll: true });
         },
     });
@@ -344,6 +351,7 @@ const submit = () => {
                             id="edit-play-game-search"
                             ref="gameSearchInput"
                             v-model="gameSearch"
+                            @keydown.enter="preventSearchSubmit"
                             type="search"
                             autocomplete="off"
                             placeholder="Escribe el nombre del juego..."
