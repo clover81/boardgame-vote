@@ -31,16 +31,16 @@ class PlayController extends Controller
                 $request->user()->id
             )
             ->with([
-                'game',
-                'players',
-                'expansion',
+                'game:id,name,image_url',
+                'players' => fn ($query) => $query->select('players.id', 'players.name'),
+                'expansion:id,name',
                 'poll' => fn ($query) => $query
                     ->where('created_by', $request->user()->id)
                     ->select('id', 'name'),
             ])
             ->orderByDesc('played_at')
             ->orderByDesc('id')
-            ->get();
+            ->get(['id', 'game_id', 'expansion_id', 'poll_id', 'played_at', 'notes']);
 
         $uniqueGames = $plays
             ->pluck('game_id')

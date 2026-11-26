@@ -99,11 +99,21 @@ test('multiple games create separate plays with shared details and only their ow
             );
     }
 
+    $winnerId = $this->players->first()->id;
+    $plays[1]->players()->updateExistingPivot($winnerId, ['is_winner' => true]);
+
     $this->get(route('plays.index'))->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->has('plays', 2)
             ->where('plays.0.game.name', 'The White Castle')
             ->where('plays.0.expansion.name', 'Matcha')
+            ->where('plays.0.notes', $this->payload['notes'])
+            ->where('plays.0.poll', ['id' => $this->poll->id, 'name' => $this->poll->name])
+            ->where('plays.0.players', $this->players->map(fn ($player) => [
+                'id' => $player->id,
+                'name' => $player->name,
+                'is_winner' => $player->id === $winnerId,
+            ])->all())
             ->where('plays.1.game.name', 'Sky Team')
             ->where('plays.1.expansion', null)
         );

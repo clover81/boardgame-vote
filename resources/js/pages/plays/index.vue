@@ -228,15 +228,10 @@ watch([search, selectedGameId, selectedPlayerId, sortBy, showAdvancedFilters], (
     }
 });
 
-const sortedPlays = computed(() => {
-    const direction = sortBy.value === 'newest' ? -1 : 1;
-
-    return [...props.plays].sort((a, b) => {
-        if (a.played_at === b.played_at) return (a.id - b.id) * direction;
-
-        return (a.played_at < b.played_at ? -1 : 1) * direction;
-    });
-});
+// El servidor ordena por fecha e ID descendentes.
+const sortedPlays = computed(() =>
+    sortBy.value === 'oldest' ? [...props.plays].reverse() : props.plays
+);
 
 const searchablePlayText = computed(() => new Map(props.plays.map(play => [
     play.id,
