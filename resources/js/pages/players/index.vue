@@ -1,6 +1,6 @@
 
 <script setup lang="ts">
-import { playerNameColor } from '@/lib/player-colors';
+import { playerMeepleColor, playerNameColor } from '@/lib/player-colors';
 import MeepleIcon from '@/components/icons/MeepleIcon.vue';
 import PencilSparklesIcon from '@/components/icons/PencilSparklesIcon.vue';
 import PlayingCardsFanIcon from '@/components/icons/PlayingCardsFanIcon.vue';
@@ -61,7 +61,7 @@ const togglePlayer = (player: Player) => {
                     <div class="flex min-w-0 items-center gap-3.5">
                         <span
                             class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-200 bg-violet-50 shadow-sm transition-colors duration-200 group-hover:border-violet-300 dark:border-zinc-700 dark:bg-zinc-900"
-                            :class="playerNameColor(player.name, player.color)"
+                            :class="playerMeepleColor(player.name, player.color)"
                             aria-hidden="true"
                         >
                             <MeepleIcon class="h-8 w-8 shrink-0" />

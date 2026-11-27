@@ -328,12 +328,12 @@ const resultText = computed(() => {
     const finalWinner = finalTieBreakWinner.value;
     const tied = results.filter(result => result.is_top_tie);
 
-    const score = (points: number) => {
+    const score = (points: number, compact = false) => {
         const unit = props.poll.single_choice || props.poll.ranking_slots === 1
             ? (points === 1 ? 'voto' : 'votos')
-            : (points === 1 ? 'punto' : 'puntos');
+            : (points === 1 ? 'punto' : compact ? 'pts' : 'puntos');
 
-        return `${points} ${unit}`;
+        return `${points}\u00A0${unit}`;
     };
 
     if (!results.length) return 'La votación terminó sin votos.';
@@ -385,7 +385,7 @@ const resultText = computed(() => {
 
     for (const result of results) {
         if (result === winner || result.is_top_tie) continue;
-        lines.push(`${result.rank}.º ${result.game.name} · ${score(result.points)}`);
+        lines.push(`${result.rank}.º\u00A0·\u00A0${score(result.points, true)} — ${result.game.name}`);
     }
 
     // Cada jugador consulta los tutoriales desde su propio enlace.

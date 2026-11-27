@@ -2,7 +2,7 @@
 export const playerColorOptions = [
     { id: 'violet', label: 'Morado', swatch: 'bg-violet-500', text: 'text-violet-700 dark:text-violet-300' },
     { id: 'pink', label: 'Rosa', swatch: 'bg-pink-500', text: 'text-pink-700 dark:text-pink-300' },
-    { id: 'yellow', label: 'Amarillo', swatch: 'bg-yellow-400', text: 'text-amber-700 dark:text-yellow-300' },
+    { id: 'yellow', label: 'Amarillo', swatch: 'bg-yellow-400', text: 'text-[#806600] dark:text-yellow-300' },
     { id: 'teal', label: 'Turquesa', swatch: 'bg-teal-400', text: 'text-teal-700 dark:text-teal-300' },
     { id: 'blue', label: 'Azul', swatch: 'bg-blue-500', text: 'text-blue-700 dark:text-blue-300' },
     { id: 'green', label: 'Verde', swatch: 'bg-green-500', text: 'text-green-700 dark:text-green-300' },
