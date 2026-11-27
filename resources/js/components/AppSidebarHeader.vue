@@ -88,7 +88,7 @@ const currentSection = computed(() => {
 
 <template>
     <header
-        class="flex h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4 sm:px-6"
+        class="clover-topbar flex h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4 sm:px-6"
     >
         <SidebarTrigger
             class="-ml-1 h-11 w-11 shrink-0 rounded-lg hover:bg-[#5200FF]/10 lg:h-7 lg:w-7"
@@ -99,7 +99,7 @@ const currentSection = computed(() => {
         <div class="flex min-w-0 items-center gap-2">
             <component
                 :is="currentSection.icon"
-                class="size-4 shrink-0 text-[#CCFF00]"
+                class="clover-section-icon size-4 shrink-0 text-[#CCFF00]"
             />
 
             <span class="truncate text-sm font-semibold text-foreground/85">

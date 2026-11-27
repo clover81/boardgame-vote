@@ -339,26 +339,21 @@ const resultText = computed(() => {
     if (!results.length) return 'La votación terminó sin votos.';
 
     const sessionLabel = props.poll.is_second_game
-        ? 'Juego 2 de 2'
+        ? 'Juego 2/2'
         : props.poll.linked_poll
-            ? 'Juego 1 de 2'
+            ? 'Juego 1/2'
             : null;
 
     const cleanName = sessionLabel
         ? props.poll.name.replace(/\s*[·–—-]\s*Juego\s*[12]\s*$/i, '').trim()
         : props.poll.name.trim();
 
-    const title = sessionLabel
-        ? `${cleanName} · ${sessionLabel}`
-        : cleanName;
-
-    const lines: string[] = [
-        `🎲 *${title}*`,
-        '',
-    ];
+    const lines = [`🎲 *${cleanName}*`];
+    if (sessionLabel) lines.push(sessionLabel);
+    lines.push('');
 
     if (winner) {
-        lines.push(`🏆 *${winner.game.name}* gana con *${score(winner.points)}*`);
+        lines.push(`🏆 *${winner.game.name}* · ${score(winner.points)}`);
         if (secondPreferenceTieBreak.value) {
             const tie = secondPreferenceTieBreak.value;
             lines.push(
@@ -390,21 +385,14 @@ const resultText = computed(() => {
 
     for (const result of results) {
         if (result === winner || result.is_top_tie) continue;
-        lines.push(`${result.rank}. ${result.game.name} · ${score(result.points)}`);
+        lines.push(`${result.rank}.º ${result.game.name} · ${score(result.points)}`);
     }
 
-    // Cada jugador conserva su propio enlace personal.
-    // No compartimos tokens privados en el mensaje grupal.
-    const gamesReminder = winner || finalWinner
-        ? 'el ganador y los demás juegos'
-        : 'todos los juegos candidatos';
-
+    // Cada jugador consulta los tutoriales desde su propio enlace.
     lines.push(
         '',
-        '🎬 *Tutoriales para la partida:*',
-        `Desde vuestro enlace personal de votación (el mismo que usasteis para votar) podéis consultar ${gamesReminder}, ver sus vídeos disponibles o buscar los que falten en YouTube.`,
-        '',
-        '¡Échales un vistazo antes de la partida!'
+        '🎬 Tutoriales en vuestro enlace personal de votación.',
+        '¡Échales un vistazo antes de la partida!',
     );
 
     return lines.join('\n');

@@ -172,3 +172,73 @@
         @apply bg-background text-foreground;
     }
 }
+
+html[data-ui-palette="original"] {
+    --clover-soft: #f1edf8;
+    --clover-hover: #e7e0f3;
+    --clover-ink: #4b356b;
+    --clover-focus: #684b94;
+    --clover-border: #dcd2e9;
+    --clover-accent: #684b94;
+    --clover-surface: #faf8fc;
+}
+
+html.dark[data-ui-palette="original"] {
+    --clover-soft: #2a2237;
+    --clover-hover: #362a46;
+    --clover-ink: #eee5fa;
+    --clover-focus: #bb9ae8;
+    --clover-border: #4b3c5c;
+    --clover-accent: #CCFF00;
+    --clover-surface: #17131d;
+}
+
+html[data-ui-palette="original"] .clover-topbar {
+    background: var(--clover-surface);
+    border-color: var(--clover-border);
+}
+
+html[data-ui-palette="original"] .clover-section-icon {
+    color: var(--clover-ink);
+}
+
+html[data-ui-palette="original"] .clover-nav-item:hover,
+html[data-ui-palette="original"] .clover-nav-item[data-active="true"] {
+    background: var(--clover-soft);
+    color: var(--clover-ink);
+}
+
+html[data-ui-palette="original"] .clover-nav-item[data-active="true"] {
+    box-shadow: inset 3px 0 var(--clover-accent);
+}
+
+html[data-ui-palette="original"] :is(.clover-primary, .clover-brand) {
+    background: #4b356b;
+    color: #fff;
+}
+
+html[data-ui-palette="original"] .clover-primary:hover,
+html[data-ui-palette="original"] .clover-primary:active {
+    background: #5b427e;
+    color: #fff;
+}
+
+html[data-ui-palette="original"] .clover-secondary {
+    border-color: var(--clover-border);
+    background: var(--clover-soft);
+    color: var(--clover-ink);
+    box-shadow: none;
+}
+
+html[data-ui-palette="original"] .clover-secondary:hover {
+    background: var(--clover-hover);
+}
+
+html[data-ui-palette="original"] .clover-secondary-icon {
+    color: var(--clover-ink);
+}
+
+html[data-ui-palette="original"] :is(.clover-primary, .clover-secondary, .clover-nav-item):focus-visible {
+    outline: 2px solid var(--clover-focus);
+    outline-offset: 2px;
+}

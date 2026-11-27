@@ -592,7 +592,7 @@ const confirmPollDeletion = () => {
                             </div>
 
                             <div
-                                class="mt-3 flex flex-wrap gap-4 text-sm text-zinc-500"
+                                class="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-zinc-600 dark:text-zinc-400"
                             >
                                 <span>
                                     <UsersRound class="mr-1 inline-block size-4 shrink-0 align-[-0.15em] text-[#6D28D9] dark:text-[#C4B5FD]" :stroke-width="2.2" role="img" aria-label="Jugadores" />
@@ -630,11 +630,11 @@ const confirmPollDeletion = () => {
                         <!-- ACCIONES -->
 
                         <div
-                            class="flex flex-wrap gap-2"
+                            class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center"
                         >
                             <Link
                                 :href="withPollListReturn(`/polls/${poll.id}`)"
-                                class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#5200FF] px-4 py-2.5 text-center text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#4000cc] hover:shadow-md hover:shadow-violet-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                                class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#5200FF] max-sm:col-span-2 px-4 py-2.5 text-center text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-[#4000cc] hover:shadow-md hover:shadow-violet-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                             >
                                 {{
                                     poll.status === 'closed'
@@ -652,7 +652,7 @@ const confirmPollDeletion = () => {
                                     poll.status === 'draft'
                                 "
                                 :href="`/polls/create?parent_poll_id=${poll.id}`"
-                                class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#CCFF00] px-4 py-2.5 text-center text-sm font-black text-black transition hover:bg-lime-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                                class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#CCFF00] px-2 sm:px-4 py-2.5 text-center text-sm font-black text-black transition hover:bg-lime-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                             >
                                 Preparar juego 2
                             </Link>
@@ -660,7 +660,7 @@ const confirmPollDeletion = () => {
                             <Link
                                 v-if="poll.tie_break_for_poll_id !== null"
                                 :href="withPollListReturn(`/polls/${poll.tie_break_for_poll_id}`)"
-                                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-violet-300 px-4 py-2.5 text-center text-sm font-bold text-[#5200FF] hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300"
+                                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-violet-300 px-2 sm:px-4 py-2.5 text-center text-sm font-bold text-[#5200FF] hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300"
                             >
                                 Ver votación original
                             </Link>
@@ -668,14 +668,14 @@ const confirmPollDeletion = () => {
                             <Link
                                 v-if="poll.linked_poll_id"
                                 :href="withPollListReturn(`/polls/${poll.linked_poll_id}`)"
-                                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-violet-300 px-4 py-2.5 text-center text-sm font-bold text-[#5200FF] transition hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-950"
+                                class="inline-flex min-h-11 flex-col items-center sm:flex-row justify-center rounded-xl border border-violet-300 px-2 sm:px-4 py-2.5 text-center text-sm font-bold text-[#5200FF] transition hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-950"
                             >
-                                {{ poll.session_position === 1 ? 'Ver juego 2' : 'Ver juego 1' }}
+                                <span>{{ poll.session_position === 1 ? 'Ver juego 2' : 'Ver juego 1' }}</span>
                                 <span
                                     v-if="linkedPollStatusLabel(poll)"
-                                    class="ml-1 text-xs font-medium opacity-80"
+                                    class="block text-xs font-medium leading-tight sm:ml-1 sm:inline"
                                 >
-                                    · {{ linkedPollStatusLabel(poll) }}
+                                    <span class="hidden sm:inline" aria-hidden="true">· </span>{{ linkedPollStatusLabel(poll) }}
                                 </span>
                             </Link>
 
@@ -687,17 +687,17 @@ const confirmPollDeletion = () => {
                                     poll.tie_break_for_poll_id === null
                                 "
                                 :href="withPollListReturn(`/polls/${poll.id}/register-play`)"
-                                class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#CCFF00] px-4 py-2.5 text-center text-sm font-black text-black transition-all duration-200 hover:bg-lime-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                                class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#CCFF00] px-2 sm:px-4 py-2.5 text-center text-sm font-black text-black transition-all duration-200 hover:bg-lime-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                             >
-                                <PlayingCardsFanIcon class="mr-1 inline-block size-4 shrink-0 align-[-0.14em] text-violet-600 dark:text-violet-300" aria-hidden="true" /> Registrar partida
+                                <span>Registrar partida</span>
                             </Link>
 
-                            <div class="flex max-w-sm flex-col gap-1">
+                            <div class="col-span-2 flex flex-col items-start gap-1 border-t border-zinc-200 pt-1 dark:border-zinc-800 sm:max-w-sm sm:border-0 sm:pt-0">
                                 <button
                                     v-if="poll.delete_block_reason === null"
                                     type="button"
                                     :disabled="deletingPollId !== null"
-                                    class="inline-flex min-h-11 items-center justify-center rounded-xl border border-red-300 px-4 py-2.5 text-sm font-bold text-red-700 transition hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:opacity-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+                                    class="inline-flex min-h-11 items-center justify-center rounded-lg px-2 py-2 text-sm font-semibold text-red-700 underline-offset-4 transition hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:opacity-50 dark:text-red-300"
                                     @click="requestPollDeletion(poll)"
                                 >
                                     Eliminar votación

@@ -325,16 +325,16 @@ const formatDate = (date: string | null): string => {
                     <Link
                         :href="`/polls/create?back=${encodeURIComponent(gamesReturnUrl)}`"
                         @start="cancelSearchTimer"
-                        class="inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-[#5200FF]/35 bg-[#5200FF]/5 px-4 py-2 font-bold text-[#5200FF] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#5200FF] hover:bg-[#5200FF]/10 hover:shadow-[0_8px_22px_rgba(82,0,255,0.16)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none dark:border-[#CCFF00]/45 dark:bg-[#5200FF]/10 dark:text-[#CCFF00] dark:hover:bg-[#5200FF]/20"
+                        class="clover-secondary inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-[#5200FF]/35 bg-[#5200FF]/5 px-4 py-2 font-bold text-[#5200FF] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#5200FF] hover:bg-[#5200FF]/10 hover:shadow-[0_8px_22px_rgba(82,0,255,0.16)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] motion-reduce:transform-none dark:border-[#CCFF00]/45 dark:bg-[#5200FF]/10 dark:text-[#CCFF00] dark:hover:bg-[#5200FF]/20"
                     >
-                        <RollingDicesIcon class="size-7 shrink-0 text-[#5200FF] dark:text-[#CCFF00]" aria-hidden="true" />
+                        <RollingDicesIcon class="clover-secondary-icon size-7 shrink-0 text-[#5200FF] dark:text-[#CCFF00]" aria-hidden="true" />
                         <span>Nueva votación</span>
                     </Link>
 
                     <Link
                         :href="`/games/create?back=${encodeURIComponent(gamesReturnUrl)}${selectedCollectionId === null ? '' : `&collection_id=${selectedCollectionId}`}`"
                         @start="cancelSearchTimer"
-                        class="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#5200FF] px-5 py-2.5 font-bold text-white transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
+                        class="clover-primary inline-flex min-h-12 items-center justify-center rounded-xl bg-[#5200FF] px-5 py-2.5 font-bold text-white transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                     >
                         + Añadir juego
                     </Link>

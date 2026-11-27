@@ -64,7 +64,7 @@ const mainNavItems: NavItem[] = [
                     <SidebarMenuButton size="lg" as-child>
                         <Link href="/games" @click="closeMobileSidebar">
                             <div
-                                class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#5200FF]"
+                                class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#5200FF] clover-brand"
                             >
                                 <Dices class="size-5 text-[#CCFF00] palette-sidebar-primary-icon" />
                             </div>
@@ -87,7 +87,7 @@ const mainNavItems: NavItem[] = [
                     <SidebarMenuButton
                         as-child
                         tooltip="Crear votación"
-                        class="h-11 rounded-xl bg-[#5200FF] px-3 font-bold text-white hover:bg-[#4200D0] hover:text-white active:bg-[#4200D0] active:text-white"
+                        class="clover-primary h-11 rounded-xl bg-[#5200FF] px-3 font-bold text-white hover:bg-[#4200D0] hover:text-white active:bg-[#4200D0] active:text-white"
                     >
                         <Link href="/polls/create" @click="closeMobileSidebar">
                             <Vote class="size-4 text-[#CCFF00] palette-sidebar-primary-icon" />

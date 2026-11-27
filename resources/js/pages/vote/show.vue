@@ -875,20 +875,29 @@ const myChoiceLabel = (candidateId: number): string | null => {
                     Ver juegos y tutoriales
                 </a>
 
-                <p
-                    v-if="hasRecordedVotes"
-                    class="mt-2 text-zinc-500"
-                >
-                    {{
-                        needsThirdChoice
-                            ? 'Primera opción: 3 puntos · Segunda: 2 · Tercera: 1'
-                            : poll.single_choice || poll.ranking_slots === 1
-                                ? 'Un voto por persona.'
-                                : needsSecondChoice
-                                    ? 'Primera opción: 2 puntos · Segunda opción: 1 punto'
-                                    : 'Cada voto vale 2 puntos'
-                    }}
-                </p>
+                <div v-if="hasRecordedVotes" class="mt-2 text-sm text-zinc-600">
+                    <ul
+                        v-if="needsSecondChoice"
+                        aria-label="Puntuación por preferencia"
+                        class="flex flex-wrap gap-2"
+                    >
+                        <li class="rounded-lg bg-zinc-100 px-2.5 py-1">
+                            1.ª opción · <span class="whitespace-nowrap font-semibold">{{ preferencePointsLabel(1) }}</span>
+                        </li>
+                        <li class="rounded-lg bg-zinc-100 px-2.5 py-1">
+                            2.ª opción · <span class="whitespace-nowrap font-semibold">{{ preferencePointsLabel(2) }}</span>
+                        </li>
+                        <li v-if="needsThirdChoice" class="rounded-lg bg-zinc-100 px-2.5 py-1">
+                            3.ª opción · <span class="whitespace-nowrap font-semibold">{{ preferencePointsLabel(3) }}</span>
+                        </li>
+                    </ul>
+                    <p v-else>
+                        <template v-if="poll.single_choice || poll.ranking_slots === 1">Un voto por persona.</template>
+                        <template v-else>
+                            Cada voto vale <span class="whitespace-nowrap font-semibold">{{ preferencePointsLabel(1) }}</span>.
+                        </template>
+                    </p>
+                </div>
 
                 <div
                     v-if="hasRecordedVotes"
@@ -899,9 +908,9 @@ const myChoiceLabel = (candidateId: number): string | null => {
                         class="overflow-hidden rounded-2xl border border-lime-200 bg-[#F7FAED] p-4 text-zinc-900 shadow-sm sm:p-5"
                     >
                         <span
-                            class="inline-flex items-center rounded-full border border-lime-300 bg-lime-100 px-3 py-1.5 text-xs font-black text-lime-950"
+                            class="inline-flex items-center gap-1.5 rounded-full bg-[#CCFF00] px-3 py-1.5 text-xs font-black text-zinc-950"
                         >
-                            <Trophy class="mr-1 inline-block size-4 shrink-0 align-[-0.15em]" :stroke-width="2.2" aria-hidden="true" /> Juego ganador
+                            <Trophy class="size-4 shrink-0 text-[#5200FF]" :stroke-width="2.2" aria-hidden="true" /> Juego ganador
                         </span>
 
                         <div class="mt-4 flex min-w-0 items-start gap-4 sm:gap-5">
@@ -1042,7 +1051,10 @@ const myChoiceLabel = (candidateId: number): string | null => {
                     <summary class="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 font-bold text-[#5200FF] shadow-sm hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] [&::-webkit-details-marker]:hidden">
                         <span class="inline-flex min-w-0 items-center gap-2">
                             <Medal class="size-5 shrink-0" :stroke-width="2" aria-hidden="true" />
-                            <span>Clasificación completa ({{ results.length }} juegos)</span>
+                            <span>Clasificación<span class="hidden sm:inline"> completa</span></span>
+                            <span class="shrink-0 rounded-md bg-violet-50 px-1.5 text-xs">
+                                {{ results.length }}<span class="sr-only"> {{ results.length === 1 ? 'juego' : 'juegos' }}</span>
+                            </span>
                         </span>
                         <span
                             aria-hidden="true"
@@ -1111,7 +1123,7 @@ const myChoiceLabel = (candidateId: number): string | null => {
                             class="min-w-0 flex-1"
                         >
                             <h3
-                                class="text-lg font-bold"
+                                class="wrap-anywhere text-lg font-bold leading-snug"
                             >
                                 {{
                                     result.game.name
@@ -1131,25 +1143,12 @@ const myChoiceLabel = (candidateId: number): string | null => {
                             </p>
 
                             <p
-                                v-if="!poll.single_choice"
-                                class="mt-1 text-sm text-zinc-500"
+                                v-if="needsSecondChoice"
+                                class="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-xs text-zinc-600 sm:text-sm"
                             >
-                                <Medal class="inline-block size-4 text-[#5200FF]" :stroke-width="2" aria-hidden="true" />
-                                {{
-                                    result.first_votes
-                                }}
-                                primeras
-
-                                ·
-
-                                <Medal class="inline-block size-4 text-[#5200FF]" :stroke-width="2" aria-hidden="true" />
-                                {{
-                                    result.second_votes
-                                }}
-                                segundas
-                                <template v-if="needsThirdChoice">
-                                    · 3.ª: {{ result.third_votes }} terceras
-                                </template>
+                                <span class="whitespace-nowrap">{{ result.first_votes }} primeras</span>
+                                <span class="whitespace-nowrap">{{ result.second_votes }} segundas</span>
+                                <span v-if="needsThirdChoice" class="whitespace-nowrap">{{ result.third_votes }} terceras</span>
                             </p>
                         </div>
 
@@ -1361,9 +1360,9 @@ const myChoiceLabel = (candidateId: number): string | null => {
                             <div class="min-w-0 flex-1">
                                 <p
                                     v-if="candidate.id === sessionWinnerCandidateId"
-                                    class="mb-1 text-xs font-black uppercase text-green-800"
+                                    class="mb-2 inline-flex max-w-full items-center gap-1.5 rounded-full bg-[#CCFF00] px-2.5 py-1 text-xs font-black text-zinc-950"
                                 >
-                                    <Trophy class="mr-1 inline-block size-4 shrink-0 align-[-0.15em]" :stroke-width="2.2" aria-hidden="true" /> Juego ganador
+                                    <Trophy class="size-4 shrink-0 text-[#5200FF]" :stroke-width="2.2" aria-hidden="true" /> Juego ganador
                                 </p>
                                 <p
                                     v-else-if="sessionResult(candidate.id)?.is_top_tie"
@@ -1493,9 +1492,9 @@ const myChoiceLabel = (candidateId: number): string | null => {
                                 <div class="min-w-0 flex-1">
                                     <p
                                         v-if="candidate.is_winner"
-                                        class="mb-1 text-xs font-black text-green-800"
+                                        class="mb-2 inline-flex max-w-full items-center gap-1.5 rounded-full bg-[#CCFF00] px-2.5 py-1 text-xs font-black text-zinc-950"
                                     >
-                                        <Trophy class="mr-1 inline-block size-4 shrink-0 align-[-0.15em]" :stroke-width="2.2" aria-hidden="true" /> Ganador
+                                        <Trophy class="size-4 shrink-0 text-[#5200FF]" :stroke-width="2.2" aria-hidden="true" /> Ganador
                                     </p>
                                     <h4 class="break-words font-black leading-snug">
                                         {{ candidate.game.name }}
