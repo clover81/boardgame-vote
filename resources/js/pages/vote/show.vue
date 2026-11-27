@@ -1299,6 +1299,7 @@ const myChoiceLabel = (candidateId: number): string | null => {
             <section
                 v-if="poll.status === 'closed' || voteSaved"
                 id="session-games"
+                tabindex="-1"
                 aria-labelledby="session-games-title"
                 class="mt-8 scroll-mt-6"
             >
@@ -2055,6 +2056,10 @@ const myChoiceLabel = (candidateId: number): string | null => {
                 </div>
             </template>
         </div>
-        <ScrollToTopProgress :remember-position="false" compact-on-mobile hide-near-bottom />
+        <ScrollToTopProgress
+            :remember-position="false"
+            :hide-near-bottom="poll.status === 'open' && !voteSaved"
+            compact-on-mobile
+        />
     </main>
 </template>
