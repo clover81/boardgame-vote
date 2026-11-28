@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Play;
 use App\Models\Poll;
 use App\Models\Vote;
+use App\Notifications\PollVoteReceived;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -790,6 +791,9 @@ class PublicPollController extends Controller
                 $selected[] = $candidateId;
             }
 
+            $notifyOrganizer = config('mail.poll_vote_notifications')
+                && $participant->votes()->whereBetween('position', [1, $requiredCount])->count() < $requiredCount;
+
             // Sustituye el voto anterior de forma atómica.
             $participant->votes()->delete();
 
@@ -799,6 +803,24 @@ class PublicPollController extends Controller
                     'poll_candidate_id' => $candidateId,
                     'position' => $index + 1,
                 ]);
+            }
+
+            if ($notifyOrganizer) {
+                $completed = $poll->participants()->whereHas(
+                    'votes',
+                    fn ($query) => $query->whereBetween('position', [1, $requiredCount]),
+                    '=',
+                    $requiredCount,
+                )->count();
+                $notification = new PollVoteReceived(
+                    $poll->id,
+                    $poll->name,
+                    $participant->display_name,
+                    $completed,
+                    $poll->participants()->count(),
+                );
+
+                DB::afterCommit(fn () => rescue(fn () => $poll->creator?->notify($notification)));
             }
 
             return redirect($participantUrl)->with('success', 'Voto guardado correctamente.');

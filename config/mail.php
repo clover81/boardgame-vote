@@ -16,6 +16,8 @@ return [
 
     'default' => env('MAIL_MAILER', 'log'),
 
+    'poll_vote_notifications' => env('MAIL_POLL_VOTE_NOTIFICATIONS', false),
+
     /*
     |--------------------------------------------------------------------------
     | Mailer Configurations

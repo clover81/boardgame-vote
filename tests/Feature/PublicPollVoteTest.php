@@ -3,6 +3,8 @@
 use App\Models\Game;
 use App\Models\Poll;
 use App\Models\User;
+use App\Notifications\PollVoteReceived;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -120,6 +122,28 @@ test('a public vote stores both choices with the poll and participant IDs', func
             ->where('poll.voted_participants_count', 1)
             ->where('poll.participants.0.has_voted', true)
         );
+});
+
+test('the organizer gets one email per first complete vote and a closing reminder on the last one', function () {
+    config(['mail.poll_vote_notifications' => true]);
+    Notification::fake();
+    $owner = $this->poll->creator;
+    $this->participant->votes()->where('position', 2)->delete();
+    $other = $this->poll->participants()->create(['display_name' => 'Bea']);
+    $otherUrl = route('vote.participant.store', [$this->poll->token, $other->vote_token]);
+
+    $this->post($this->voteUrl, $this->payload)->assertSessionHasNoErrors();
+    $this->post($this->voteUrl, $this->payload)->assertSessionHasNoErrors();
+    $this->post($otherUrl, $this->payload)->assertSessionHasNoErrors();
+
+    $sent = Notification::sent($owner, PollVoteReceived::class);
+    expect($sent)->toHaveCount(2);
+    expect($sent[0]->playerName)->toBe('Ana')
+        ->and($sent[0]->completed)->toBe(1)
+        ->and($sent[0]->total)->toBe(2);
+    expect($sent[1]->playerName)->toBe('Bea')
+        ->and($sent[1]->completed)->toBe(2)
+        ->and($sent[1]->toMail($owner)->subject)->toBe('Ya puedes cerrar: Votación abierta');
 });
 
 test('changing a vote replaces both choices without changing another participants votes', function () {
