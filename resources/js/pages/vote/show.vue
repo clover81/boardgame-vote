@@ -1146,9 +1146,9 @@ const myChoiceLabel = (candidateId: number): string | null => {
                                 v-if="needsSecondChoice"
                                 class="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-xs text-zinc-600 sm:text-sm"
                             >
-                                <span class="whitespace-nowrap">{{ result.first_votes }} primeras</span>
-                                <span class="whitespace-nowrap">{{ result.second_votes }} segundas</span>
-                                <span v-if="needsThirdChoice" class="whitespace-nowrap">{{ result.third_votes }} terceras</span>
+                                <span class="whitespace-nowrap">{{ result.first_votes }} {{ result.first_votes === 1 ? 'primera' : 'primeras' }}</span>
+                                <span class="whitespace-nowrap">{{ result.second_votes }} {{ result.second_votes === 1 ? 'segunda' : 'segundas' }}</span>
+                                <span v-if="needsThirdChoice" class="whitespace-nowrap">{{ result.third_votes }} {{ result.third_votes === 1 ? 'tercera' : 'terceras' }}</span>
                             </p>
                         </div>
 
@@ -1168,7 +1168,7 @@ const myChoiceLabel = (candidateId: number): string | null => {
                             <p
                                 class="text-xs text-zinc-500"
                             >
-                                {{ poll.single_choice || poll.ranking_slots === 1 ? (result.points === 1 ? 'voto' : 'votos') : 'puntos' }}
+                                {{ poll.single_choice || poll.ranking_slots === 1 ? (result.points === 1 ? 'voto' : 'votos') : (result.points === 1 ? 'punto' : 'puntos') }}
                             </p>
                         </div>
                     </article>
@@ -1419,9 +1419,10 @@ const myChoiceLabel = (candidateId: number): string | null => {
                             {{ candidate.game.short_description }}
                         </p>
 
-                        <div class="mt-auto flex flex-wrap items-center gap-2 pt-4">
+                        <div class="mt-auto flex flex-wrap items-stretch gap-2 pt-4">
                             <a
                                 :href="tutorialUrl(candidate.game)"
+                                :aria-label="`${externalUrl(candidate.game.youtube_url) ? 'Ver tutorial' : 'Buscar tutorial'} de ${candidate.game.name}`"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 class="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#5200FF] px-3 py-2.5 text-center text-sm font-bold text-white hover:bg-[#4100cc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
@@ -1433,6 +1434,7 @@ const myChoiceLabel = (candidateId: number): string | null => {
                             <a
                                 v-if="externalUrl(candidate.game.bgg_url)"
                                 :href="externalUrl(candidate.game.bgg_url)"
+                                :aria-label="`Ver BGG de ${candidate.game.name}`"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 class="inline-flex min-h-11 items-center justify-center gap-1 rounded-xl border border-zinc-300 px-3 text-sm font-bold text-[#5200FF] hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
@@ -1534,12 +1536,13 @@ const myChoiceLabel = (candidateId: number): string | null => {
                                 {{ candidate.game.short_description }}
                             </p>
 
-                            <div class="mt-auto flex flex-wrap gap-2 pt-4">
+                            <div class="mt-auto flex flex-wrap items-stretch gap-2 pt-4">
                                 <a
                                     :href="tutorialUrl(candidate.game)"
+                                    :aria-label="`${externalUrl(candidate.game.youtube_url) ? 'Ver tutorial' : 'Buscar tutorial'} de ${candidate.game.name}`"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    class="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#5200FF] px-3 py-2 text-sm font-bold text-white hover:bg-[#4100cc]"
+                                    class="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#5200FF] px-3 py-2.5 text-center text-sm font-bold text-white hover:bg-[#4100cc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                                 >
                                     <YoutubeLogoIcon class="size-5 shrink-0" aria-hidden="true" />
                                     {{ externalUrl(candidate.game.youtube_url) ? 'Ver tutorial' : 'Buscar tutorial' }}
@@ -1547,11 +1550,13 @@ const myChoiceLabel = (candidateId: number): string | null => {
                                 <a
                                     v-if="externalUrl(candidate.game.bgg_url)"
                                     :href="externalUrl(candidate.game.bgg_url)"
+                                    :aria-label="`Ver BGG de ${candidate.game.name}`"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    class="inline-flex min-h-11 items-center rounded-xl border border-zinc-300 px-3 text-sm font-bold text-[#5200FF]"
+                                    class="inline-flex min-h-11 items-center justify-center gap-1 rounded-xl border border-zinc-300 px-3 text-sm font-bold text-[#5200FF] hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF]"
                                 >
                                     BGG
+                                    <ChainIcon class="size-4 shrink-0" aria-hidden="true" />
                                 </a>
                             </div>
                         </article>
