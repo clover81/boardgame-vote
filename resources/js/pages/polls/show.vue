@@ -623,6 +623,10 @@ const closePollError = ref('');
 const closePollButton = ref<HTMLButtonElement | null>(null);
 const resultsHeading = ref<HTMLElement | null>(null);
 
+watch(() => props.poll.status, (status) => {
+    if (status !== 'open') closePollDialogOpen.value = false;
+});
+
 const restoreClosePollFocus = (event: Event) => {
     const target = resultsHeading.value ?? closePollButton.value;
     if (!target) return;
@@ -638,10 +642,11 @@ const closePoll = () => {
 
     closePollError.value = '';
     closePollDialogOpen.value = true;
+    refreshVotes();
 };
 
 const confirmClosePoll = () => {
-    if (closingPoll.value || !canClosePoll.value) {
+    if (closingPoll.value || refreshingVotes.value || !canClosePoll.value) {
         return;
     }
 
@@ -1073,10 +1078,14 @@ const modeLabel = (
                         <!-- PROGRESO -->
 
                         <div
+                            role="progressbar"
+                            aria-label="Votos recibidos"
+                            :aria-valuenow="votePercentage"
+                            :aria-valuetext="`${poll.voted_participants_count} de ${poll.participants_count} han votado`"
                             class="mt-4 h-3 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800"
                         >
                             <div
-                                class="h-full rounded-full bg-[#CCFF00] transition-all"
+                                class="h-full rounded-full bg-[#5200FF] motion-safe:transition-[width] dark:bg-[#CCFF00]"
                                 :style="{
                                     width: `${votePercentage}%`,
                                 }"
@@ -1084,6 +1093,8 @@ const modeLabel = (
                         </div>
 
                         <p
+                            aria-live="polite"
+                            aria-atomic="true"
                             class="mt-2 text-sm font-semibold text-zinc-600 dark:text-zinc-300"
                         >
                             {{
@@ -2044,9 +2055,17 @@ const modeLabel = (
                     </DialogDescription>
                 </DialogHeader>
 
+                <p
+                    v-if="refreshingVotes"
+                    role="status"
+                    class="text-sm font-semibold text-zinc-600 dark:text-zinc-300"
+                >
+                    Comprobando los votos recibidos…
+                </p>
+
                 <!-- TODAVÍA QUEDAN PERSONAS POR VOTAR -->
                 <div
-                    v-if="pendingParticipants.length > 0"
+                    v-else-if="pendingParticipants.length > 0"
                     class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
                 >
                     <p class="font-bold">
@@ -2100,7 +2119,7 @@ const modeLabel = (
 
                     <button
                         type="button"
-                        :disabled="!canClosePoll || closingPoll"
+                        :disabled="!canClosePoll || closingPoll || refreshingVotes"
                         class="rounded-xl bg-[#5200FF] px-5 py-3 font-bold text-white transition hover:bg-[#4000cc] disabled:cursor-not-allowed disabled:opacity-50"
                         @click="confirmClosePoll"
                     >
