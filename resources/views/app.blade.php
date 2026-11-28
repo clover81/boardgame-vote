@@ -49,7 +49,7 @@
             if (is_array($publicPoll)) {
                 $pollName = trim((string) ($publicPoll['name'] ?? 'Votación'));
                 $position = $publicPoll['session_position'] ?? null;
-                $closed = ($publicPoll['status'] ?? null) === 'closed';
+                $status = $publicPoll['status'] ?? null;
 
                 if (in_array($position, [1, 2], true)) {
                     // Evitar "Juego 2 · Juego 2 de 2".
@@ -63,15 +63,19 @@
 
                     $previewTitle = "🎲 {$baseName} · Juego {$position} de 2";
 
-                    $previewDescription = $closed
-                        ? "Juego {$position} de 2: consulta los resultados y los tutoriales."
-                        : "Juego {$position} de 2: vota y consulta los juegos y sus tutoriales.";
+                    $previewDescription = match ($status) {
+                        'draft' => "Juego {$position} de 2: la votación aún no está abierta.",
+                        'closed' => "Juego {$position} de 2: consulta los resultados y los tutoriales.",
+                        default => "Juego {$position} de 2: vota y consulta los juegos y sus tutoriales.",
+                    };
                 } else {
                     $previewTitle = "🎲 {$pollName}";
 
-                    $previewDescription = $closed
-                        ? 'Consulta los resultados y tutoriales de la votación.'
-                        : 'Participa en la votación y descubre los juegos y sus tutoriales.';
+                    $previewDescription = match ($status) {
+                        'draft' => 'La votación aún no está abierta. Podrás votar desde este enlace.',
+                        'closed' => 'Consulta los resultados y tutoriales de la votación.',
+                        default => 'Participa en la votación y descubre los juegos y sus tutoriales.',
+                    };
                 }
             }
             // Vista previa de las fichas del catálogo público.

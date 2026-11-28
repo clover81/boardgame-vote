@@ -44,6 +44,18 @@ beforeEach(function () {
     $this->originalVotes = $this->participant->votes()->get()->toArray();
 });
 
+test('a draft vote link shows a waiting message in its link preview', function () {
+    $this->poll->update(['status' => 'draft']);
+
+    $this->get($this->personalUrl)
+        ->assertOk()
+        ->assertSee('property="og:description" content="La votación aún no está abierta. Podrás votar desde este enlace."', false)
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('vote/show')
+            ->where('poll.status', 'draft')
+        );
+});
+
 test('a personal link stores one vote for its participant regardless of the submitted participant ID', function ($secondChoice) {
     $otherParticipant = $this->poll->participants()->create(['display_name' => 'Ana']);
     $otherVote = $otherParticipant->votes()->create([

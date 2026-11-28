@@ -129,6 +129,7 @@ interface Poll {
     session_position: 1 | 2 | null;
 
     status:
+        | 'draft'
         | 'open'
         | 'closed';
 
@@ -543,6 +544,10 @@ const cancelVoteEdit = async () => {
     );
 };
 
+const refreshDraftVote = () => {
+    if (props.poll.status === 'draft') window.location.reload();
+};
+
 const submit = () => {
     if (form.processing || !canSubmit.value) {
         return;
@@ -829,6 +834,10 @@ const myChoiceLabel = (candidateId: number): string | null => {
                                 }}
                             </template>
 
+                            <template v-else-if="poll.status === 'draft'">
+                                La votación aún no está abierta. Vuelve a este enlace cuando empiece.
+                            </template>
+
                             <template v-else>
                                 La votación ha terminado.
                             </template>
@@ -857,6 +866,15 @@ const myChoiceLabel = (candidateId: number): string | null => {
             <!-- ================================================= -->
             <!-- RESULTADOS                                        -->
             <!-- ================================================= -->
+
+            <button
+                v-if="poll.status === 'draft'"
+                type="button"
+                class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#5200FF] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#4100cc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] sm:w-auto"
+                @click="refreshDraftVote"
+            >
+                Actualizar estado
+            </button>
 
             <section
                 v-if="poll.status === 'closed'"
