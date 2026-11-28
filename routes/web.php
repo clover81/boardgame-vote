@@ -34,6 +34,9 @@ Route::get(
     [PublicPollController::class, 'showForParticipant']
 )->name('vote.participant.show');
 
+Route::get('/vote/{token}', fn () => abort(404))
+    ->name('vote.participant.incomplete');
+
 Route::post(
     '/vote/{token}/{voteToken}',
     [PublicPollController::class, 'voteForParticipant']

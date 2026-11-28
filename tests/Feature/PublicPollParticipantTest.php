@@ -274,7 +274,16 @@ test('personal links show group names without revealing other participants votes
 ]);
 
 test('a personal link rejects unknown poll and participant tokens', function ($token, $voteToken) {
-    $this->get(route('vote.participant.show', [$token, $voteToken]))->assertNotFound();
+    $url = route('vote.participant.show', [$token, $voteToken]);
+
+    $this->get($url)
+        ->assertNotFound()
+        ->assertSee('Enlace de votación no disponible')
+        ->assertSee('tu enlace personal');
+
+    $this->getJson($url)
+        ->assertNotFound()
+        ->assertJsonStructure(['message']);
 })->with([
     'unknown poll' => ['UNKNOWN', str_repeat('a', 40)],
     'unknown participant' => ['PERSONAL', str_repeat('b', 40)],
@@ -291,7 +300,10 @@ test('a personal link cannot use the token of a participant from another poll', 
     $this->get(route('vote.participant.show', [$otherPoll->token, $this->participant->vote_token]))
         ->assertNotFound();
 
-    $this->get('/vote/'.$this->poll->token)->assertNotFound();
+    $this->get('/vote/'.$this->poll->token)
+        ->assertNotFound()
+        ->assertSee('Enlace de votación no disponible')
+        ->assertSee('tu enlace personal');
 });
 
 
