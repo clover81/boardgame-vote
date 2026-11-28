@@ -293,8 +293,12 @@ const changeVotingMode = () => {
 
 const copiedParticipantId = ref<number | null>(null);
 const copyFailedParticipantId = ref<number | null>(null);
+const sharingParticipantLink = ref(false);
 
 const participantVotePath = (voteToken: string) => `/vote/${props.poll.token}/${voteToken}`;
+
+const participantVoteUrl = (voteToken: string) =>
+    new URL(participantVotePath(voteToken), window.location.origin).href;
 
 const copyParticipantLink = async (participant: Participant) => {
     if (!participant.vote_token) return;
@@ -303,12 +307,32 @@ const copyParticipantLink = async (participant: Participant) => {
     copyFailedParticipantId.value = null;
 
     try {
-        const url = new URL(participantVotePath(participant.vote_token), window.location.origin);
-        await navigator.clipboard.writeText(url.href);
+        await navigator.clipboard.writeText(participantVoteUrl(participant.vote_token));
         copiedParticipantId.value = participant.id;
     } catch {
         copyFailedParticipantId.value = participant.id;
     }
+};
+
+const shareParticipantLink = async (participant: Participant) => {
+    if (!participant.vote_token || sharingParticipantLink.value) return;
+
+    if (navigator.share) {
+        sharingParticipantLink.value = true;
+        try {
+            await navigator.share({
+                title: props.poll.name,
+                url: participantVoteUrl(participant.vote_token),
+            });
+            return;
+        } catch (error) {
+            if (error instanceof DOMException && error.name === 'AbortError') return;
+        } finally {
+            sharingParticipantLink.value = false;
+        }
+    }
+
+    await copyParticipantLink(participant);
 };
 
 const secondPreferenceTieBreak = computed(() =>
@@ -1122,6 +1146,16 @@ const modeLabel = (
                                     </div>
 
                                     <div v-if="participant.vote_token" class="mt-2 flex flex-wrap items-center gap-2">
+                                        <button
+                                            type="button"
+                                            class="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[#5200FF] px-3 text-sm font-semibold text-white hover:bg-[#4100cc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] disabled:opacity-50"
+                                            :disabled="sharingParticipantLink"
+                                            :aria-label="`Compartir enlace de ${participant.display_name}`"
+                                            @click="shareParticipantLink(participant)"
+                                        >
+                                            <Share2 class="size-4 shrink-0" aria-hidden="true" />
+                                            Compartir enlace
+                                        </button>
                                         <button
                                             type="button"
                                             class="min-h-11 rounded-xl bg-violet-100 px-3 text-sm font-semibold text-[#5200FF] hover:bg-violet-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5200FF] dark:bg-violet-950 dark:text-violet-200"
